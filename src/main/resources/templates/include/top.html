@@ -1,0 +1,52 @@
+<html xmlns:th="http://www.thymeleaf.org">
+
+<div th:fragment="top">
+
+    <!-- CSS -->
+    <link th:href="@{/css/top.css}" rel="stylesheet">
+
+    <!-- Header -->
+    <header class="top-header">
+        <h1>티켓팅 사이트 ver 1.0</h1>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="top-nav">
+        &emsp;&emsp;&emsp;
+        <a th:href="@{/main.do}">홈으로</a>&emsp;
+        <a th:href="@{/member/form.do}">회원가입</a>&emsp;
+        <a th:href="@{/member/list.do}">회원목록</a>&emsp;
+               
+     &emsp;
+    <span th:if="${session.role == 'ROLE_ADMIN'}">
+      <a th:href="@{/admin/main.do}">관리자영역</a>&emsp;
+    </span> 
+    
+    <span th:if="${(session.role == 'ROLE_ADMIN') || (session.role == 'ROLE_MANAGER') }">
+      <a th:href="@{/manager/main.do}">관리자&매니저영역</a>&emsp;
+    </span> 
+    
+    
+    <span th:if="${ session.role != null }">
+       <a th:href="@{/product/main.do}">회원영역</a>&emsp;
+       <span th:if="${session.role == 'ROLE_ADMIN'}">
+         <a th:href="@{/product/form.do}">상품등록(관리자)</a>&emsp;
+         <a th:href="@{/product/orderList.do}">장바구니목록(관리자)</a>&emsp;
+       </span>
+       <a th:href="@{/product/list.do}">상품목록(회원)</a>&emsp;
+       <a th:href="@{/product/memberorderList.do}">장바구니목록(회원)</a>&emsp;
+       <a th:href="@{/product/memberorderSelect.do}">주문목록(회원)</a>&emsp;
+    </span>    
+
+    <span th:if="${session.username != null }">
+    <a th:href="@{/logout}"> [[${session.name}]]
+                            (ROLE:[[${session.role}]]) 로그아웃</a>
+    </span>
+    
+    <span th:unless="${session.username != null}">
+      <a th:href="@{/member/login.do}">로그인</a>
+    </span>
+    
+    </nav>
+
+</div>
