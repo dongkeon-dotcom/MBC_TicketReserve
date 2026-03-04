@@ -3,7 +3,7 @@
 <div th:fragment="top">
 
     <!-- CSS -->
-    <link th:href="@{/css/top.css}" rel="stylesheet">
+    <link th:href="@{/css/top.css}" rel="stylesheet" />
 
     <!-- Header -->
     <header class="top-header">
@@ -46,7 +46,7 @@
     </span>
     
     <span th:unless="${session.username != null}">
-      <a th:href="@{/member/login.do}">로그인</a>
+      <a th:href="@{/user/login.do}">로그인</a>
     </span>
     
     </nav>
