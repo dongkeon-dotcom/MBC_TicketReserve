@@ -14,8 +14,8 @@
     <nav class="top-nav">
         &emsp;&emsp;&emsp;
         <a th:href="@{/main.do}">홈으로</a>&emsp;
-        <a th:href="@{/member/form.do}">회원가입</a>&emsp;
-        <a th:href="@{/member/list.do}">회원목록</a>&emsp;
+        <a th:href="@{/user/join.do}">회원가입</a>&emsp;
+        <a th:href="@{/user/list.do}">회원목록</a>&emsp;
                
      &emsp;
     <span th:if="${session.role == 'ROLE_ADMIN'}">
@@ -23,7 +23,7 @@
     </span> 
     
     <span th:if="${(session.role == 'ROLE_ADMIN') || (session.role == 'ROLE_MANAGER') }">
-      <a th:href="@{/manager/main.do}">관리자&매니저영역</a>&emsp;
+      <a th:href="@{/manager/main.do}" th:text="'관리자&매니저영역'"></a>&emsp;
     </span> 
     
     
