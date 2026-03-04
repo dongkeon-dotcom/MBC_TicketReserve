@@ -1,0 +1,158 @@
+<html xmlns:th="http://www.thymeleaf.org">
+	<div th:replace="include/top::top"></div>
+<div align="center"> 
+  <h1> thymeleaf (index) </h1> 
+</div>
+<head>
+    <meta charset="UTF-8">
+    <title>관리자 - 공연 등록</title>
+<link rel="stylesheet" th:href="@{/css/admin/showInsert.css}">
+</head>
+<body>
+
+    <h1>새 공연 등록</h1>
+
+    <form th:action="@{/admin/performance/save}" method="post" enctype="multipart/form-data">
+        
+        <div class="section">
+            <h2>1. 기본 정보</h2>
+            <div class="form-group">
+                <label>공연 제목</label>
+                <input type="text" name="title" placeholder="공연 제목을 입력하세요" required>
+            </div>
+            <div class="form-group">
+				<label>메인 포스터</label>
+				        <input type="file" name="posterFile" id="posterFile" accept="image/*" required onchange="previewMainPoster(this)">
+				        <div id="poster-preview" style="margin-top: 10px;"></div>
+            </div>
+            <div style="display: flex; gap: 20px;">
+                <div class="form-group" style="flex: 1;">
+                    <label>공연 시작일</label>
+                    <input type="date" name="startDate" required>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>공연 종료일</label>
+                    <input type="date" name="endDate" required>
+                </div>
+            </div>
+        </div>
+		<div class="section">
+		    <h2>2. 상세 설명 이미지</h2>
+		    <div class="form-group">
+		        <label>상세 이미지들 (최대 5개)</label>
+		        <input type="file" id="detailFiles" name="detailFiles" accept="image/*" multiple onchange="previewDetailImages(this)">
+		        <div id="detail-preview" style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;"></div>
+		    </div>
+		</div>
+
+        <div class="section">
+            <h2>3. 좌석 등급 및 가격 설정</h2>
+            <div id="grade-container">
+                <div class="grade-item">
+                    <span style="min-width: 70px;">1번 등급:</span>
+                    <input type="text" name="gradeNames" placeholder="등급명 (예: VIP석)" required>
+                    <input type="number" name="gradePrices" placeholder="가격" required>
+                </div>
+            </div>
+            <button type="button" class="btn btn-add" onclick="addGrade()">+ 등급 추가</button>
+        </div>
+
+        <div class="section">
+            <h2>4. 예약 오픈 설정</h2>
+            <div class="form-group">
+                <label>예약 시작 일시</label>
+                <input type="datetime-local" name="openingTime" required>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-submit">공연 데이터 생성 및 저장</button>
+    </form>
+
+   
+</section>
+
+<script>
+	
+	// 1. 메인 포스터 미리보기 (1장)
+	function previewMainPoster(input) {
+	    const container = document.getElementById('poster-preview');
+	    container.innerHTML = ""; // 기존 미리보기 삭제
+
+	    if (input.files && input.files[0]) {
+	        const reader = new FileReader();
+	        reader.onload = function(e) {
+	            const img = document.createElement('img');
+	            img.src = e.target.result;
+	            img.style.width = "150px"; // 적절한 크기 조절
+	            img.style.border = "1px solid #ddd";
+	            container.appendChild(img);
+	        };
+	        reader.readAsDataURL(input.files[0]);
+	    }
+	}
+
+	// 2. 상세 이미지 미리보기 (최대 5장)
+	function previewDetailImages(input) {
+	    const container = document.getElementById('detail-preview');
+	    container.innerHTML = ""; // 기존 미리보기 삭제
+
+	    if (input.files.length > 5) {
+	        alert("상세 이미지는 최대 5장까지만 선택 가능합니다.");
+	        input.value = ""; // 선택 초기화
+	        return;
+	    }
+
+	    if (input.files) {
+	        // 선택된 모든 파일에 대해 반복
+	        Array.from(input.files).forEach(file => {
+	            const reader = new FileReader();
+	            reader.onload = function(e) {
+	                const img = document.createElement('img');
+	                img.src = e.target.result;
+	                img.style.width = "100px";
+	                img.style.height = "100px";
+	                img.style.objectFit = "cover"; // 이미지 비율 유지하며 꽉 채움
+	                img.style.border = "1px solid #ddd";
+	                container.appendChild(img);
+	            };
+	            reader.readAsDataURL(file);
+	        });
+	    }
+	}
+	
+	
+	
+	//파일선택갯수제한 
+	function checkFileCount(input) {
+	        const maxFiles = 5;
+	        if (input.files.length > maxFiles) {
+	            alert("상세 이미지는 최대 " + maxFiles + "개까지만 업로드 가능합니다.");
+	            input.value = ""; // 선택된 파일들을 초기화
+	        }
+	    }
+	
+	
+	
+       let gradeCount = 1;
+       function addGrade() {
+           gradeCount++;
+           const container = document.getElementById('grade-container');
+           const div = document.createElement('div');
+           div.className = 'grade-item';
+           div.innerHTML = `
+               <span style="min-width: 70px;">${gradeCount}번 등급:</span>
+               <input type="text" name="gradeNames" placeholder="등급명" required>
+               <input type="number" name="gradePrices" placeholder="가격" required>
+               <button type="button" class="btn btn-remove" onclick="removeGrade(this)">삭제</button>
+           `;
+           container.appendChild(div);
+       }
+       function removeGrade(btn) {
+           btn.parentElement.remove();
+       }
+   </script>
+   
+<div th:replace="include/bottom::footer"></div>
+
+</body>
+</html>

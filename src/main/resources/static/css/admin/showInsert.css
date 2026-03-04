@@ -1,0 +1,155 @@
+/* 1. 전체 레이아웃 및 공통 스타일 (유지) */
+.admin-container {
+    max-width: 1000px; /* 가로 배열을 위해 폭을 조금 넓혔습니다 */
+    margin: 30px auto;
+    padding: 20px;
+    font-family: 'Pretendard', sans-serif;
+}
+
+.page-title { margin-bottom: 30px; color: #333; }
+
+.section {
+    background: #ffffff;
+    padding: 25px;
+    margin-bottom: 25px;
+    border: 1px solid #e1e1e1;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.section h2 {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: #007bff;
+    border-left: 5px solid #007bff;
+    padding-left: 10px;
+}
+
+/* 2. 폼 요소 및 이미지 프리뷰 (유지) */
+.form-group { margin-bottom: 15px; }
+label { display: block; font-weight: bold; margin-bottom: 8px; }
+input[type="text"], input[type="date"], input[type="number"], input[type="datetime-local"], input[type="time"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.date-row { display: flex; gap: 20px; }
+.date-item { flex: 1; }
+
+.preview-container { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.preview-container div { position: relative; transition: transform 0.2s; }
+.preview-container div:hover { transform: scale(1.05); }
+.pre-img-main { width: 180px; height: auto; border-radius: 8px; border: 2px solid #eee; }
+.pre-img-sub { width: 100px; height: 100px; object-fit: cover; border-radius: 6px; }
+
+/* 3. 등급 설정 및 좌석 배치도 (유지 + 드래그 최적화) */
+.grade-item {
+    display: flex; gap: 10px; align-items: center; margin-bottom: 10px;
+    padding: 12px; background: #f8f9fa; border-radius: 8px;
+}
+.grade-label { font-weight: bold; min-width: 70px; }
+
+.seat-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 55px);
+    gap: 12px;
+    background: #343a40;
+    padding: 25px;
+    border-radius: 15px;
+    width: fit-content;
+    margin: 20px auto;
+    user-select: none; /* 드래그 시 텍스트 선택 방지 */
+    position: relative;
+}
+
+.seat {
+    width: 55px; height: 55px; background: #adb5bd; color: #fff;
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    cursor: crosshair; font-weight: bold; transition: background 0.2s;
+}
+
+/* 등급별 색상 */
+.grade-color-1 { background: #ff4d4d !important; }
+.grade-color-2 { background: #3399ff !important; }
+.grade-color-3 { background: #ffcc00 !important; color: #333 !important; }
+.grade-color-4 { background: #2ecc71 !important; }
+.grade-color-5 { background: #9b59b6 !important; }
+
+/* 드래그 사각형 스타일 (추가) */
+#drag-selection-rect {
+    display: none;
+    position: absolute;
+    border: 1px solid #007bff;
+    background: rgba(0, 123, 255, 0.2);
+    z-index: 9999;
+    pointer-events: none;
+}
+
+/* 4. 요일별 회차 일괄 설정 (가로 배열로 완전 수정) */
+.day-schedule-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 15px;
+    width: 100%;
+}
+
+.day-schedule-item {
+    flex: 1;
+    min-width: 110px;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    padding: 15px 5px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+}
+
+/* 토요일/일요일 색상 포인트 */
+.day-schedule-item:nth-child(6) .day-name { color: #228be6; }
+.day-schedule-item:nth-child(7) .day-name { color: #fa5252; }
+
+.day-header { border-bottom: 1px solid #dee2e6; margin-bottom: 10px; padding-bottom: 8px; }
+.day-name { font-size: 1.1rem; font-weight: bold; display: block; margin-bottom: 8px; }
+
+.radio-group {
+    display: flex;
+    flex-direction: column; /* 가로폭 확보를 위해 상하 배치 */
+    align-items: center;
+    gap: 5px;
+    font-size: 0.85rem;
+}
+.radio-group label { cursor: pointer; display: flex; align-items: center; gap: 4px; }
+
+.time-list { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; align-items: center; }
+.time-input-item { display: flex; align-items: center; gap: 2px; }
+.time-val { width: 85px !important; padding: 5px !important; font-size: 0.8rem !important; text-align: center; }
+
+/* 5. 버튼 스타일 (유지 및 보완) */
+.selector-row { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; flex-wrap: wrap; }
+.selector-btn { padding: 10px 20px; border-radius: 20px; border: 2px solid #ddd; background: white; cursor: pointer; }
+.selector-btn.active { border-color: #000; background: #e9ecef; font-weight: bold; }
+
+.btn-add, .btn-add-time { background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+.btn-add-time { background: #007bff; width: 90%; font-size: 0.75rem; padding: 5px 0; }
+.btn-remove, .btn-remove-time { background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+.btn-remove-time { padding: 2px 6px; font-size: 0.8rem; }
+
+.btn-submit {
+    width: 100%; background: #28a745; color: white; padding: 18px; border: none;
+    border-radius: 8px; font-size: 1.2rem; font-weight: bold; cursor: pointer;
+    margin-top: 20px; transition: background 0.3s;
+}
+.btn-submit:hover { background: #218838; }
+
+.time-val {
+    width: 70px !important;    /* 24시간제 숫자 4개와 콜론만 들어가면 됨 */
+    text-align: center;
+    font-family: 'Courier New', Courier, monospace; /* 숫자 가독성 */
+    font-weight: bold;
+    letter-spacing: 1px;
+}

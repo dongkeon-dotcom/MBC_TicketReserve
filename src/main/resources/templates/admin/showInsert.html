@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>관리자 - 공연 등록</title>
+    <link rel="stylesheet" th:href="@{/css/admin/showInsert.css}">
+</head>
+<body>
+    <div th:replace="include/top::top"></div>
+
+
+	<section class="admin-container">
+	    <h1 class="page-title">새 공연 및 좌석 일괄 등록</h1>
+
+	    <form th:action="@{/admin/showsave.do}" method="post" enctype="multipart/form-data" onsubmit="return validateAndSubmit()">
+			<div id="drag-selection-rect" style="display:none; position:fixed; border:1px solid #007bff; background:rgba(0, 123, 255, 0.2); z-index:9999; pointer-events:none;"></div>
+	        <div class="section">
+	            <h2>1. 기본 정보 (공연 전체 기간)</h2>
+	            <div class="form-group">
+	                <label>공연 제목</label>
+	                <input type="text" name="title" placeholder="예: B 공연 (2026)" required style="width:100%;">
+	            </div>
+	            <div class="date-row">
+	                <div class="date-item">
+	                    <label>공연 시작일</label>
+	                    <input type="date" name="startDate" id="startDate" required>
+	                </div>
+	                <div class="date-item">
+	                    <label>공연 종료일</label>
+	                    <input type="date" name="endDate" id="endDate" required>
+	                </div>
+	            </div>
+	            <div class="form-group" style="margin-top:15px;">
+	                <label>메인 포스터 (1장)</label>
+	                <input type="file" name="posterFile" accept="image/*" required onchange="previewSingle(this, 'poster-pre')">
+	                <div id="poster-pre" class="preview-box" style="margin-top:10px;"></div>
+	            </div>
+	        </div>
+
+	        <div class="section">
+	            <h2>2. 상세 설명 이미지</h2>
+	            <div class="form-group">
+	                <label>이미지 선택 (최대 5장)</label>
+	                <input type="file" name="detailFiles" id="detailFiles" accept="image/*" multiple onchange="previewMultiple(this, 'detail-pre')">
+	               
+	                <div id="detail-pre" class="preview-container" style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;"></div>
+	            </div>
+	        </div>
+
+	        <div class="section">
+	            <h2>3. 좌석 등급 설정 및 배치도 드래그</h2>
+	            <div id="grade-container">
+	                <div class="grade-item" id="grade-row-1">
+	                    <span class="grade-label">1번 등급:</span>
+	                    <input type="text" name="gradeNames" placeholder="등급명(예: VIP석)" required oninput="updateSelectors()">
+	                    <input type="text" name="gradePrices" placeholder="가격(원)" required oninput="handlePriceInput(this)">
+	                </div>
+	            </div>
+	            <button type="button" class="btn-add" onclick="addGradeRow()" style="margin-top:10px;">+ 등급 추가</button>
+
+	            <div class="seat-work-area" style="margin-top:30px;">
+	                <p>💡 <b>등급 버튼을 클릭한 후, 아래 좌석을 드래그하여 색칠하세요.</b></p>
+	                <div id="grade-selectors" class="selector-row" style="display:flex; gap:10px; justify-content:center; margin-bottom:15px;">
+	                    </div>
+
+	                <div id="seat-map" class="seat-grid">
+	                    </div>
+	            </div>
+
+	            <input type="hidden" name="seatGradeMap" id="seatGradeMapInput">
+	        </div>
+
+			<div class="section">
+			    <h2>4. 공연 기간 내 요일별 회차 일괄 설정</h2>
+			    <p class="guide-text">공연 기간 내 모든 해당 요일에 대해 설정된 회차가 자동 생성됩니다.</p>
+			    
+			    <div class="day-schedule-container">
+			        <div th:each="day : ${#strings.arraySplit('월,화,수,목,금,토,일', ',')}" class="day-schedule-item">
+			            <div class="day-header">
+			                <span class="day-name">[[${day}]]</span>
+			                <div class="radio-group">
+			                    <label>
+			                        <input type="radio" th:name="'is' + ${day} + 'Show'" value="Y" 
+			                               th:onclick="toggleTimeInputs([[${day}]], true)"> 있음
+			                    </label>
+			                    <label>
+			                        <input type="radio" th:name="'is' + ${day} + 'Show'" value="N" checked 
+			                               th:onclick="toggleTimeInputs([[${day}]], false)"> 없음
+			                    </label>
+			                </div>
+			            </div>
+			            
+			            <div th:id="'time-area-' + ${day}" class="time-input-area" style="display:none;">
+			                <div th:id="'time-list-' + ${day}" class="time-list">
+			                    </div>
+			                <button type="button" class="btn-add-time" 
+			                        th:onclick="addTimeInput([[${day}]])">+ 시간 추가</button>
+			            </div>
+			        </div>
+			    </div>
+			    
+			    <input type="hidden" name="weeklySchedule" id="weeklyScheduleInput">
+			</div>
+
+	            <hr style="margin: 25px 0;">
+
+	            <div class="form-group">
+	                <label>🔔 티켓 예매 시작 일시</label>
+	                <input type="datetime-local" name="openingTime" required>
+	                <small>티켓 판매가 시작되는 날짜와 시간입니다.</small>
+	            </div>
+	        </div>
+
+	        <button type="submit" class="btn-submit" style="width:100%; padding:20px; font-size:1.2em; cursor:pointer; background:#28a745; color:white; border:none; border-radius:8px; font-weight:bold;">
+	            모든 회차 및 좌석 데이터 일괄 생성 저장
+	        </button>
+	    </form>
+	</section>
+    <div th:replace="include/bottom::footer"></div>
+ <!--=========script부분 =========================--> 
+	
+	
+    <script> // [1] 전역 변수 설정
+ let gradeCount = 1;
+ let currentSelectedGrade = 1; 
+ let isDrawing = false;
+ let startX, startY; 
+ const seatAssignment = {}; // { "좌석번호": 등급번호 }
+ let selectedDetailFiles = []; // 상세 이미지 파일 배열
+ let tempSelectedSeats = []; // 드래그 도중 임시로 체크된 좌석들
+
+ const selectionRect = document.getElementById('drag-selection-rect');
+ const seatMap = document.getElementById('seat-map');
+
+ // --- [2] 가격 콤마 처리 (입력 시 자동 , 생성) ---
+ function handlePriceInput(el) {
+     let val = el.value.replace(/\D/g, ""); // 숫자만 추출
+     if (val) {
+         el.value = Number(val).toLocaleString(); // 3자리 콤마 적용
+     } else {
+         el.value = "";
+     }
+ }
+
+ // --- [3] 이미지 미리보기 및 개별 삭제 ---
+ function previewSingle(input, targetId) {
+     const target = document.getElementById(targetId);
+     if (input.files && input.files[0]) {
+         const reader = new FileReader();
+         reader.onload = e => {
+             target.innerHTML = `<img src="${e.target.result}" style="width:180px; border-radius:8px; border:1px solid #ddd; margin-top:10px;">`;
+         };
+         reader.readAsDataURL(input.files[0]);
+     }
+ }
+
+ function previewMultiple(input, targetId) {
+     const newFiles = Array.from(input.files);
+     if (selectedDetailFiles.length + newFiles.length > 5) {
+         alert("상세 이미지는 최대 5장까지만 선택 가능합니다.");
+         input.value = ""; 
+         return;
+     }
+     newFiles.forEach(file => selectedDetailFiles.push(file));
+     renderPreviews(document.getElementById(targetId));
+ }
+
+ function renderPreviews(container) {
+     container.innerHTML = ""; 
+     selectedDetailFiles.forEach((file, index) => {
+         const reader = new FileReader();
+         reader.onload = function(e) {
+             const div = document.createElement('div');
+             div.style.cssText = "position:relative; display:inline-block; margin:10px;";
+             div.innerHTML = `
+                 <img src="${e.target.result}" style="width:100px; height:100px; object-fit:cover; border-radius:8px; border:1px solid #ddd;">
+                 <button type="button" onclick="removeDetailFile(${index})" style="position:absolute; top:-5px; right:-5px; background:#ff4d4d; color:white; border:none; border-radius:50%; width:22px; height:22px; cursor:pointer; font-weight:bold;">&times;</button>
+             `;
+             container.appendChild(div);
+         };
+         reader.readAsDataURL(file);
+     });
+     updateInputFile();
+ }
+
+ function removeDetailFile(index) {
+     selectedDetailFiles.splice(index, 1);
+     renderPreviews(document.getElementById('detail-pre'));
+ }
+
+ function updateInputFile() {
+     const dataTransfer = new DataTransfer();
+     selectedDetailFiles.forEach(file => dataTransfer.items.add(file));
+     const input = document.getElementById('detailFiles');
+     if(input) input.files = dataTransfer.files;
+ }
+
+ // --- [4] 등급 관리 및 선택기 로직 ---
+ function addGradeRow() {
+     if (gradeCount >= 5) { alert("최대 5개 등급까지만 가능합니다."); return; }
+     gradeCount++;
+     const container = document.getElementById('grade-container');
+     const div = document.createElement('div');
+     div.className = 'grade-item';
+     div.id = `grade-row-${gradeCount}`;
+     div.innerHTML = `
+         <span class="grade-label">${gradeCount}번 등급:</span>
+         <input type="text" name="gradeNames" placeholder="등급명" required oninput="updateSelectors()">
+         <input type="text" name="gradePrices" placeholder="가격(원)" required oninput="handlePriceInput(this)">
+         <button type="button" class="btn-remove" onclick="removeGradeRow(this)">×</button>
+     `;
+     container.appendChild(div);
+     updateSelectors();
+ }
+
+ function removeGradeRow(btn) {
+     btn.parentElement.remove();
+     gradeCount--;
+     // 삭제 후 번호 재정렬
+     const rows = document.querySelectorAll('.grade-item');
+     rows.forEach((row, idx) => {
+         const num = idx + 1;
+         row.querySelector('.grade-label').innerText = `${num}번 등급:`;
+     });
+     updateSelectors();
+ }
+
+ function updateSelectors() {
+     const selectorDiv = document.getElementById('grade-selectors');
+     const names = document.getElementsByName('gradeNames');
+     
+     // 현재 선택 등급이 전체 등급 수보다 많아지면 1번으로 초기화
+     if (currentSelectedGrade > names.length) currentSelectedGrade = 1;
+
+     selectorDiv.innerHTML = "";
+     names.forEach((input, index) => {
+         const gNum = index + 1;
+         const btn = document.createElement('button');
+         btn.type = "button";
+         btn.className = `selector-btn ${currentSelectedGrade === gNum ? 'active' : ''}`;
+         btn.innerText = input.value.trim() || `${gNum}번 등급`;
+         btn.onclick = () => { 
+             currentSelectedGrade = gNum; 
+             updateSelectors(); 
+         };
+         selectorDiv.appendChild(btn);
+     });
+ }
+
+ // --- [5] 요일별 회차(24시간제) 로직 ---
+ function toggleTimeInputs(day, isShow) {
+     const area = document.getElementById(`time-area-${day}`);
+     const list = document.getElementById(`time-list-${day}`);
+     area.style.display = isShow ? 'block' : 'none';
+     if (!isShow) list.innerHTML = ""; 
+     else if (list.children.length === 0) addTimeInput(day);
+ }
+
+ function addTimeInput(day) {
+     const list = document.getElementById(`time-list-${day}`);
+     const div = document.createElement('div');
+     div.className = 'time-input-item';
+     div.innerHTML = `
+         <input type="text" class="time-val" placeholder="14:00" maxlength="5"
+                oninput="formatTimeInput(this)">
+         <button type="button" class="btn-remove-time" onclick="this.parentElement.remove(); collectSchedule();">×</button>
+     `;
+     list.appendChild(div);
+ }
+
+ function formatTimeInput(el) {
+     let val = el.value.replace(/\D/g, ""); // 숫자만
+     if (val.length >= 3) {
+         el.value = val.substring(0, 2) + ":" + val.substring(2, 4);
+     } else {
+         el.value = val;
+     }
+     collectSchedule(); 
+ }
+
+ function collectSchedule() {
+     const schedule = {};
+     ['월','화','수','목','금','토','일'].forEach(day => {
+         const radio = document.querySelector(`input[name="is${day}Show"]:checked`);
+         const isShow = radio ? radio.value === 'Y' : false;
+         const times = Array.from(document.querySelectorAll(`#time-list-${day} .time-val`))
+                            .map(input => input.value)
+                            .filter(val => /^([01][0-9]|2[0-3]):([0-5][0-9])$/.test(val));
+         schedule[day] = isShow ? times : [];
+     });
+     document.getElementById('weeklyScheduleInput').value = JSON.stringify(schedule);
+ }
+
+ // --- [6] 좌석 사각형 드래그 선택 로직 ---
+ const seats = [];
+ for (let i = 1; i <= 30; i++) {
+     const seat = document.createElement('div');
+     seat.className = 'seat';
+     seat.innerText = i;
+     seat.dataset.seatNo = i;
+     seatMap.appendChild(seat);
+     seats.push(seat);
+ }
+
+ seatMap.onmousedown = (e) => {
+     if (e.button !== 0) return; 
+     isDrawing = true;
+     startX = e.pageX;
+     startY = e.pageY;
+
+     selectionRect.style.display = 'block';
+     selectionRect.style.left = startX + 'px';
+     selectionRect.style.top = startY + 'px';
+     selectionRect.style.width = '0px';
+     selectionRect.style.height = '0px';
+ };
+
+ window.onmousemove = (e) => {
+     if (!isDrawing) return;
+     const currentX = e.pageX;
+     const currentY = e.pageY;
+     const left = Math.min(startX, currentX);
+     const top = Math.min(startY, currentY);
+     const width = Math.abs(startX - currentX);
+     const height = Math.abs(startY - currentY);
+
+     selectionRect.style.left = left + 'px';
+     selectionRect.style.top = top + 'px';
+     selectionRect.style.width = width + 'px';
+     selectionRect.style.height = height + 'px';
+
+     findSeatsInRect(left, top, width, height);
+ };
+
+ function findSeatsInRect(rl, rt, rw, rh) {
+     const rr = rl + rw;
+     const rb = rt + rh;
+     tempSelectedSeats = [];
+     seats.forEach(s => {
+         const b = s.getBoundingClientRect();
+         const sl = b.left + window.scrollX;
+         const st = b.top + window.scrollY;
+         const isOverlap = !(rr < sl || rl > sl + b.width || rb < st || rt > st + b.height);
+         if (isOverlap) {
+             tempSelectedSeats.push(s);
+             s.style.outline = "3px solid white";
+             s.style.outlineOffset = "-3px";
+         } else {
+             s.style.outline = "none";
+         }
+     });
+ }
+
+ window.onmouseup = () => {
+     if (!isDrawing) return;
+     isDrawing = false;
+     selectionRect.style.display = 'none';
+     tempSelectedSeats.forEach(s => {
+         s.className = `seat grade-color-${currentSelectedGrade}`;
+         s.style.outline = "none";
+         seatAssignment[s.dataset.seatNo] = currentSelectedGrade;
+     });
+     tempSelectedSeats = [];
+     document.getElementById('seatGradeMapInput').value = JSON.stringify(seatAssignment);
+ };
+
+ // --- [7] 최종 제출 전처리 ---
+ function validateAndSubmit() {
+     collectSchedule(); 
+     
+     // 1. 모든 좌석 지정 여부 확인
+     if (Object.keys(seatAssignment).length < 30) {
+         alert("모든 좌석(30개)의 등급을 지정해야 합니다!");
+         return false;
+     }
+
+     // 2. 가격 콤마(,) 제거 후 순수 숫자로 전송
+     const prices = document.getElementsByName('gradePrices');
+     prices.forEach(p => {
+         p.value = p.value.replace(/,/g, ""); 
+     });
+
+     return true;
+ }
+
+ // 페이지 로드 시 초기 셀렉터 생성
+ updateSelectors();
+	
+	</script>
+</body>
+</html>
