@@ -1,0 +1,123 @@
+/* 전체 섹션 레이아웃 */
+.member-wrapper {
+    max-width: 800px;
+    margin: 60px auto;
+    padding: 0 20px;
+    min-height: 600px;
+}
+
+.member-wrapper h1 {
+    font-size: 26px;
+    font-weight: 600;
+    margin-bottom: 40px;
+    color: #212529;
+    text-align: center;
+}
+
+/* 정보 수정 테이블 */
+.member-table {
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
+    border-collapse: collapse;
+    border-top: 2px solid #212529;
+    background-color: #fff;
+}
+
+.member-table td {
+    padding: 20px 15px;
+    border-bottom: 1px solid #dee2e6;
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+/* 왼쪽 라벨 칸 */
+.label-cell {
+    width: 160px;
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* 입력창 스타일 */
+.member-table input[type="text"],
+.member-table input[type="password"],
+.member-table select {
+    width: 100%; /* 기본적으로 꽉 차게 */
+    padding: 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+/* 읽기 전용 배경색 */
+.member-table input[readonly] {
+    background-color: #e9ecef !important;
+    border-color: #dee2e6;
+    color: #6c757d;
+    cursor: default;
+}
+
+/* 주소 입력 그룹 내의 간격 조정 */
+.address-edit-group input {
+    margin-bottom: 8px;
+}
+
+.address-edit-group .btn-addr {
+    width: auto;
+    padding: 8px 15px;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+/* 하단 버튼 그룹 */
+.button-group {
+    padding: 50px 0 !important;
+    text-align: center;
+    border-bottom: none !important;
+}
+
+/* 버튼 공통 스타일 */
+.button-group button {
+    width: 130px;
+    height: 50px;
+    border: none;
+    border-radius: 4px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 0 5px;
+    transition: all 0.2s;
+}
+
+/* 수정 버튼 (Primary) */
+.btn-update {
+    background-color: #0d6efd;
+    color: #fff;
+}
+.btn-update:hover { background-color: #0b5ed7; }
+
+/* 뒤로가기 버튼 (Gray) */
+.btn-back {
+    background-color: #6c757d;
+    color: #fff;
+}
+.btn-back:hover { background-color: #5a6268; }
+
+/* 탈퇴하기 버튼 (Red) */
+.btn-del {
+    background-color: #fff;
+    color: #dc3545;
+    border: 1px solid #dc3545 !important;
+}
+.btn-del:hover {
+    background-color: #dc3545;
+    color: #fff;
+}

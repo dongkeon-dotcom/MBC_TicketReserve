@@ -35,6 +35,9 @@ public class Users {
     @Column(name = "address", length = 255)
     private String address;
     
+    @Column(name = "extra_address", length = 255)
+    private String extraAddress;
+    
     @Column(name = "zipcode", length = 10)
     private String zipcode;
 

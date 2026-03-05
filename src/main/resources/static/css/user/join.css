@@ -1,0 +1,95 @@
+@charset "UTF-8";
+
+/* 1. 기본 레이아웃 및 섹션 */
+section {
+    padding: 60px 0;
+    background-color: #fcfcfc;
+    min-height: 800px;
+    display: flex;
+    justify-content: center;
+}
+
+/* 2. 테이블 카드 스타일 */
+table {
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border-collapse: separate;
+    width: 100%;
+}
+
+/* 3. 입력창 및 텍스트 스타일 */
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+    box-sizing: border-box; /* 패딩이 너비에 영향을 주지 않도록 설정 */
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    outline: none;
+}
+
+/* 4. 기존 <style> 태그에 있던 클래스들 이동 */
+.social-badge {
+    background-color: #fee500;
+    color: #3c1e1e;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-left: 8px;
+    border: 1px solid #e2d100;
+    display: inline-block;
+}
+
+.readonly-box {
+    background-color: #f1f3f5 !important;
+    border: 1px solid #dee2e6 !important;
+    cursor: not-allowed;
+    color: #868e96 !important;
+}
+
+.msg-text {
+    font-size: 13px;
+    margin-top: 6px;
+    display: block;
+    min-height: 18px;
+}
+
+/* 5. 버튼 스타일 */
+.btn-addr, .btn-outline-secondary {
+    padding: 10px 15px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background 0.2s;
+}
+
+.btn-addr:hover {
+    background-color: #5a6268;
+}
+
+/* 회원가입 완료 버튼 전용 */
+.join-submit-btn {
+    width: 100%;
+    height: 50px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 20px;
+}

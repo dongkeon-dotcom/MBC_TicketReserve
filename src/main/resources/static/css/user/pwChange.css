@@ -1,0 +1,95 @@
+/* 비밀번호 변경 섹션 레이아웃 */
+.pw-change-wrapper {
+    max-width: 600px; /* 수정 페이지보다 조금 더 슬림하게 */
+    margin: 80px auto;
+    padding: 0 20px;
+}
+
+.pw-change-wrapper h1 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 30px;
+    color: #212529;
+    text-align: center;
+}
+
+/* 테이블 스타일 */
+.pw-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-top: 2px solid #333;
+    background-color: #fff;
+}
+
+.pw-table td {
+    padding: 20px 15px;
+    border-bottom: 1px solid #eee;
+}
+
+/* 라벨 셀 */
+.label-cell {
+    width: 150px;
+    background-color: #fcfcfc;
+    color: #333;
+    font-weight: 600;
+    text-align: center;
+    font-size: 14px;
+}
+
+/* 입력창 스타일 */
+.pw-table input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.pw-table input[type="password"]:focus {
+    border-color: #0d6efd;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+}
+
+/* 안내 메시지 (비밀번호 불일치 등) */
+.msg-area {
+    margin-top: 8px;
+    font-size: 12px;
+    display: block;
+}
+.msg-error { color: #dc3545; }
+.msg-success { color: #198754; }
+
+/* 하단 버튼 그룹 */
+.button-group {
+    padding-top: 40px !important;
+    text-align: center;
+    border-bottom: none !important;
+}
+
+.button-group button {
+    width: 140px;
+    height: 50px;
+    border: none;
+    border-radius: 5px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin: 0 5px;
+    transition: background 0.2s;
+}
+
+.btn-submit {
+    background-color: #0d6efd;
+    color: #fff;
+}
+.btn-submit:hover { background-color: #0b5ed7; }
+
+.btn-cancel {
+    background-color: #f8f9fa;
+    color: #666;
+    border: 1px solid #ddd !important;
+}
+.btn-cancel:hover { background-color: #e2e6ea; }

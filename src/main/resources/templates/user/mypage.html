@@ -1,0 +1,58 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>마이페이지</title>
+    <link rel="stylesheet" th:href="@{/css/user/mypage.css}">
+</head>
+<body>
+    <div th:replace="include/top::top"></div>
+
+    <section class="mypage-wrapper">
+        <div class="welcome-box">
+            <h1>마이페이지</h1>
+            <div class="user-name">
+                <strong><span th:text="${user?.name}">사용자</span></strong>님 환영합니다!
+            </div>
+        </div>
+
+        <div class="menu-container">
+            <a th:href="@{/user/edit.do}" class="menu-item horizontal-item">
+                <span class="icon-box">👤</span>
+                <span class="menu-text-wrap">
+                    <span class="main-text">회원 정보 수정</span>
+                </span>
+                <span class="arrow-icon">›</span>
+            </a>
+            <!-- 해당 메뉴는 간편로그인 유저는 안보이게 처리해야됨 -->
+            <!-- 해당 메뉴는 간편로그인 유저는 안보이게 처리해야됨 -->
+            <!-- 해당 메뉴는 간편로그인 유저는 안보이게 처리해야됨 -->
+            <!-- 해당 메뉴는 간편로그인 유저는 안보이게 처리해야됨 -->
+            <a th:href="@{/user/pwChnage.do}" class="menu-item horizontal-item">
+                <span class="icon-box">🔒</span>
+                <span class="menu-text-wrap">
+                    <span class="main-text">비밀번호 변경</span>
+                </span>
+                <span class="arrow-icon">›</span>
+            </a>
+
+            <a th:href="@{/user/reservationList.do}" class="menu-item horizontal-item">
+                <span class="icon-box">🎫</span>
+                <span class="menu-text-wrap">
+                    <span class="main-text">공연 예매 확인/취소</span>
+                </span>
+                <span class="arrow-icon">›</span>
+            </a>
+        </div>
+    </section>
+<script th:inline="javascript">
+/*<![CDATA[*/
+const message = /*[[${msg}]]*/ null;
+if (message) {
+    alert(message);
+}
+/*]]>*/
+</script>
+
+    <div th:replace="include/bottom::footer"></div>
+</body>
+</html>

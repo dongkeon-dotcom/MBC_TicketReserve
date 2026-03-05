@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>회원 정보 수정</title>
+    <link th:href="@{/css/user/edit.css}" rel="stylesheet" />
+</head>
+<body>
+    <div th:replace="include/top::top"></div>
+
+    <section class="member-wrapper">
+        <div class="edit-container" style="text-align: center; padding: 50px 0;">
+            <div style="display: inline-block; text-align: left; width: 100%; max-width: 600px;">
+                <h1>개인 회원 정보 수정</h1>
+
+                <form name="updateForm" th:action="@{/user/editOK.do}" method="POST">
+                    <input type="hidden" name="userId" th:value="${user.userId}">
+                    <input type="hidden" name="userIdx" th:value="${user.userIdx}">
+
+                    <table class="member-table" border="1" style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td class="label-cell" style="padding: 10px; font-weight: bold;">이메일(아이디)</td>
+                            <td>
+                                <input type="text" th:value="${user.userId}" readonly style="width: 100%; background: #eee;">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="label-cell" style="padding: 10px; font-weight: bold;">회원 이름</td>
+                            <td>
+                                <input type="text" name="name" th:value="${user.name}" style="width: 100%;">
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td class="label-cell" style="padding: 10px; font-weight: bold;">전화번호</td>
+                            <td>
+                                <div class="phone-group" style="display: flex; align-items: center; gap: 5px;">
+                                    <input type="text" name="phone" id="phone" th:value="${user.phone}" 
+                                           placeholder="숫자만 입력" maxlength="11" style="width: 100%;"
+                                           oninput="this.value=this.value.replace(/[^0-9]/g,'');">
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td class="label-cell" style="padding: 10px; font-weight: bold;">현재 주소</td>
+                            <td>
+                                <div class="address-edit-group">
+                                    <input type="text" id="zipcode" placeholder="우편번호" th:value="${user.zipcode}" readonly style="width: 120px; margin-bottom: 5px;">
+                                    <input type="button" value="주소 검색" class="btn-addr" onclick="execDaumPostcode()"/><br>
+                                    <input type="text" id="address" name="address" placeholder="기본 주소" th:value="${user.address}" readonly style="width: 100%; margin-bottom: 5px;">
+                                    <input type="text" id="extraAddress" name="extraAddress" placeholder="상세 주소" th:value="${user.extraAddress}" style="width: 100%;">
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td colspan="2" class="button-group" style="text-align: center; padding: 20px;">
+                                <button type="button" class="btn-update" onclick="userUpdate()">수정하기</button>
+                                <button type="button" class="btn-back" onclick="back()">뒤로가기</button>
+                                <button type="button" class="btn-del" onclick="userDel()" style="color: red;">탈퇴하기</button>
+                            </td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+        </div>
+    </section>
+
+<script
+	src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script th:inline="javascript">
+
+/*<![CDATA[*/
+const message = /*[[${msg}]]*/ null;
+if (message) {
+    alert(message);
+}
+/*]]>*/
+
+function userDel(){
+	if(confirm("정말로 탈퇴하시겠습니까?")){
+		location.href = "";
+	}
+}
+
+const _isSocial = /*[[${isSocial}]]*/ false;
+let emailChecked = _isSocial;
+
+function userUpdate(){
+    const form = document.updateForm;
+    const addrMain = form.address.value;
+    const addrExtra = form.extraAddress.value;
+    const fullAddr = form.address;
+    
+
+    if(form.name.value.trim() === ""){
+        alert("이름을 입력하세요.");
+        form.name.focus();
+        return;
+    }
+    
+    if(form.phone.value.length < 10){
+        alert("전화번호를 확인해주세요.");
+        form.phone.focus();
+        return;
+    }
+    
+    if(addrMain.trim() === ""){
+        alert("주소를 검색하여 입력해주세요.");
+        return;
+    }
+    
+    if(addrExtra.trim() === ""){
+        alert("상세 주소를 입력해주세요.");
+        form.addr_extra.focus();
+        return;
+    }
+    
+    if(confirm("입력하신 정보로 수정하시겠습니까?")){
+        form.submit();	
+    }	
+}
+
+
+function execDaumPostcode() {
+    new daum.Postcode({
+        oncomplete: function(data) {
+            var addr = (data.userSelectedType === 'R') ? data.roadAddress : data.jibunAddress;
+            document.getElementById('zipcode').value = data.zonecode;
+            document.getElementById("address").value = addr;
+            document.getElementById("extraAddress").focus();
+        }
+    }).open();
+}
+
+function back(){
+	location.href = "/user/mypage.do";
+}
+</script>
+
+<div th:replace="include/bottom::footer"></div>
+</body>
+</html>

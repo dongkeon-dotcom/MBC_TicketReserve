@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>비밀번호 변경</title>
+    <link th:href="@{/css/user/pwChange.css}" rel="stylesheet" />
+</head>
+<body>
+    <div th:replace="include/top::top"></div>
+
+<section class="pw-change-wrapper">
+    <h1>비밀번호 변경</h1>
+    <form id="pwForm" th:action="@{/user/pwChangeOK.do}" method="POST">
+        <input type="hidden" name="userId" th:value="${session.user.userId}">
+        
+        <table class="pw-table">
+            <tr>
+                <td class="label-cell">현재 비밀번호</td>
+                <td><input type="password" id="currentPw" name="currentPw" required></td>
+            </tr>
+            <tr>
+                <td class="label-cell">새 비밀번호</td>
+                <td><input type="password" id="newPw" name="newPw" required></td>
+            </tr>
+            <tr>
+                <td class="label-cell">새 비밀번호 확인</td>
+                <td>
+                    <input type="password" id="newPwConfirm" name="newPwConfirm" required>
+                    <span id="pwMatchMsg" class="msg-area"></span>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" class="button-group">
+                    <button type="button" class="btn-submit" onclick="validatePassword()">비밀번호 변경</button>
+                    <button type="button" class="btn-cancel" onclick="history.back()">취소하기</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+</section>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+const message = /*[[${msg}]]*/ null;
+if (message) {
+    alert(message);
+}
+/*]]>*/
+
+    // 1. 실시간 체크 기능 (사용자가 입력하는 동안 작동)
+    document.getElementById('newPwConfirm').addEventListener('keyup', function() {
+        const pw = document.getElementById('newPw').value;
+        const confirmPw = this.value;
+        const msgArea = document.getElementById('pwMatchMsg');
+
+        if (confirmPw === "") {
+            msgArea.textContent = "";
+        } else if (pw === confirmPw) {
+            msgArea.textContent = "비밀번호가 일치합니다.";
+            msgArea.style.color = "green"; // 클래스 대신 직접 스타일을 줘도 됩니다.
+        } else {
+            msgArea.textContent = "비밀번호가 일치하지 않습니다.";
+            msgArea.style.color = "red";
+        }
+    });
+
+    // 2. 최종 전송 기능 (버튼 클릭 시 작동)
+    function validatePassword() {
+        const currentPw = document.getElementById('currentPw').value;
+        const newPw = document.getElementById('newPw').value;
+        const newPwConfirm = document.getElementById('newPwConfirm').value;
+
+        // 필수 입력 체크
+        if (!currentPw || !newPw || !newPwConfirm) {
+            alert("모든 필드를 입력해주세요.");
+            return;
+        }
+
+        // 최종 일치 확인
+        if (newPw !== newPwConfirm) {
+            alert("새 비밀번호가 일치하지 않습니다.");
+            return;
+        }
+
+        // 서버로 전송
+        if (confirm("비밀번호를 변경하시겠습니까?")) {
+            document.getElementById('pwForm').submit();
+        }
+    }
+</script>
+</body>
+</html>
