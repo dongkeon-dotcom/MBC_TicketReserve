@@ -46,7 +46,7 @@
                             <td class="label-cell" style="padding: 10px; font-weight: bold;">현재 주소</td>
                             <td>
                                 <div class="address-edit-group">
-                                    <input type="text" id="zipcode" placeholder="우편번호" th:value="${user.zipcode}" readonly style="width: 120px; margin-bottom: 5px;">
+                                    <input type="text" id="zipcode" name="zipcode" placeholder="우편번호" th:value="${user.zipcode}" readonly style="width: 120px; margin-bottom: 5px;">
                                     <input type="button" value="주소 검색" class="btn-addr" onclick="execDaumPostcode()"/><br>
                                     <input type="text" id="address" name="address" placeholder="기본 주소" th:value="${user.address}" readonly style="width: 100%; margin-bottom: 5px;">
                                     <input type="text" id="extraAddress" name="extraAddress" placeholder="상세 주소" th:value="${user.extraAddress}" style="width: 100%;">

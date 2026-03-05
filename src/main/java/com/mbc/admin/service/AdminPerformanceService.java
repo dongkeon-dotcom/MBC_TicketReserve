@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -286,6 +288,10 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
     public List<Performance> getAllPerformances() {
         // 최신 등록순으로 보고 싶다면 리포지토리에 findAllByOrderByPerformanceIdDesc() 등을 추가해 사용하세요.
         return performanceRepository.findAll();
+    }
+    
+    public Page<Performance> searchByTitle(String keyword, Pageable pageable){
+    	return performanceRepository.findByTitleContainingIgnoreCase(keyword, pageable);
     }
     
     

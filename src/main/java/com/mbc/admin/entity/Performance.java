@@ -20,7 +20,6 @@ public class Performance {
 
     private String title;
     private String posterImageName;
-    private String posterImageHash;
     private LocalDate startDate;
     private LocalDate endDate;
     private Integer isDeleted = 0;

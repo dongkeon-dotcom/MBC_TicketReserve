@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <link th:href="@{/css/search/list.css}" rel="stylesheet" />
+</head>
+<body>
+    <div th:replace="include/top::top"></div>
+
+    <section class="search-result-container">
+        <div class="search-summary-wrapper">
+            <div class="center-search-bar">
+                <form th:action="@{/search/list.do}" method="get">
+                    <div class="search-input-group">
+                        <input type="text" name="keyword" th:value="${keyword}" placeholder="검색어를 입력하세요">
+                        <button type="submit" class="search-icon-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="result-count-text-wrapper">        
+                <span class="highlight-orange">[[${keyword}]]</span>에 대한 검색 결과는 총 
+                <span class="highlight-orange">[[${totalElements}]]</span>건입니다.
+            </div>
+        </div> <hr class="search-divider">
+
+        <div class="performance-grid">
+        
+            <div th:each="p : ${list}" class="performance-item">
+                <button type="button" class="perf-button" th:onclick="|location.href='/performance/detail.do?id=${p.performanceId}'|">
+                    <div class="perf-content">
+                        <div class="perf-img-box">
+                            <img th:src="@{'/upload/' + ${p.posterImageName}}" alt="포스터">
+                        </div>
+                        <div class="perf-info">
+                            <h3 class="perf-title">[[${p.title}]]</h3>
+                            <p class="perf-date">[[${p.startDate}]] ~ [[${p.endDate}]]</p>
+                        </div>
+                    </div>
+                </button>
+            </div>
+            
+        </div>
+
+		<div class="pagination" th:if="${totalPages > 0}" 
+		     th:with="pageGroupSize=5,
+		              currentGroup=${currentPage / pageGroupSize},
+		              startPage=${currentGroup * pageGroupSize},
+		              endPage=${(startPage + pageGroupSize - 1 < totalPages - 1) ? (startPage + pageGroupSize - 1) : (totalPages - 1)}">
+		    
+		    <a th:href="@{/search/list.do(keyword=${keyword}, page=0)}" 
+		       class="arrow-btn" th:classappend="${currentPage == 0} ? 'disabled' : ''">|<</a>
+		    
+		    <a th:href="@{/search/list.do(keyword=${keyword}, page=${startPage - 1})}" 
+		       class="arrow-btn" th:classappend="${startPage == 0} ? 'disabled' : ''">&lt;</a>
+		
+		    <span th:each="i : ${#numbers.sequence(startPage, endPage)}">
+		        <a th:href="@{/search/list.do(keyword=${keyword}, page=${i})}"
+		           th:text="${i + 1}"
+		           th:classappend="${i == currentPage} ? 'active' : ''"></a>
+		    </span>
+		
+		    <a th:href="@{/search/list.do(keyword=${keyword}, page=${endPage + 1})}" 
+		       class="arrow-btn" th:classappend="${endPage >= totalPages - 1} ? 'disabled' : ''">&gt;</a>
+		    
+		    <a th:href="@{/search/list.do(keyword=${keyword}, page=${totalPages - 1})}" 
+		       class="arrow-btn" th:classappend="${currentPage >= totalPages - 1} ? 'disabled' : ''">>|</a>
+		</div>
+    </section>
+
+    <div th:replace="include/bottom::footer"></div>    
+</body>
+</html>

@@ -25,7 +25,7 @@ public class UserController {
 	private final UsersService service;
 	
 	@GetMapping("join.do")
-	String join(Model model) {
+	public String join(Model model) {
 		System.out.println("==> main.do");
 		// 나중에 if문으로 isSocial인지 아닌지 구분해야됨
 		model.addAttribute("isSocial", false);
@@ -33,7 +33,7 @@ public class UserController {
 	}
 	
 	@PostMapping("joinOK.do")
-	String joinOK(Users user) {
+	public String joinOK(Users user) {
 		
 		service.join(user);		
 		

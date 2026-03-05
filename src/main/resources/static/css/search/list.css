@@ -1,0 +1,172 @@
+/* 1. 전체 컨테이너 및 배경 설정 */
+body {
+    background-color: #fff;
+    margin: 0;
+}
+
+.search-result-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 40px;
+    min-height: 600px; /* 결과가 없을 때도 푸터가 너무 올라오지 않게 */
+}
+
+/* 2. 검색 요약 영역 */
+.search-summary-wrapper {
+    text-align: center;
+    margin-bottom: 40px; 
+    padding: 40px 0;
+}
+
+/* 3. 중앙 검색창 스타일 */
+.center-search-bar {
+    display: inline-block;
+    border-bottom: 3px solid #000;
+    margin: 0 auto 50px auto;
+    padding-bottom: 5px;
+    width: 100%; 
+    max-width: 700px;
+}
+
+.search-input-group {
+    display: flex;
+    align-items: center;
+}
+
+.search-input-group input[type="text"] {
+    border: none;
+    outline: none;
+    font-size: 30px; 
+    font-weight: 700;
+    color: #000;
+    background: transparent;
+    padding: 10px;
+    flex-grow: 1;
+}
+
+.search-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 32px;
+    color: #000;
+}
+
+.result-count-text-wrapper {
+    margin-top: 20px;
+    font-size: 22px;
+    font-weight: 500;
+    color: #333;
+}
+
+.highlight-orange {
+    color: #FF4D00;
+    font-weight: 700;
+}
+
+.search-divider {
+    border: none;
+    border-top: 1px solid #eee;
+    margin-bottom: 60px;
+}
+
+/* 4. 그리드 레이아웃 */
+.performance-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px 40px;
+    margin-bottom: 80px;
+}
+
+/* 5. 개별 아이템 */
+.perf-button {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+    display: block; /* 버튼을 블록으로 설정 */
+}
+
+.perf-content {
+    display: flex; 
+    align-items: center; /* 이미지와 텍스트 세로 중앙 정렬 */
+    gap: 25px; 
+}
+
+.perf-img-box {
+    flex-shrink: 0;
+    width: 180px;  
+    height: 250px;
+    overflow: hidden;
+    border-radius: 4px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+}
+
+.perf-img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 6. 정보 텍스트 영역 */
+.perf-info {
+    flex-grow: 1;
+}
+
+.perf-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #333;
+    margin: 0 0 12px 0;
+    line-height: 1.4;
+    word-break: keep-all;
+}
+
+.perf-date {
+    font-size: 16px;
+    color: #666;
+    margin: 0;
+    font-weight: 400;
+}
+
+/* 7. 페이징 스타일 */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 80px;
+    margin-bottom: 100px;
+}
+
+.pagination a {
+    text-decoration: none;
+    color: #999;
+    font-size: 18px;
+    padding: 5px 8px;
+    min-width: 30px;
+    text-align: center;
+}
+
+.pagination a.active {
+    color: #000 !important;
+    font-weight: 800;
+}
+
+.pagination a:hover:not(.disabled) {
+    color: #000;
+}
+
+.pagination a.disabled {
+    color: #e0e0e0 !important;
+    pointer-events: none;
+    cursor: default;
+}
+
+/* 화살표 버튼에 클래스를 부여하여 스타일링하는 것을 권장 */
+.arrow-btn {
+    font-weight: bold;
+    font-family: monospace; /* |< 아이콘 정렬을 위해 */
+}

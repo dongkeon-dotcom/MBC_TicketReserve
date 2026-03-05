@@ -52,17 +52,28 @@
             <button type="button" class="search-close-btn" onclick="toggleSearch(false)">&times;</button>
             
             <div class="search-form-container">
+            	<form th:action="@{/search/list.do}" method="get">
                 <div class="search-input-wrapper">
-                    <input type="text" id="searchInput" placeholder="검색어를 입력하세요." autocomplete="off">
-                    <button type="button" class="search-btn">
+                    <input type="text" name="keyword" id="keyword" placeholder="검색어를 입력하세요." autocomplete="off">
+                    <button type="submit" class="search-btn">
                         <i class="fas fa-search"></i>
                     </button>
                 </div>
+                </form>
             </div>
         </div>
     </div>
 
 <script th:inline="javascript">
+
+document.querySelector('.search-form-container form').onsubmit = function() {
+    const val = document.getElementById('keyword').value.trim();
+    if (val === "") {
+        alert("검색어를 입력해주세요.");
+        return false; // 전송 중단
+    }
+};
+
 function toggleSearch(isOpen) {
     const overlay = document.getElementById('searchOverlay');
     const dim = document.getElementById('searchDim');
@@ -70,7 +81,7 @@ function toggleSearch(isOpen) {
     if (isOpen) {
         overlay.classList.add('active');
         if(dim) dim.classList.add('active'); // 배경 어둡게
-        setTimeout(() => document.getElementById('searchInput').focus(), 400);
+        setTimeout(() => document.getElementById('keyword').focus(), 400);
     } else {
         overlay.classList.remove('active');
         if(dim) dim.classList.remove('active'); // 배경 밝게
