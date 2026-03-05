@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/admin")
@@ -217,7 +218,40 @@ public class AdminController {
             return "<script>alert('수정 실패: " + e.getMessage() + "'); history.back();</script>";
         }
     }
-    
+    /**
+     * 공연 삭제 처리
+     * /admin/delete.do?id=123
+     */
+    @GetMapping("/delete.do")
+    public String deletePerformance(@RequestParam("id") Long id, RedirectAttributes rttr) {
+        System.out.println("==> 관리자 공연 삭제 요청 (ID: " + id + ")");
+        
+        try {
+            // 1. 공연 존재 여부 및 판매 상태 체크 (선택 사항)
+            Performance performance = performanceService.getPerformance(id);
+            if (performance == null) {
+                rttr.addFlashAttribute("errorMsg", "존재하지 않는 공연입니다.");
+                return "redirect:/admin/listPage.do";
+            }
+
+            // [비즈니스 로직] 만약 이미 판매가 시작된 공연은 삭제를 막고 싶다면?
+            // if (isStarted(performance)) { 
+            //     rttr.addFlashAttribute("errorMsg", "이미 예매가 진행 중인 공연은 삭제할 수 없습니다.");
+            //     return "redirect:/admin/listPage.do";
+            // }
+
+            // 2. 서비스 호출하여 삭제 실행 (Cascade 설정이 없다면 내부에서 연관 데이터 모두 삭제 필요)
+            performanceService.deletePerformance(id);
+            
+            rttr.addFlashAttribute("successMsg", "공연이 성공적으로 삭제되었습니다.");
+            
+        } catch (Exception e) {
+            System.err.println("삭제 중 오류 발생: " + e.getMessage());
+            rttr.addFlashAttribute("errorMsg", "삭제 중 오류가 발생했습니다. (참조 데이터 확인 필요)");
+        }
+        
+        return "redirect:/admin/listPage.do";
+    }   
     
     
     
