@@ -1,27 +1,159 @@
 @charset "UTF-8";
-header{
- background-color:blue;
- height:70px;
- line-height:70px;
- text-align:center;
- vertical-align:middle;
- color:#ffffff;
-}
-nav{
- background-color:#6699ff;
- height:40px;
- line-height:45px;
- vertical-align:middle;
-}
-section{
- background-color:#CCCCCC;
- min-height:450px;
 
+header {
+    background-color: blue;
+    height: 70px;
+    line-height: 70px;
+    text-align: center;
+    vertical-align: middle;
+    color: #ffffff;
 }
-footer{
- background-color:#0077FF;
- height:35px;
- line-height:35px;
- text-align:center;
- vertical-align:middle;
+
+/* --- Navigation 영역 --- */
+.top-nav {
+    background-color: #6699ff;
+    height: 40px;
+    display: flex; /* Flexbox 활성화 */
+    justify-content: space-between; /* 좌우 양 끝 정렬 */
+    align-items: center; /* 세로 중앙 정렬 */
+    padding: 0 30px; /* 좌우 끝에 너무 붙지 않게 여백 추가 */
+}
+
+/* 왼쪽 메뉴 그룹 */
+.nav-left {
+    display: flex;
+    gap: 20px; /* 메뉴 사이 간격 */
+}
+
+/* 오른쪽 메뉴 그룹 */
+.nav-right {
+    display: flex;
+    gap: 20px; /* 메뉴 사이 간격 */
+    align-items: center;
+}
+
+/* 링크 공통 스타일 */
+nav a {
+    text-decoration: none;
+    color: #000; /* 기존 파란색 링크 대신 검정색 추천 */
+    font-size: 14px;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
+
+.user-info {
+    font-size: 14px;
+    color: #333;
+}
+
+.logout-link {
+    font-size: 12px;
+    margin-left: 5px;
+    color: #444 !important;
+}
+
+/* ---  기존 섹션 및 푸터 스타일 --- */
+section {
+    background-color: #CCCCCC;
+    min-height: 450px;
+}
+
+footer {
+    background-color: #0077FF;
+    height: 35px;
+    line-height: 35px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* ---  검색 기능 관련 스타일 --- */
+.search-trigger {
+    font-size: 1.2rem;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.search-overlay {
+    position: fixed;
+    top: 0;
+    right: -100%; /* 여전히 우측 밖에 숨겨둠 */
+    
+    /* [수정] 너비를 가로의 약 1/3인 33%로 설정 */
+    width: 33%; 
+    /* 화면 너비가 너무 좁을 때를 대비해 최소 너비를 주면 좋습니다 */
+    min-width: 350px; 
+    
+    height: 100%; /* 세로는 전체를 다 씁니다 */
+    background-color: #ffffff;
+    z-index: 9999;
+    transition: right 0.4s ease-in-out;
+    
+    /* 그림자를 왼쪽으로 줘서 메인 화면과 분리된 느낌을 줍니다 */
+    box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+    
+    display: flex;
+    flex-direction: column;
+    padding: 100px 30px; /* 내부 여백 조절 */
+}
+
+.search-overlay.active {
+    right: 0; /* 우측 끝에 딱 붙어서 멈춤 */
+}
+
+/* 닫기 버튼 (X) 위치 조정 */
+.search-close-btn {
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    font-size: 35px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #000;
+}
+
+/* 검색 입력창 컨테이너 (가로 너비에 맞게 조정) */
+.search-form-container {
+    width: 100%; /* 부모(33%) 안에서 꽉 차게 */
+}
+
+.search-input-wrapper {
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid #000;
+    padding-bottom: 5px;
+}
+
+.search-input-wrapper input {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: none;
+    font-size: 20px; /* 좁은 폭에 맞춰 폰트 크기 살짝 줄임 */
+    font-weight: bold;
+}
+
+.search-dim {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5); /* 검정 반투명 */
+    z-index: 9998; /* 오버레이(9999)보다 낮게 */
+    display: none; /* 평소엔 숨김 */
+}
+.search-dim.active {
+    display: block;
+}
+
+.search-btn {
+    background: none;
+    border: none;
+    font-size: 30px;
+    cursor: pointer;
 }
