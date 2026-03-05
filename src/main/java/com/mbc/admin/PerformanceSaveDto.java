@@ -12,6 +12,10 @@ public class PerformanceSaveDto {
     private String endDate;         // 종료일 (2026-04-02)
     private String openingTime;     // 티켓 오픈 시간
     
+ // ⭐ [추가] 이번 티켓팅으로 실제 생성할 회차 기간
+    private String openStartDate; // 티켓팅 대상 시작일
+    private String openEndDate;   // 티켓팅 대상 종료일
+    
     // 파일 업로드 (Entity에는 파일 자체가 아니라 파일 이름만 저장할 거임)
     private MultipartFile posterFile; 
     private List<MultipartFile> detailFiles;
