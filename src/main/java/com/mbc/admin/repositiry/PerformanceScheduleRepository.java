@@ -2,6 +2,9 @@ package com.mbc.admin.repositiry;
 
 import com.mbc.admin.entity.PerformanceSchedule;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -27,4 +30,15 @@ public interface PerformanceScheduleRepository extends JpaRepository<Performance
      * (예: 3월 1일 ~ 3월 15일 사이의 모든 공연 회차)
      */
     List<PerformanceSchedule> findByStartTimeBetween(LocalDateTime start, LocalDateTime end);
-}
+    
+ // 이름을 findByPerformance_PerformanceId로 바꾸거나, 아래처럼 @Query를 씁니다.
+    @Query("SELECT s FROM PerformanceSchedule s WHERE s.performance.performanceId = :performanceId")
+    List<PerformanceSchedule> findByPerformanceId(@Param("performanceId") Long performanceId);        // 특정 공연 ID에 해당하는 모든 데이터를 한 번에 삭제
+    @Modifying // 삭제/수정 쿼리에는 필수
+    @Query("DELETE FROM PerformanceSchedule s WHERE s.performance.performanceId = :performanceId")
+    void deleteByPerformanceId(@Param("performanceId") Long performanceId);
+} 
+    // (나머지 리포지토리도 동일하게 deleteByPerformanceId 추가 필요)
+    
+    
+    

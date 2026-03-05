@@ -117,230 +117,259 @@
     </section>
 
     <div th:replace="~{include/bottom::footer}"></div>
+	JavaScript
 	<script th:inline="javascript">
-		/*<![CDATA[*/
-		// --- [1] 서버 데이터 안전하게 로드 ---
-		const isStarted = /*[[${isStarted}]]*/ false;
+	    /*<![CDATA[*/
+	    // --- [1] 서버 데이터 안전하게 로드 ---
+	    const isStarted = /*[[${isStarted}]]*/ false;
+	    const seatGradeMapRaw = /*[[${seatGradeMap}]]*/ '{}'; 
+	    const seatAssignment = JSON.parse(seatGradeMapRaw); 
+	    const weeklyScheduleRaw = /*[[${weeklySchedule}]]*/ '{}';
+	    const initialSchedule = JSON.parse(weeklyScheduleRaw);
 
-		// [수정] templates 리스트보다 가공된 seatGradeMap(JSON 문자열)을 우선 사용합니다.
-		const seatGradeMapRaw = /*[[${seatGradeMap}]]*/ '{}'; 
-		const seatAssignment = JSON.parse(seatGradeMapRaw); 
+	    // --- [2] 전역 변수 및 상태 관리 ---
+	    let currentSelectedGrade = 1;
+	    let isDrawing = false;
+	    let startX, startY;
+	    const selectionRect = document.getElementById('drag-selection-rect');
+	    const seatMap = document.getElementById('seat-map');
 
-		const weeklyScheduleRaw = /*[[${weeklySchedule}]]*/ '{}';
-		const initialSchedule = JSON.parse(weeklyScheduleRaw);
+	    // --- [3] 페이지 초기화 실행 ---
+	    document.addEventListener("DOMContentLoaded", function() {
+	        initSeatMap();           
+	        restoreWeeklySchedule(); 
+	        updateSelectors();       
+	        
+	        // 페이지 로드 시 기존 날짜 제한 적용
+	        syncOpenDateLimits();
+	    });
 
-		// --- [2] 전역 변수 및 상태 관리 ---
-		let currentSelectedGrade = 1;
-		let isDrawing = false;
-		let startX, startY;
+	    // --- [추가] 날짜 제한 동기화 함수 ---
+	    function syncOpenDateLimits() {
+	        const totalStart = document.getElementById('startDate').value;
+	        const totalEnd = document.getElementById('endDate').value;
 
-		const selectionRect = document.getElementById('drag-selection-rect');
-		const seatMap = document.getElementById('seat-map');
+	        if (!totalStart || !totalEnd) return;
 
-		// --- [3] 페이지 초기화 실행 ---
-		document.addEventListener("DOMContentLoaded", function() {
-		    initSeatMap();           // 1. 좌석 그리드 생성 및 복원
-		    restoreWeeklySchedule(); // 2. 요일별 스케줄 복구
-		    updateSelectors();       // 3. 등급 선택 버튼 초기화
-		    
-		    if (typeof syncOpenDateLimits === 'function') syncOpenDateLimits();
-		});
+	        // 모든 오픈 시작일/종료일 input을 찾아서 min/max 설정
+	        const openStarts = document.querySelectorAll('.openStart');
+	        const openEnds = document.querySelectorAll('.openEnd');
 
-		// --- [4] 좌석 그리드 생성 및 기존 데이터 매핑 (수정됨) ---
-		function initSeatMap() {
-		    seatMap.innerHTML = ''; 
-		    const seats = [];
+	        openStarts.forEach(el => {
+	            el.min = totalStart;
+	            el.max = totalEnd;
+	        });
 
-		    // 5행 6열(30석) 생성 루프
-		    for (let i = 1; i <= 30; i++) {
-		        const seatNo = i.toString();
-		        
-		        // [핵심] seatAssignment 객체에 저장된 등급 정보를 가져옴 (기본값 1)
-		        const grade = seatAssignment[seatNo] || 1;
-		        
-		        const seat = document.createElement('div');
-		        // CSS 클래스명이 .grade-color-1 ~ 5와 일치해야 합니다.
-		        seat.className = `seat grade-color-${grade}`;
-		        seat.innerText = seatNo;
-		        seat.dataset.seatNo = seatNo;
-		        
-		        seatMap.appendChild(seat);
-		        seats.push(seat);
-		    }
-		    
-		    // 폼 전송을 위해 hidden input에 현재 배치도 JSON 저장
-		    updateSeatInput();
+	        openEnds.forEach(el => {
+	            el.min = totalStart;
+	            el.max = totalEnd;
+	        });
+	    }
 
-		    if (!isStarted) {
-		        setupDragLogic(seats);
-		    }
-		}
+	    // --- [4] 좌석 그리드 생성 및 기존 데이터 매핑 ---
+	    function initSeatMap() {
+	        seatMap.innerHTML = ''; 
+	        const seats = [];
+	        for (let i = 1; i <= 30; i++) {
+	            const seatNo = i.toString();
+	            const grade = seatAssignment[seatNo] || 1;
+	            const seat = document.createElement('div');
+	            seat.className = `seat grade-color-${grade}`;
+	            seat.innerText = seatNo;
+	            seat.dataset.seatNo = seatNo;
+	            seatMap.appendChild(seat);
+	            seats.push(seat);
+	        }
+	        updateSeatInput();
+	        if (!isStarted) setupDragLogic(seats);
+	    }
 
-		// --- [5] 드래그 선택 로직 (기존 유지) ---
-		function setupDragLogic(seats) {
-		    seatMap.onmousedown = (e) => {
-		        if (e.button !== 0) return;
-		        isDrawing = true;
-		        startX = e.pageX; startY = e.pageY;
-		        selectionRect.style.display = 'block';
-		        selectionRect.style.left = startX + 'px'; selectionRect.style.top = startY + 'px';
-		    };
+	    // --- [5] 드래그 선택 로직 ---
+	    function setupDragLogic(seats) {
+	        seatMap.onmousedown = (e) => {
+	            if (e.button !== 0) return;
+	            isDrawing = true;
+	            startX = e.pageX; startY = e.pageY;
+	            selectionRect.style.display = 'block';
+	            selectionRect.style.left = startX + 'px'; selectionRect.style.top = startY + 'px';
+	        };
+	        window.onmousemove = (e) => {
+	            if (!isDrawing) return;
+	            const l = Math.min(startX, e.pageX), t = Math.min(startY, e.pageY);
+	            const w = Math.abs(startX - e.pageX), h = Math.abs(startY - e.pageY);
+	            selectionRect.style.left = l + 'px'; selectionRect.style.top = t + 'px';
+	            selectionRect.style.width = w + 'px'; selectionRect.style.height = h + 'px';
+	            seats.forEach(s => {
+	                const b = s.getBoundingClientRect();
+	                const sl = b.left + window.scrollX, st = b.top + window.scrollY;
+	                if (!(l+w < sl || l > sl+b.width || t+h < st || t > st+b.height)) {
+	                    s.classList.add('temp-selected');
+	                } else { s.classList.remove('temp-selected'); }
+	            });
+	        };
+	        window.onmouseup = () => {
+	            if (!isDrawing) return;
+	            isDrawing = false;
+	            selectionRect.style.display = 'none';
+	            document.querySelectorAll('.seat.temp-selected').forEach(s => {
+	                s.className = `seat grade-color-${currentSelectedGrade}`;
+	                seatAssignment[s.dataset.seatNo] = currentSelectedGrade;
+	                s.classList.remove('temp-selected');
+	            });
+	            updateSeatInput();
+	        };
+	    }
 
-		    window.onmousemove = (e) => {
-		        if (!isDrawing) return;
-		        const l = Math.min(startX, e.pageX), t = Math.min(startY, e.pageY);
-		        const w = Math.abs(startX - e.pageX), h = Math.abs(startY - e.pageY);
-		        selectionRect.style.left = l + 'px'; selectionRect.style.top = t + 'px';
-		        selectionRect.style.width = w + 'px'; selectionRect.style.height = h + 'px';
-		        
-		        seats.forEach(s => {
-		            const b = s.getBoundingClientRect();
-		            const sl = b.left + window.scrollX, st = b.top + window.scrollY;
-		            if (!(l+w < sl || l > sl+b.width || t+h < st || t > st+b.height)) {
-		                s.classList.add('temp-selected');
-		            } else { 
-		                s.classList.remove('temp-selected');
-		            }
-		        });
-		    };
+	    // --- [6] 주간 스케줄 데이터 복구 ---
+	    function restoreWeeklySchedule() {
+	        const days = ['월', '화', '수', '목', '금', '토', '일'];
+	        days.forEach(day => {
+	            const times = initialSchedule[day];
+	            if (times && times.length > 0) {
+	                const radioY = document.querySelector(`input[name="is${day}Show"][value="Y"]`);
+	                if (radioY) {
+	                    radioY.checked = true;
+	                    toggleTimeInputs(day, true);
+	                    const listArea = document.getElementById(`time-list-${day}`);
+	                    listArea.innerHTML = ""; 
+	                    times.forEach(t => addTimeInput(day, t));
+	                }
+	            }
+	        });
+	        collectSchedule();
+	    }
 
-		    window.onmouseup = () => {
-		        if (!isDrawing) return;
-		        isDrawing = false;
-		        selectionRect.style.display = 'none';
-		        
-		        document.querySelectorAll('.seat.temp-selected').forEach(s => {
-		            s.className = `seat grade-color-${currentSelectedGrade}`;
-		            seatAssignment[s.dataset.seatNo] = currentSelectedGrade;
-		            s.classList.remove('temp-selected');
-		        });
-		        updateSeatInput();
-		    };
-		}
+	    // --- [7] 기타 유틸리티 함수 ---
+	    function toggleTimeInputs(day, isShow) {
+	        const area = document.getElementById(`time-area-${day}`);
+	        if(!area) return;
+	        area.style.display = isShow ? 'block' : 'none';
+	        if (isShow && document.getElementById(`time-list-${day}`).children.length === 0) {
+	            addTimeInput(day);
+	        }
+	        collectSchedule();
+	    }
 
-		// --- [6] 주간 스케줄 데이터 복구 ---
-		function restoreWeeklySchedule() {
-		    const days = ['월', '화', '수', '목', '금', '토', '일'];
-		    days.forEach(day => {
-		        const times = initialSchedule[day];
-		        if (times && times.length > 0) {
-		            const radioY = document.querySelector(`input[name="is${day}Show"][value="Y"]`);
-		            if (radioY) {
-		                radioY.checked = true;
-		                toggleTimeInputs(day, true);
-		                const listArea = document.getElementById(`time-list-${day}`);
-		                listArea.innerHTML = ""; 
-		                times.forEach(t => addTimeInput(day, t));
-		            }
-		        }
-		    });
-		    collectSchedule();
-		}
+	    function addTimeInput(day, val = "") {
+	        const list = document.getElementById(`time-list-${day}`);
+	        const div = document.createElement('div');
+	        div.className = 'time-input-item';
+	        div.style.display = 'flex'; div.style.gap = '5px'; div.style.marginBottom = '5px';
+	        div.innerHTML = `
+	            <input type="text" class="time-val" value="${val}" placeholder="14:00" maxlength="5" 
+	                   style="width:65px; text-align:center; padding:5px; border:1px solid #ddd; border-radius:4px;" 
+	                   oninput="formatTime(this)" ${isStarted ? 'readonly' : ''}>
+	            ${!isStarted ? `<button type="button" class="btn-remove-time" style="background:#ff5e5e; color:#fff; border:none; border-radius:4px; cursor:pointer; padding:0 8px;" onclick="this.parentElement.remove(); collectSchedule();">×</button>` : ''}
+	        `;
+	        list.appendChild(div);
+	    }
 
-		// --- [7] 기타 유틸리티 함수 ---
-		function toggleTimeInputs(day, isShow) {
-		    const area = document.getElementById(`time-area-${day}`);
-		    if(!area) return;
-		    area.style.display = isShow ? 'block' : 'none';
-		    if (isShow && document.getElementById(`time-list-${day}`).children.length === 0) {
-		        addTimeInput(day);
-		    }
-		    collectSchedule();
-		}
+	    function formatTime(el) {
+	        el.value = el.value.replace(/\D/g,'').replace(/(\d{2})(\d{2})/,'$1:$2');
+	        collectSchedule();
+	    }
 
-		function addTimeInput(day, val = "") {
-		    const list = document.getElementById(`time-list-${day}`);
-		    const div = document.createElement('div');
-		    div.className = 'time-input-item';
-		    div.style.display = 'flex'; div.style.gap = '5px'; div.style.marginBottom = '5px';
-		    
-		    div.innerHTML = `
-		        <input type="text" class="time-val" value="${val}" placeholder="14:00" maxlength="5" 
-		               style="width:65px; text-align:center; padding:5px; border:1px solid #ddd; border-radius:4px;" 
-		               oninput="formatTime(this)" ${isStarted ? 'readonly' : ''}>
-		        ${!isStarted ? `<button type="button" class="btn-remove-time" style="background:#ff5e5e; color:#fff; border:none; border-radius:4px; cursor:pointer; padding:0 8px;" onclick="this.parentElement.remove(); collectSchedule();">×</button>` : ''}
-		    `;
-		    list.appendChild(div);
-		}
+	    function collectSchedule() {
+	        const schedule = {};
+	        ['월','화','수','목','금','토','일'].forEach(day => {
+	            const radioY = document.querySelector(`input[name="is${day}Show"][value="Y"]`);
+	            const isY = radioY ? radioY.checked : false;
+	            const times = Array.from(document.querySelectorAll(`#time-list-${day} .time-val`))
+	                               .map(i => i.value).filter(v => v.length === 5);
+	            schedule[day] = isY ? times : [];
+	        });
+	        const input = document.getElementById('weeklyScheduleInput');
+	        if(input) input.value = JSON.stringify(schedule);
+	    }
 
-		function formatTime(el) {
-		    el.value = el.value.replace(/\D/g,'').replace(/(\d{2})(\d{2})/,'$1:$2');
-		    collectSchedule();
-		}
+	    function updateSelectors() {
+	        const container = document.getElementById('grade-selectors');
+	        const names = document.getElementsByName('gradeNames');
+	        if(!container) return;
+	        container.innerHTML = "";
+	        names.forEach((input, idx) => {
+	            const num = idx + 1;
+	            const btn = document.createElement('button');
+	            btn.type = "button";
+	            btn.className = `selector-btn ${currentSelectedGrade === num ? 'active' : ''}`;
+	            btn.innerText = input.value || `${num}번 등급`;
+	            btn.style.margin = '0 5px';
+	            btn.onclick = () => { if(!isStarted) { currentSelectedGrade = num; updateSelectors(); } };
+	            container.appendChild(btn);
+	        });
+	    }
 
-		function collectSchedule() {
-		    const schedule = {};
-		    ['월','화','수','목','금','토','일'].forEach(day => {
-		        const radioY = document.querySelector(`input[name="is${day}Show"][value="Y"]`);
-		        const isY = radioY ? radioY.checked : false;
-		        const times = Array.from(document.querySelectorAll(`#time-list-${day} .time-val`))
-		                           .map(i => i.value).filter(v => v.length === 5);
-		        schedule[day] = isY ? times : [];
-		    });
-		    const input = document.getElementById('weeklyScheduleInput');
-		    if(input) input.value = JSON.stringify(schedule);
-		}
+	    function updateSeatInput() {
+	        const input = document.getElementById('seatGradeMapInput');
+	        if(input) input.value = JSON.stringify(seatAssignment);
+	    }
 
-		function updateSelectors() {
-		    const container = document.getElementById('grade-selectors');
-		    const names = document.getElementsByName('gradeNames');
-		    if(!container) return;
-		    container.innerHTML = "";
-		    names.forEach((input, idx) => {
-		        const num = idx + 1;
-		        const btn = document.createElement('button');
-		        btn.type = "button";
-		        btn.className = `selector-btn ${currentSelectedGrade === num ? 'active' : ''}`;
-		        btn.innerText = input.value || `${num}번 등급`;
-		        btn.style.margin = '0 5px';
-		        btn.onclick = () => { if(!isStarted) { currentSelectedGrade = num; updateSelectors(); } };
-		        container.appendChild(btn);
-		    });
-		}
+	    function handlePriceInput(el) {
+	        let val = el.value.replace(/\D/g, "");
+	        el.value = val ? Number(val).toLocaleString() : "";
+	    }
 
-		function updateSeatInput() {
-		    const input = document.getElementById('seatGradeMapInput');
-		    if(input) input.value = JSON.stringify(seatAssignment);
-		}
+	    function validateAndSubmit() {
+	        const totalStart = document.getElementById('startDate').value;
+	        const totalEnd = document.getElementById('endDate').value;
+	        
+	        // 날짜 범위 최종 검증
+	        let dateValid = true;
+	        document.querySelectorAll('.openStart, .openEnd').forEach(el => {
+	            if (el.value < totalStart || el.value > totalEnd) {
+	                dateValid = false;
+	            }
+	        });
 
-		function handlePriceInput(el) {
-		    let val = el.value.replace(/\D/g, "");
-		    el.value = val ? Number(val).toLocaleString() : "";
-		}
+	        if (!dateValid) {
+	            alert("티켓 오픈 범위는 공연 전체 운영 기간 내에 있어야 합니다.");
+	            return false;
+	        }
 
-		function validateAndSubmit() {
-		    collectSchedule();
-		    if (Object.keys(seatAssignment).length < 30) {
-		        alert("30개의 좌석 등급을 모두 지정해야 합니다.");
-		        return false;
-		    }
-		    return true;
-		}
+	        collectSchedule();
+	        if (Object.keys(seatAssignment).length < 30) {
+	            alert("30개의 좌석 등급을 모두 지정해야 합니다.");
+	            return false;
+	        }
+	        return true;
+	    }
 
-		function addOpenPeriod() {
-		    if(isStarted) return;
-		    const container = document.getElementById('open-period-container');
-		    if(!container) return;
-		    const newIdx = container.children.length + 1;
-		    const div = document.createElement('div');
-		    div.className = 'open-period-box';
-		    div.innerHTML = `
-		        <div class="period-title">
-		            <strong>🎟️ 생성할 회차 범위 (세트 ${newIdx})</strong>
-		            <button type="button" class="btn-remove" onclick="this.closest('.open-period-box').remove()">삭제</button>
-		        </div>
-		        <div class="date-row">
-		            <div class="date-item"><label>오픈 시작일</label><input type="date" name="openStartDates" class="openStart" required></div>
-		            <div class="date-item"><label>오픈 종료일</label><input type="date" name="openEndDates" class="openEnd" required></div>
-		        </div>
-		        <div class="form-group opening-time-group">
-		            <label>🔔 티켓 예매 시작 일시</label>
-		            <input type="datetime-local" name="openingTimes" required>
-		        </div>`;
-		    container.appendChild(div);
-		}
-		/*]]>*/
-	    </script>
+	    function addOpenPeriod() {
+	        if(isStarted) return;
+	        const container = document.getElementById('open-period-container');
+	        if(!container) return;
+
+	        const totalStart = document.getElementById('startDate').value;
+	        const totalEnd = document.getElementById('endDate').value;
+
+	        const newIdx = container.children.length + 1;
+	        const div = document.createElement('div');
+	        div.className = 'open-period-box';
+	        div.innerHTML = `
+	            <div class="period-title">
+	                <strong>🎟️ 생성할 회차 범위 (세트 ${newIdx})</strong>
+	                <button type="button" class="btn-remove" onclick="this.closest('.open-period-box').remove()">삭제</button>
+	            </div>
+	            <div class="date-row">
+	                <div class="date-item">
+	                    <label>오픈 시작일</label>
+	                    <input type="date" name="openStartDates" class="openStart" 
+	                           min="${totalStart}" max="${totalEnd}" required>
+	                </div>
+	                <div class="date-item">
+	                    <label>오픈 종료일</label>
+	                    <input type="date" name="openEndDates" class="openEnd" 
+	                           min="${totalStart}" max="${totalEnd}" required>
+	                </div>
+	            </div>
+	            <div class="form-group opening-time-group">
+	                <label>🔔 티켓 예매 시작 일시</label>
+	                <input type="datetime-local" name="openingTimes" required>
+	            </div>`;
+	        container.appendChild(div);
+	    }
+	    /*]]>*/
+	</script>
 
 		</body>
 		</html>

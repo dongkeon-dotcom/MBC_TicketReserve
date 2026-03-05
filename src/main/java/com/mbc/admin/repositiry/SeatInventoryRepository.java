@@ -28,5 +28,19 @@ public interface SeatInventoryRepository extends JpaRepository<SeatInventory, Lo
 
     // [4] 특정 회차의 잔여 좌석 수 조회 (isReserved = 0)
     long countByScheduleScheduleIdAndIsReserved(Long scheduleId, Integer isReserved);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM SeatInventory s WHERE s.schedule.performance.performanceId = :performanceId")
+    void deleteByPerformanceId(@Param("performanceId") Long performanceId);
+
+ // 특정 회차(scheduleId)와 등급 번호(seatType) 중 예약 안 된(isReserved = 0) 좌석 수 카운트
+    @Query("SELECT COUNT(s) FROM SeatInventory s " +
+           "WHERE s.schedule.scheduleId = :scheduleId " +
+           "AND s.seatType = :seatType " +
+           "AND s.isReserved = 0")
+    int countAvailableSeats(@Param("scheduleId") Long scheduleId, @Param("seatType") Integer seatType);
+
+    
 }
 //실제로 판매될 개별 좌석을 저정하고 확인하기 위해 사용 

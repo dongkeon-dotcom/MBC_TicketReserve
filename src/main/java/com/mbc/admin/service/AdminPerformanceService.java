@@ -25,26 +25,40 @@ import com.mbc.admin.entity.PerformanceSchedule;
 import com.mbc.admin.entity.PerformanceSeatTemplate;
 import com.mbc.admin.entity.SeatInventory;
 import com.mbc.admin.entity.VenueSeatMaster;
+import com.mbc.admin.repositiry.PerformanceGradeConfigRepository;
 import com.mbc.admin.repositiry.PerformanceRepository;
+import com.mbc.admin.repositiry.PerformanceScheduleRepository;
 import com.mbc.admin.repositiry.PerformanceSeatTemplateRepository;
+import com.mbc.admin.repositiry.SeatInventoryRepository;
 import com.mbc.admin.repositiry.VenueSeatMasterRepository;
 
 @Service
 @Transactional // 모든 과정이 하나의 트랜잭션으로 묶임 (하나라도 실패하면 롤백)
 public class AdminPerformanceService {
 
-    private final PerformanceRepository performanceRepository;
+	private final PerformanceRepository performanceRepository;
     private final VenueSeatMasterRepository venueMasterRepository;
+    private final PerformanceSeatTemplateRepository templateRepository;
+    private final PerformanceScheduleRepository scheduleRepository;     // [추가] 회차 삭제용
+    private final PerformanceGradeConfigRepository gradeConfigRepository; // [추가] 가격 설정 삭제용
     private final ObjectMapper objectMapper;
-    private final PerformanceSeatTemplateRepository templateRepository; // 1. 추가
+    private final SeatInventoryRepository seatInventoryRepository; // 추가
+    
+    // 생성자 주입 (모든 리포지토리를 포함하도록 업데이트)
     public AdminPerformanceService(
             PerformanceRepository performanceRepository, 
             VenueSeatMasterRepository venueMasterRepository,
-            PerformanceSeatTemplateRepository templateRepository // 2. 추가
+            PerformanceSeatTemplateRepository templateRepository,
+            PerformanceScheduleRepository scheduleRepository,      // [추가]
+            PerformanceGradeConfigRepository gradeConfigRepository,  // [추가]
+            SeatInventoryRepository seatInventoryRepository // 추가
     ) {
         this.performanceRepository = performanceRepository;
         this.venueMasterRepository = venueMasterRepository;
-        this.templateRepository = templateRepository; // 3. 추가
+        this.templateRepository = templateRepository;
+        this.scheduleRepository = scheduleRepository;              // [주입]
+        this.gradeConfigRepository = gradeConfigRepository;        // [주입]
+        this.seatInventoryRepository = seatInventoryRepository;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule()); 
     }
@@ -290,11 +304,63 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
         return performanceRepository.findAll();
     }
     
+
     public Page<Performance> searchByTitle(String keyword, Pageable pageable){
     	return performanceRepository.findByTitleContainingIgnoreCase(keyword, pageable);
     }
     
+
+    /**
+     * 공연 삭제 로직
+     */
+    public void deletePerformance(Long performanceId) {
+        // [순서가 매우 중요합니다]
+        
+        // 1. 가장 하위 데이터인 '재고 좌석(Inventory)'부터 삭제 (FK 해결)
+        seatInventoryRepository.deleteByPerformanceId(performanceId);
+        
+        // 2. 공연 회차(Schedule) 삭제
+        scheduleRepository.deleteByPerformanceId(performanceId);
+        
+        // 3. 가격 설정(GradeConfig) 삭제
+        gradeConfigRepository.deleteByPerformanceId(performanceId);
+        
+        // 4. 좌석 템플릿(Template) 삭제
+        templateRepository.deleteByPerformanceId(performanceId);
+        
+        // 5. 마지막으로 공연(Performance) 삭제
+        performanceRepository.deleteById(performanceId);
+        
+        System.out.println("==> 모든 연관 데이터 삭제 완료 (ID: " + performanceId + ")");
+    }
+
     
+    
+    
+    
+ // 1. 해당 공연의 모든 등급 및 가격 설정 가져오기
+    public List<PerformanceGradeConfig> getGradesByPerformanceId(Long performanceId) {
+        return gradeConfigRepository.findByPerformanceId(performanceId);
+    }
+
+    // 2. 해당 공연의 모든 회차 일정 가져오기
+    public List<PerformanceSchedule> getSchedulesByPerformanceId(Long performanceId) {
+        return scheduleRepository.findByPerformanceId(performanceId);
+    }
+    
+    
+    
+    //자꾸 예매 페이지에서 무한루프 걸려서 수정용 
+    public Performance findById(Long performanceId) {
+        // performanceRepository 부분은 본인이 설정한 리포지토리 변수명으로 맞추세요.
+        return performanceRepository.findById(performanceId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 공연이 존재하지 않습니다. id=" + performanceId));
+    }
+    
+    public PerformanceSchedule findScheduleById(Long scheduleId) {
+        return scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 회차를 찾을 수 없습니다. ID: " + scheduleId));
+    }
     
     
 }
