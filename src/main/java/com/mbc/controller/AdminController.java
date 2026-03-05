@@ -1,12 +1,26 @@
 package com.mbc.controller;
 
 import com.mbc.admin.PerformanceSaveDto;
-import com.mbc.admin.AdminPerformanceService;
+import com.mbc.admin.entity.Performance;
+import com.mbc.admin.entity.PerformanceSchedule;
+import com.mbc.admin.service.AdminPerformanceService;
+import com.mbc.admin.entity.PerformanceSeatTemplate;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
@@ -20,14 +34,141 @@ public class AdminController {
         this.performanceService = performanceService;
     }
     
-    // "admin.insertPage.do  를 통해 관리자의 상품 입력 제어 " 
-    @GetMapping("/insertPage.do")
-    public String insertPage() { // void를 String으로 변경!
-        System.out.println("==>공연등록페이지로 이동 .do");
-        return "admin/showInsert"; // 이제 정상적으로 해당 경로의 페이지를 찾아갑니다.
+    /**
+     * java.time.DayOfWeek를 한국어 요일 문자열로 변환하는 헬퍼 메서드
+     */
+    private String getKoreanDay(java.time.DayOfWeek day) {
+        return switch (day) {
+            case MONDAY -> "월";
+            case TUESDAY -> "화";
+            case WEDNESDAY -> "수";
+            case THURSDAY -> "목";
+            case FRIDAY -> "금";
+            case SATURDAY -> "토";
+            case SUNDAY -> "일";
+            default -> throw new IllegalArgumentException("잘못된 요일 정보입니다.");
+        };
     }
     
     
+    //====이동을위한 단순 컨트롤러 ==================================================================
+    // "admin.insertPage.do  를 통해 관리자의 상품 입력 제어 " 
+    @GetMapping("/insertPage.do")
+    public String insertPage() { 
+        System.out.println("==>공연등록페이지로 이동 .do");
+        return "admin/showInsert";
+    }
+    
+    
+    // 목록으로 이동하기위한 페이지 
+    @GetMapping("/listPage.do")
+    public String listPage(Model model) {
+        System.out.println("==> 공연 목록 페이지로 이동 .do");
+        
+        // DB에서 모든 공연 정보를 가져와서 모델에 담음
+        List<Performance> list = performanceService.getAllPerformances();
+        model.addAttribute("performanceList", list);
+        
+        return "admin/showList"; // templates/admin/showList.html
+    }
+    
+    
+    
+    
+    @GetMapping("/editPage.do")
+    public String editPage(@RequestParam("id") Long performanceId, Model model) { 
+        System.out.println("==> 관리자 공연 수정 (ID: " + performanceId + ")");
+        
+        // 1. 공연 정보 조회
+        Performance performance = performanceService.getPerformance(performanceId);
+        if (performance == null) {
+            return "redirect:/admin/listPage.do";
+        }
+        model.addAttribute("performance", performance);
+        
+        // 2. 가격 설정 조회
+        model.addAttribute("gradeConfigs", performanceService.getGradeConfigs(performanceId));
+        
+        // 3. 좌석 템플릿 조회 및 JS용 Map 변환
+        List<PerformanceSeatTemplate> templates = performanceService.getTemplates(performanceId);
+        model.addAttribute("templates", templates);
+        
+        // [중요] HTML에서 좌석을 그리기 위해 { "1": 1, "2": 2 } 형태의 JSON 생성
+        Map<String, Integer> seatGradeMap = new HashMap<>();
+        for (PerformanceSeatTemplate t : templates) {
+            seatGradeMap.put(t.getSeatNumber().toString(), t.getGradeOrder());
+        }
+
+        // 4. 오픈 세트 및 판매 시작 여부(isStarted) 계산
+        List<Map<String, Object>> openPeriods = new ArrayList<>();
+        Map<String, List<String>> weeklyMap = new HashMap<>();
+        String[] days = {"월", "화", "수", "목", "금", "토", "일"};
+        for(String d : days) weeklyMap.put(d, new ArrayList<>());
+
+        boolean isStarted = false; // 기본값 false (에러 방지)
+        LocalDateTime now = LocalDateTime.now();
+
+        if (performance.getSchedules() != null && !performance.getSchedules().isEmpty()) {
+            Map<LocalDateTime, Map<String, Object>> periodGroups = new LinkedHashMap<>();
+
+            for (PerformanceSchedule sched : performance.getSchedules()) {
+                LocalDateTime st = sched.getStartTime();
+                LocalDateTime ot = sched.getOpeningTime();
+                LocalDate sd = st.toLocalDate();
+
+                // 판매 시작 여부 체크: 어떤 회차라도 예매 시작 시간이 지났다면 true
+                if (ot != null && now.isAfter(ot)) {
+                    isStarted = true;
+                }
+
+                // 주간 요일/시간 추출
+                String korDay = getKoreanDay(st.getDayOfWeek());
+                String timeStr = st.toLocalTime().toString().substring(0, 5); 
+                
+                if (!weeklyMap.get(korDay).contains(timeStr)) {
+                    weeklyMap.get(korDay).add(timeStr);
+                }
+
+                // 기간 세트 정보 추출 (OpeningTime 기준 그룹화)
+                if (ot != null) {
+                    if (!periodGroups.containsKey(ot)) {
+                        Map<String, Object> p = new HashMap<>();
+                        p.put("openingTime", ot);
+                        p.put("start", sd);
+                        p.put("end", sd);
+                        periodGroups.put(ot, p);
+                    } else {
+                        Map<String, Object> p = periodGroups.get(ot);
+                        if (sd.isBefore((LocalDate)p.get("start"))) p.put("start", sd);
+                        if (sd.isAfter((LocalDate)p.get("end"))) p.put("end", sd);
+                    }
+                }
+            }
+            openPeriods.addAll(periodGroups.values());
+        }
+
+        // 5. 모델에 데이터 담기
+        model.addAttribute("isStarted", isStarted); // 에러 해결의 핵심!
+        model.addAttribute("openPeriods", openPeriods);
+        
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            // 요일별 시간 JSON
+            model.addAttribute("weeklySchedule", mapper.writeValueAsString(weeklyMap));
+            // 좌석 배치 JSON
+            model.addAttribute("seatGradeMap", mapper.writeValueAsString(seatGradeMap));
+        } catch (Exception e) {
+            model.addAttribute("weeklySchedule", "{}");
+            model.addAttribute("seatGradeMap", "{}");
+        }
+
+        return "admin/showEdit";
+    }
+    
+
+    
+    
+    //======================================================================
     /**
      * 공연 등록 처리 (ShowInsert)
      * HTML Form에서 submit 하면 이쪽으로 들어옵니다.
@@ -56,4 +197,31 @@ public class AdminController {
             return "<script>alert('등록 실패: " + e.getMessage() + "'); history.back();</script>";
         }
     }
+    
+    
+    
+    /**
+     * 공연 수정 처리 (ShowUpdate)
+     * 기존 데이터를 삭제하고 새 데이터를 저장하는 로직을 호출합니다.
+     */
+    @PostMapping("/showupdate.do")
+    @ResponseBody
+    public String showUpdate(@ModelAttribute PerformanceSaveDto dto) {
+        System.out.println("==> 공연 수정 요청 진입: " + dto.getPerformanceId());
+        try {
+            // 기존 템플릿/가격을 지우고 새로 저장하는 서비스 로직 호출
+            performanceService.processShowUpdate(dto);
+            return "<script>alert('공연 수정이 완료되었습니다!'); location.href='/main.do';</script>";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "<script>alert('수정 실패: " + e.getMessage() + "'); history.back();</script>";
+        }
+    }
+    
+    
+    
+    
+    
+    
+    
 }

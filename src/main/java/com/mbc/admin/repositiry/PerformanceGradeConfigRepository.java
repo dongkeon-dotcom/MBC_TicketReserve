@@ -1,4 +1,4 @@
-package com.mbc.admin;
+package com.mbc.admin.repositiry;
 
 import com.mbc.admin.entity.PerformanceGradeConfig;
 import org.springframework.data.jpa.repository.JpaRepository;

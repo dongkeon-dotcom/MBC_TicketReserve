@@ -1,158 +1,102 @@
 <html xmlns:th="http://www.thymeleaf.org">
 	<div th:replace="include/top::top"></div>
-<div align="center"> 
-  <h1> thymeleaf (index) </h1> 
-</div>
-<head>
-    <meta charset="UTF-8">
-    <title>관리자 - 공연 등록</title>
-<link rel="stylesheet" th:href="@{/css/admin/showInsert.css}">
-</head>
-<body>
+	<link rel="stylesheet" th:href="@{/css/admin/showList.css}">
+	
+	
+	
+	<head>
+	    <meta charset="UTF-8">
+	    <title>공연 관리 목록 - 관리자</title>
+	    <link rel="stylesheet" th:href="@{/css/admin_style.css}">
+	    <link rel="stylesheet" th:href="@{/css/admin_list.css}">
+	</head>
+	<body>
+	    <div class="admin-container">
+	        <h1 class="page-title">공연 통합 관리 시스템</h1>
 
-    <h1>새 공연 등록</h1>
+	        <div class="section">
+	            <div class="list-header">
+	                <h2>등록된 공연 현황</h2>
+	                <a th:href="@{/admin/insertPage.do}" class="btn-add-main">+ 새 공연 등록하기</a>
+	            </div>
 
-    <form th:action="@{/admin/performance/save}" method="post" enctype="multipart/form-data">
-        
-        <div class="section">
-            <h2>1. 기본 정보</h2>
-            <div class="form-group">
-                <label>공연 제목</label>
-                <input type="text" name="title" placeholder="공연 제목을 입력하세요" required>
-            </div>
-            <div class="form-group">
-				<label>메인 포스터</label>
-				        <input type="file" name="posterFile" id="posterFile" accept="image/*" required onchange="previewMainPoster(this)">
-				        <div id="poster-preview" style="margin-top: 10px;"></div>
-            </div>
-            <div style="display: flex; gap: 20px;">
-                <div class="form-group" style="flex: 1;">
-                    <label>공연 시작일</label>
-                    <input type="date" name="startDate" required>
-                </div>
-                <div class="form-group" style="flex: 1;">
-                    <label>공연 종료일</label>
-                    <input type="date" name="endDate" required>
-                </div>
-            </div>
-        </div>
-		<div class="section">
-		    <h2>2. 상세 설명 이미지</h2>
-		    <div class="form-group">
-		        <label>상세 이미지들 (최대 5개)</label>
-		        <input type="file" id="detailFiles" name="detailFiles" accept="image/*" multiple onchange="previewDetailImages(this)">
-		        <div id="detail-preview" style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;"></div>
-		    </div>
-		</div>
+	            <p class="guide-text">* 현재 시스템에 등록된 모든 공연 리스트입니다. 수정 버튼을 통해 상세 정보와 좌석 배치를 변경할 수 있습니다.</p>
 
-        <div class="section">
-            <h2>3. 좌석 등급 및 가격 설정</h2>
-            <div id="grade-container">
-                <div class="grade-item">
-                    <span style="min-width: 70px;">1번 등급:</span>
-                    <input type="text" name="gradeNames" placeholder="등급명 (예: VIP석)" required>
-                    <input type="number" name="gradePrices" placeholder="가격" required>
-                </div>
-            </div>
-            <button type="button" class="btn btn-add" onclick="addGrade()">+ 등급 추가</button>
-        </div>
-
-        <div class="section">
-            <h2>4. 예약 오픈 설정</h2>
-            <div class="form-group">
-                <label>예약 시작 일시</label>
-                <input type="datetime-local" name="openingTime" required>
-            </div>
-        </div>
-
-        <button type="submit" class="btn btn-submit">공연 데이터 생성 및 저장</button>
-    </form>
-
+	            <table class="admin-table">
+	                <thead>
+	                    <tr>
+	                        <th style="width: 80px;">번호</th>
+	                        <th style="width: 100px;">포스터</th>
+	                        <th>공연 제목</th>
+	                        <th style="width: 250px;">공연 운영 기간</th>
+	                        <th style="width: 200px;">관리 액션</th>
+	                    </tr>
+	                </thead>
+	                <tbody>
+	                    <tr th:if="${#lists.isEmpty(performanceList)}">
+	                        <td colspan="5" style="padding: 100px 0; color: #bbb; font-size: 1.1em;">
+	                            <i class="fa-solid fa-inbox" style="font-size: 2em; display: block; margin-bottom: 10px;"></i>
+	                            등록된 공연 데이터가 존재하지 않습니다.
+	                        </td>
+	                    </tr>
+	                    
+	                    <tr th:each="p : ${performanceList}">
+	                        <td th:text="${p.performanceId}">1</td>
+	                        <td>
+	                            <img th:if="${p.posterImageName != null}" 
+	                                 th:src="@{/upload/{name}(name=${p.posterImageName})}" 
+	                                 class="poster-thumb" alt="포스터">
+	                            <span th:unless="${p.posterImageName != null}" style="color: #ccc;">No Image</span>
+	                        </td>
+	                        <td class="perf-title">
+	                            <span th:text="${p.title}">공연 제목이 표시됩니다.</span>
+	                        </td>
+	                        <td class="perf-date">
+	                            <span th:text="${p.startDate}">2026-03-01</span> 
+	                            <span style="color: #ddd; margin: 0 5px;">~</span> 
+	                            <span th:text="${p.endDate}">2026-04-02</span>
+	                        </td>
+	                        <td>
+	                            <div class="action-group">
+	                                <a th:href="@{/admin/editPage.do(id=${p.performanceId})}" class="btn-edit">
+	                                    <i class="fa-regular fa-pen-to-square"></i> 정보수정
+	                                </a>
+	                                
+	                                <button type="button" class="btn-delete" 
+	                                        th:onclick="|deleteConfirm(${p.performanceId})|">
+	                                    <i class="fa-regular fa-trash-can"></i> 삭제
+	                                </button>
+	                            </div>
+	                        </td>
+	                    </tr>
+	                </tbody>
+	            </table>
+	        </div>
+	        
+	        <div style="text-align: center; margin-top: 40px;">
+	            <a th:href="@{/main.do}" style="color: #999; text-decoration: none; font-size: 0.9em;">
+	                <i class="fa-solid fa-house"></i> 메인페이지로 이동
+	            </a>
+	        </div>
+	    </div>
+		
+		
+		<div th:replace="include/bottom::footer"></div>
+		
+		
+		<script>
+		        /**
+		         * 공연 삭제 확인 컨펌 창
+		         */
+		        function deleteConfirm(id) {
+		            if (confirm('해당 공연을 삭제하시겠습니까?\n삭제 시 생성된 모든 회차와 좌석 정보가 함께 삭제됩니다.')) {
+		                // 삭제 처리 URL로 이동 (ID 파라미터 포함)
+		                location.href = '/admin/delete.do?id=' + id;
+		            }
+		        }
+		    </script>
    
-</section>
 
-<script>
-	
-	// 1. 메인 포스터 미리보기 (1장)
-	function previewMainPoster(input) {
-	    const container = document.getElementById('poster-preview');
-	    container.innerHTML = ""; // 기존 미리보기 삭제
-
-	    if (input.files && input.files[0]) {
-	        const reader = new FileReader();
-	        reader.onload = function(e) {
-	            const img = document.createElement('img');
-	            img.src = e.target.result;
-	            img.style.width = "150px"; // 적절한 크기 조절
-	            img.style.border = "1px solid #ddd";
-	            container.appendChild(img);
-	        };
-	        reader.readAsDataURL(input.files[0]);
-	    }
-	}
-
-	// 2. 상세 이미지 미리보기 (최대 5장)
-	function previewDetailImages(input) {
-	    const container = document.getElementById('detail-preview');
-	    container.innerHTML = ""; // 기존 미리보기 삭제
-
-	    if (input.files.length > 5) {
-	        alert("상세 이미지는 최대 5장까지만 선택 가능합니다.");
-	        input.value = ""; // 선택 초기화
-	        return;
-	    }
-
-	    if (input.files) {
-	        // 선택된 모든 파일에 대해 반복
-	        Array.from(input.files).forEach(file => {
-	            const reader = new FileReader();
-	            reader.onload = function(e) {
-	                const img = document.createElement('img');
-	                img.src = e.target.result;
-	                img.style.width = "100px";
-	                img.style.height = "100px";
-	                img.style.objectFit = "cover"; // 이미지 비율 유지하며 꽉 채움
-	                img.style.border = "1px solid #ddd";
-	                container.appendChild(img);
-	            };
-	            reader.readAsDataURL(file);
-	        });
-	    }
-	}
-	
-	
-	
-	//파일선택갯수제한 
-	function checkFileCount(input) {
-	        const maxFiles = 5;
-	        if (input.files.length > maxFiles) {
-	            alert("상세 이미지는 최대 " + maxFiles + "개까지만 업로드 가능합니다.");
-	            input.value = ""; // 선택된 파일들을 초기화
-	        }
-	    }
-	
-	
-	
-       let gradeCount = 1;
-       function addGrade() {
-           gradeCount++;
-           const container = document.getElementById('grade-container');
-           const div = document.createElement('div');
-           div.className = 'grade-item';
-           div.innerHTML = `
-               <span style="min-width: 70px;">${gradeCount}번 등급:</span>
-               <input type="text" name="gradeNames" placeholder="등급명" required>
-               <input type="number" name="gradePrices" placeholder="가격" required>
-               <button type="button" class="btn btn-remove" onclick="removeGrade(this)">삭제</button>
-           `;
-           container.appendChild(div);
-       }
-       function removeGrade(btn) {
-           btn.parentElement.remove();
-       }
-   </script>
-   
-<div th:replace="include/bottom::footer"></div>
 
 </body>
 </html>

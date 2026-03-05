@@ -1,4 +1,4 @@
-package com.mbc.admin;
+package com.mbc.admin.repositiry;
 
 import com.mbc.admin.entity.PerformanceSchedule;
 import org.springframework.data.jpa.repository.JpaRepository;

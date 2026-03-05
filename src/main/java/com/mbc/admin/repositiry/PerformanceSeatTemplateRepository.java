@@ -1,6 +1,7 @@
-package com.mbc.admin;
+package com.mbc.admin.repositiry;
 //관리자가 공연 저장 단계에서 지정한 좌석의 등급과 이름 가격을 임시로 저장해두고 3일전 생성을 위해 사용 
 
+import com.mbc.admin.entity.Performance;
 import com.mbc.admin.entity.PerformanceSeatTemplate;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -37,4 +38,5 @@ public interface PerformanceSeatTemplateRepository extends JpaRepository<Perform
     @Query("DELETE FROM PerformanceSeatTemplate p WHERE p.performance.performanceId = :performanceId")
     void deleteByPerformanceId(@Param("performanceId") Long performanceId);
     
+    List<PerformanceSeatTemplate> findByPerformance(Performance performance);
 }

@@ -1,4 +1,4 @@
-package com.mbc.admin;
+package com.mbc.admin.repositiry;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

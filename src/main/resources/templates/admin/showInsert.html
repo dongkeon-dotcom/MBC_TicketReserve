@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <title>관리자 - 공연 등록</title>
     <link rel="stylesheet" th:href="@{/css/admin/showInsert.css}">
+    <div th:replace="include/top::top"></div>
 </head>
 <body>
-    <div th:replace="include/top::top"></div>
+  
     <section class="admin-container">
         <h1 class="page-title">새 공연 및 회차별 오픈 등록</h1>
 
@@ -21,14 +22,14 @@
                 </div>
                 
                 <div class="date-row total-period">
-                    <div class="period-title"><strong>📅 공연 전체 운영 기간</strong> (메타 데이터)</div>
+                    <div class="period-title"><strong>📅 공연 전체 운영 기간</strong> (이 범위 내에서만 회차 생성이 가능합니다)</div>
                     <div class="date-item">
                         <label>전체 시작일</label>
-                        <input type="date" name="startDate" id="startDate" required>
+                        <input type="date" name="startDate" id="startDate" required onchange="syncOpenDateLimits()">
                     </div>
                     <div class="date-item">
                         <label>전체 종료일</label>
-                        <input type="date" name="endDate" id="endDate" required>
+                        <input type="date" name="endDate" id="endDate" required onchange="syncOpenDateLimits()">
                     </div>
                 </div>
             </div>
@@ -122,7 +123,6 @@
     <div th:replace="include/bottom::footer"></div>
 
     <script>
-        // [1] 전역 변수
         let gradeCount = 1;
         let openBoxCount = 1;
         let currentSelectedGrade = 1;
@@ -135,13 +135,60 @@
         const selectionRect = document.getElementById('drag-selection-rect');
         const seatMap = document.getElementById('seat-map');
 
-        // --- [2] 가격 콤마 ---
+        // --- [핵심: 날짜 동적 제한 로직] ---
+        function syncOpenDateLimits() {
+            const totalStart = document.getElementById('startDate').value;
+            const totalEnd = document.getElementById('endDate').value;
+
+            const openStarts = document.querySelectorAll('.openStart');
+            const openEnds = document.querySelectorAll('.openEnd');
+
+            openStarts.forEach(input => {
+                if (totalStart) input.min = totalStart;
+                if (totalEnd) input.max = totalEnd;
+            });
+            openEnds.forEach(input => {
+                if (totalStart) input.min = totalStart;
+                if (totalEnd) input.max = totalEnd;
+            });
+        }
+
+        function addOpenPeriod() {
+            const minDate = document.getElementById('startDate').value;
+            const maxDate = document.getElementById('endDate').value;
+
+            if(!minDate || !maxDate) {
+                alert("먼저 공연 전체 운영 기간을 상단에서 입력해주세요.");
+                return;
+            }
+
+            openBoxCount++;
+            const div = document.createElement('div');
+            div.className = 'open-period-box';
+            div.id = `open-box-${openBoxCount}`;
+            div.innerHTML = `
+                <div class="period-title"><strong>🎟️ 생성할 회차 범위 (세트 ${openBoxCount})</strong>
+                <button type="button" class="btn-remove" onclick="this.closest('.open-period-box').remove()" style="float:right;">삭제</button></div>
+                <div class="date-row">
+                    <div class="date-item"><label>오픈 시작일</label>
+                        <input type="date" name="openStartDates" class="openStart" required min="${minDate}" max="${maxDate}"></div>
+                    <div class="date-item"><label>오픈 종료일</label>
+                        <input type="date" name="openEndDates" class="openEnd" required min="${minDate}" max="${maxDate}"></div>
+                </div>
+                <div class="form-group opening-time-group">
+                    <label>🔔 티켓 예매 시작 일시</label>
+                    <input type="datetime-local" name="openingTimes" required>
+                </div>`;
+            document.getElementById('open-period-container').appendChild(div);
+        }
+
+        // --- 가격 콤마 ---
         function handlePriceInput(el) {
             let val = el.value.replace(/\D/g, "");
             el.value = val ? Number(val).toLocaleString() : "";
         }
 
-        // --- [3] 이미지 미리보기 ---
+        // --- 이미지 미리보기 ---
         function previewSingle(input, targetId) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -189,7 +236,7 @@
             document.getElementById('detailFiles').files = dt.files;
         }
 
-        // --- [4] 등급 및 셀렉터 ---
+        // --- 등급 및 셀렉터 ---
         function addGradeRow() {
             if (gradeCount >= 5) return;
             gradeCount++;
@@ -218,7 +265,7 @@
             });
         }
 
-        // --- [5] 요일/시간 설정 ---
+        // --- 요일/시간 설정 ---
         function toggleTimeInputs(day, isShow) {
             document.getElementById(`time-area-${day}`).style.display = isShow ? 'block' : 'none';
             if(isShow && document.getElementById(`time-list-${day}`).children.length === 0) addTimeInput(day);
@@ -242,29 +289,7 @@
             document.getElementById('weeklyScheduleInput').value = JSON.stringify(schedule);
         }
 
-        // --- [6] 오픈 범위(N개) 동적 추가 ---
-        function addOpenPeriod() {
-            openBoxCount++;
-            const minDate = document.getElementById('startDate').value;
-            const maxDate = document.getElementById('endDate').value;
-            const div = document.createElement('div');
-            div.className = 'open-period-box';
-            div.id = `open-box-${openBoxCount}`;
-            div.innerHTML = `
-                <div class="period-title"><strong>🎟️ 생성할 회차 범위 (세트 ${openBoxCount})</strong>
-                <button type="button" class="btn-remove" onclick="document.getElementById('open-box-${openBoxCount}').remove()" style="float:right;">삭제</button></div>
-                <div class="date-row">
-                    <div class="date-item"><label>오픈 시작일</label><input type="date" name="openStartDates" class="openStart" required min="${minDate}" max="${maxDate}"></div>
-                    <div class="date-item"><label>오픈 종료일</label><input type="date" name="openEndDates" class="openEnd" required min="${minDate}" max="${maxDate}"></div>
-                </div>
-                <div class="form-group opening-time-group">
-                    <label>🔔 티켓 예매 시작 일시 (이 시간 3일 전 좌석생성)</label>
-                    <input type="datetime-local" name="openingTimes" required>
-                </div>`;
-            document.getElementById('open-period-container').appendChild(div);
-        }
-
-        // --- [7] 좌석 그리드 (5*6) 및 드래그 ---
+        // --- 좌석 그리드 (5*6) ---
         const seats = [];
         for (let i = 1; i <= 30; i++) {
             const seat = document.createElement('div');
@@ -314,7 +339,6 @@
             document.getElementById('seatGradeMapInput').value = JSON.stringify(seatAssignment);
         };
 
-        // --- [8] 최종 검사 ---
         function validateAndSubmit() {
             collectSchedule();
             const totalStart = document.getElementById('startDate').value;
@@ -324,9 +348,10 @@
             for(let box of opens) {
                 const s = box.querySelector('.openStart').value;
                 const e = box.querySelector('.openEnd').value;
-                const ot = box.querySelector('input[type="datetime-local"]').value;
-                if (s < totalStart || e > totalEnd) { alert("오픈 범위는 전체 기간 내여야 합니다."); return false; }
-                if (ot && new Date(ot) >= new Date(s)) { alert("예매 시작은 공연 시작보다 빨라야 합니다!"); return false; }
+                if (s < totalStart || e > totalEnd) { 
+                    alert("오픈 범위(" + s + " ~ " + e + ")가 전체 운영 기간(" + totalStart + " ~ " + totalEnd + ")을 벗어났습니다."); 
+                    return false; 
+                }
             }
 
             if (Object.keys(seatAssignment).length < 30) { alert("모든 좌석 등급을 지정하세요."); return false; }
@@ -334,7 +359,6 @@
             return true;
         }
 
-        // 초기화
         updateSelectors();
     </script>
 </body>

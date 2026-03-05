@@ -17,6 +17,8 @@
         <a th:href="@{/member/form.do}">회원가입</a>&emsp;
         <a th:href="@{/member/list.do}">회원목록</a>&emsp;
 		<a th:href="@{/admin/insertPage.do}">공연등록</a>&emsp;
+    	<a th:href="@{/admin/editPage.do}">공연수정</a>&emsp;    	
+		<a th:href="@{/admin/listPage.do}">공연목록</a>&emsp;
      &emsp;
     <span th:if="${session.role == 'ROLE_ADMIN'}">
       <a th:href="@{/admin/main.do}">관리자영역</a>&emsp;
