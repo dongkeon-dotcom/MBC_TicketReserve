@@ -14,40 +14,34 @@
     <nav class="top-nav">
         &emsp;&emsp;&emsp;
         <a th:href="@{/main.do}">홈으로</a>&emsp;
-        <a th:href="@{/user/join.do}">회원가입</a>&emsp;
-        <a th:href="@{/user/list.do}">회원목록</a>&emsp;
-		<a th:href="@{/admin/insertPage.do}">공연등록</a>&emsp;
         
+        <!-- 로그아웃 상태일 때 -->
+        <!-- <sec:authorize access="isAnonymous()"> -->        
+        <th:block th:if="${session.user == null}">
+    	    <a th:href="@{/user/join.do}">회원가입</a>&emsp;
+		    <a th:href="@{/user/login.do}">로그인</a>
+		</th:block>
+		
+		<!-- 로그인 했을 때 -->
+        <!-- <sec:authorize access="isAuthenticated()"> -->        
+		<th:block th:if="${session.user != null}">
+			<a th:href="@{/user/mypage.do}">마이페이지</a>&emsp;
+			<span class="user-info">
+    		<strong>[[${session.user.name}]]</strong>님
+    		<a th:href="@{/user/logout.do}" class="logout-link">로그아웃</a>
+    </span>
+		</th:block>
+		<a th:href="@{/admin/insertPage.do}">공연등록</a>&emsp;
+
                
      &emsp;
     <span th:if="${session.role == 'ROLE_ADMIN'}">
       <a th:href="@{/admin/main.do}">관리자영역</a>&emsp;
     </span> 
     
-    <span th:if="${(session.role == 'ROLE_ADMIN') || (session.role == 'ROLE_MANAGER') }">
-      <a th:href="@{/manager/main.do}" th:text="'관리자&매니저영역'"></a>&emsp;
-    </span> 
-    
-    
-    <span th:if="${ session.role != null }">
-       <a th:href="@{/product/main.do}">회원영역</a>&emsp;
-       <span th:if="${session.role == 'ROLE_ADMIN'}">
-         <a th:href="@{/product/form.do}">상품등록(관리자)</a>&emsp;
-         <a th:href="@{/product/orderList.do}">장바구니목록(관리자)</a>&emsp;
-       </span>
-       <a th:href="@{/product/list.do}">상품목록(회원)</a>&emsp;
-       <a th:href="@{/product/memberorderList.do}">장바구니목록(회원)</a>&emsp;
-       <a th:href="@{/product/memberorderSelect.do}">주문목록(회원)</a>&emsp;
-    </span>    
 
-    <span th:if="${session.username != null }">
-    <a th:href="@{/logout}"> [[${session.name}]]
-                            (ROLE:[[${session.role}]]) 로그아웃</a>
-    </span>
     
-    <span th:unless="${session.username != null}">
-      <a th:href="@{/user/login.do}">로그인</a>
-    </span>
+
     
     </nav>
 
