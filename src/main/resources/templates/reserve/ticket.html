@@ -22,11 +22,9 @@
         <div class="reserve-main-wrapper">
             <div class="calendar-box">
 				<div class="calendar-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-				    <button type="button" id="prev-month" style="cursor:pointer; border:none; background:none; font-size:1.2rem;">&lt;</button>
-				    
-				    <span id="current-month-display" style="font-weight: bold; font-size: 1.1rem;">2026. 03</span>
-				    
-				    <button type="button" id="next-month" style="cursor:pointer; border:none; background:none; font-size:1.2rem;">&gt;</button>
+				    <button type="button" id="prev-month" style="cursor:pointer; border:none; background:none; font-size:1.2rem; font-weight:bold;">&lt;</button>
+				    <span id="current-month-display" style="font-weight: bold; font-size: 1.1rem;"></span>
+				    <button type="button" id="next-month" style="cursor:pointer; border:none; background:none; font-size:1.2rem; font-weight:bold;">&gt;</button>
 				</div>
                 <table class="date-picker-table">
                     <thead>
@@ -58,7 +56,7 @@
 
         <div class="reserve-footer">
             <button type="button" id="reserve-btn" class="btn-reserve" onclick="goToSeatSelection()" disabled>
-                <span id="btn-text">티켓 오픈 대기 중</span>
+                <span id="btn-text">데이터 로딩 중...</span>
             </button>
         </div>
 
@@ -73,62 +71,47 @@
     </div>
 
     <div th:replace="~{include/bottom::footer}"></div>
+
 	<script th:inline="javascript">
 	    /*<![CDATA[*/
 	    const allSchedules = /*[[${schedules}]]*/ [];    
 	    let selectedScheduleId = null;
 	    
-	    // 현재 달력에 보여줄 연도와 월을 저장하는 변수
 	    let viewYear, viewMonth;
 
-	    // 컨트롤러에서 보낸 가장 빠른 오픈 시간 (openDate로 전달됨)
+	    // 티켓 오픈 시간 설정
 	    const openDateStr = /*[[${openDate}]]*/ ''; 
-	    const openTime = new Date(openDateStr).getTime();
+	    const openTime = openDateStr ? new Date(openDateStr).getTime() : null;
 
 	    document.addEventListener('DOMContentLoaded', function() {
-	        // 공연 시작일을 기준으로 초기 달력 연/월 설정
+	        // 초기 날짜 설정 (공연 시작일 기준)
 	        const startStr = /*[[${#temporals.format(performance.startDate, 'yyyy-MM-dd')}]]*/ '';
 	        
 	        if (startStr) {
 	            const parts = startStr.split('-');
 	            viewYear = parseInt(parts[0]);
-	            viewMonth = parseInt(parts[1]) - 1; // JS 월은 0부터 시작
-	            
-	            updateCalendarDisplay(); // 초기 달력 렌더링
+	            viewMonth = parseInt(parts[1]) - 1;
+	            updateCalendarDisplay();
 	        }
 
-	        // --- [추가] 이전/다음 버튼 이벤트 리스너 ---
-	        const prevBtn = document.getElementById('prev-month');
-	        const nextBtn = document.getElementById('next-month');
+	        // 달력 이동 이벤트
+	        document.getElementById('prev-month').onclick = function() {
+	            viewMonth--;
+	            if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+	            updateCalendarDisplay();
+	        };
 
-	        if(prevBtn) {
-	            prevBtn.addEventListener('click', function() {
-	                viewMonth--;
-	                if (viewMonth < 0) {
-	                    viewMonth = 11;
-	                    viewYear--;
-	                }
-	                updateCalendarDisplay();
-	            });
-	        }
+	        document.getElementById('next-month').onclick = function() {
+	            viewMonth++;
+	            if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+	            updateCalendarDisplay();
+	        };
 
-	        if(nextBtn) {
-	            nextBtn.addEventListener('click', function() {
-	                viewMonth++;
-	                if (viewMonth > 11) {
-	                    viewMonth = 0;
-	                    viewYear++;
-	                }
-	                updateCalendarDisplay();
-	            });
-	        }
-
-	        // 티켓 오픈 상태 체크 시작
+	        // 티켓 상태 체크 루프
 	        updateTicketStatus();
 	        setInterval(updateTicketStatus, 1000);
 	    });
 
-	    // --- [추가] 달력 헤더 텍스트 갱신 및 다시 그리기 ---
 	    function updateCalendarDisplay() {
 	        const monthDisplay = document.getElementById('current-month-display');
 	        if (monthDisplay) {
@@ -137,13 +120,14 @@
 	        renderCalendar(viewYear, viewMonth);
 	    }
 
-	    // --- 티켓 오픈 상태 업데이트 함수 (이중 잠금 로직 적용) ---
 	    function updateTicketStatus() {
-	        if (!openTime) return;
+	        if (!openTime) {
+                document.getElementById('btn-text').innerText = "예매 가능";
+                return;
+            }
 
 	        const now = new Date().getTime();
 	        const diff = openTime - now;
-
 	        const btn = document.getElementById('reserve-btn');
 	        const btnText = document.getElementById('btn-text');
 	        const calendarTable = document.querySelector('.date-picker-table');
@@ -152,27 +136,24 @@
 
 	        if (diff > ONE_HOUR) {
 	            btn.disabled = true;
-	            calendarTable.style.opacity = "0.3";
+	            calendarTable.style.opacity = "0.4";
 	            calendarTable.style.pointerEvents = "none";
-	            
 	            const openDate = new Date(openTime);
 	            btnText.innerText = `${openDate.getMonth()+1}월 ${openDate.getDate()}일 오픈 예정`;
-
-	        } else if (diff > 0 && diff <= ONE_HOUR) {
+	        } else if (diff > 0) {
 	            btn.disabled = true;
-	            calendarTable.style.opacity = "0.1";
+	            calendarTable.style.opacity = "0.2";
 	            calendarTable.style.pointerEvents = "none";
-	            
-	            btnText.innerText = "잠시 후 오픈! 정각에 새로고침 해주세요";
+	            btnText.innerText = "잠시 후 오픈! 정각에 새로고침 하세요";
 	            btn.style.backgroundColor = "#555";
-
 	        } else {
 	            btn.disabled = false;
-	            btnText.innerText = "예매하기";
+	            btnText.innerText = "좌석 선택하기";
 	            calendarTable.style.opacity = "1";
 	            calendarTable.style.pointerEvents = "auto";
 	            btn.style.backgroundColor = "#ff5a00";
-
+                
+                // 오픈 정각에 클릭하면 안전하게 새로고침 유도
 	            if (!btn.dataset.reloaded) {
 	                btn.onclick = function() { location.reload(); };
 	                btn.dataset.reloaded = "true";
@@ -189,8 +170,8 @@
 	        if (!calendarBody) return;
 	        
 	        calendarBody.innerHTML = '';
-
 	        let date = 1;
+
 	        for (let i = 0; i < 6; i++) {
 	            let row = document.createElement('tr');
 	            for (let j = 0; j < 7; j++) {
@@ -224,23 +205,18 @@
 	        element.classList.add('active');
 
 	        const container = document.getElementById('time-slot-container');
-	        if (!container) return;
 	        container.innerHTML = '';
 	        
 	        const filtered = allSchedules.filter(s => s.startTime && s.startTime.startsWith(dateStr));
 
 	        if (filtered.length === 0) {
 	            container.innerHTML = '<p class="empty-msg">해당 날짜에 공연이 없습니다.</p>';
-	            const gradeContainer = document.getElementById('grade-container');
-	            if (gradeContainer) gradeContainer.innerHTML = '<p class="empty-msg">공연 회차를 선택해주세요.</p>';
 	            return;
 	        }
 
 	        filtered.forEach((s, index) => {
 	            const dateObj = new Date(s.startTime);
-	            const timeStr = dateObj.toLocaleTimeString('ko-KR', {
-	                hour: '2-digit', minute: '2-digit', hour12: true
-	            });
+	            const timeStr = dateObj.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
 
 	            const div = document.createElement('div');
 	            div.className = 'time-slot';
@@ -252,36 +228,49 @@
 	                selectedScheduleId = s.scheduleId;
 
 	                const gradeContainer = document.getElementById('grade-container');
-	                if (gradeContainer) {
-	                    gradeContainer.innerHTML = '';
-	                    if (s.seatStatus && s.seatStatus.length > 0) {
-	                        s.seatStatus.forEach(status => {
-	                            const infoDiv = document.createElement('div');
-	                            infoDiv.className = 'grade-info';
-	                            infoDiv.innerHTML = `
-	                                <span class="grade-name">${status.gradeName}</span>
-	                                <span class="grade-price">
-	                                    <b style="color: #ff5a00;">${status.remainCount}</b>석
-	                                </span>
-	                            `;
-	                            gradeContainer.appendChild(infoDiv);
-	                        });
-	                    } else {
-	                        gradeContainer.innerHTML = '<p class="empty-msg">등록된 등급 정보가 없습니다.</p>';
-	                    }
+	                gradeContainer.innerHTML = '';
+	                if (s.seatStatus && s.seatStatus.length > 0) {
+	                    s.seatStatus.forEach(status => {
+	                        const infoDiv = document.createElement('div');
+	                        infoDiv.className = 'grade-info';
+	                        infoDiv.innerHTML = `
+	                            <span class="grade-name">${status.gradeName}</span>
+	                            <span class="grade-price"><b style="color: #ff5a00;">${status.remainCount}</b>석</span>
+	                        `;
+	                        gradeContainer.appendChild(infoDiv);
+	                    });
 	                }
 	            };
 	            container.appendChild(div);
 	        });
 	    }
 
-	    function goToSeatSelection() {
-	        if (!selectedScheduleId) {
-	            alert("공연 회차를 선택해주세요.");
-	            return;
-	        }
-	        location.href = "/reserve/seat.do?scheduleId=" + selectedScheduleId;
-	    }
+		function goToSeatSelection() {
+		    if (!selectedScheduleId) {
+		        alert("공연 회차를 선택해주세요.");
+		        return;
+		    }
+
+		    // 팝업 창에 표시될 URL (기존 경로 유지)
+		    const url = "/reserve/seat.do?scheduleId=" + selectedScheduleId;
+
+		    // 팝업 창의 옵션 설정 (가로 1100px, 세로 850px 정도가 적당합니다)
+		    // 화면 중앙에 띄우기 위해 좌표 계산을 추가할 수 있습니다.
+		    const width = 1100;
+		    const height = 850;
+		    const left = (window.screen.width / 2) - (width / 2);
+		    const top = (window.screen.height / 2) - (height / 2);
+		    
+		    const windowOptions = `width=${width}, height=${height}, left=${left}, top=${top}, resizable=no, scrollbars=no, status=no, toolbar=no`;
+
+		    // 팝업 띄우기 (창 이름: reservePopup)
+		    const popup = window.open(url, "reservePopup", windowOptions);
+
+		    // 브라우저 설정에 의해 팝업이 차단된 경우 안내
+		    if (!popup || popup.outerHeight === 0 || popup.outerWidth === 0) {
+		        alert("팝업 차단이 설정되어 있습니다. 팝업 차단을 해제해주세요.");
+		    }
+		}
 	    /*]]>*/
 	</script>
 </body>

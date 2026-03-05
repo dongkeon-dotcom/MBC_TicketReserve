@@ -16,7 +16,6 @@ public class PerformanceDetailImage {
     private Performance performance;
 
     private String imageName;
-    private String imageHash;
     private Integer displayOrder;
 
 

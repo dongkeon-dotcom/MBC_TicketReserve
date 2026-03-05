@@ -348,7 +348,10 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
                 .orElseThrow(() -> new IllegalArgumentException("해당 공연이 존재하지 않습니다. id=" + performanceId));
     }
     
-    
+    public PerformanceSchedule findScheduleById(Long scheduleId) {
+        return scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 회차를 찾을 수 없습니다. ID: " + scheduleId));
+    }
     
     
 }

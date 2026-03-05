@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import com.mbc.admin.entity.PerformanceGradeConfig; // 관리자 엔티티 패키지 경로
 import com.mbc.admin.entity.PerformanceSchedule;
+import com.mbc.admin.entity.SeatInventory;
 import com.mbc.admin.repositiry.SeatInventoryRepository; // 실제 패키지 경로에 맞게 수정
 
 
@@ -89,9 +90,76 @@ public class TheaterController {
      * 좌석 선택 페이지
      */
     @GetMapping("/seat.do")
-    public String selectSeat(@RequestParam("scheduleId") Long scheduleId, Model model) {
-        // 선택한 회차의 좌석 배치도 및 잔여 좌석 정보 로드
-        model.addAttribute("scheduleId", scheduleId);
-        return "reserve/seat"; // templates/reserve/seat.html
+    public String seatPage(@RequestParam("scheduleId") Long scheduleId, Model model) {
+        // 1. 회차 정보 조회 (서비스에 findScheduleById 메서드가 있어야 함)
+        PerformanceSchedule schedule = performanceService.findScheduleById(scheduleId);
+        Performance performance = schedule.getPerformance();
+        
+        // 2. 등급 정보 및 잔여석 계산 (HTML의 'grades' 반복문을 위한 데이터)
+        List<PerformanceGradeConfig> gradeConfigs = performance.getGrades();
+        List<Map<String, Object>> gradeData = new ArrayList<>();
+        
+        for (int i = 0; i < gradeConfigs.size(); i++) {
+            PerformanceGradeConfig config = gradeConfigs.get(i);
+            Map<String, Object> map = new HashMap<>();
+            map.put("gradeName", config.getGradeName());
+            map.put("price", config.getGradePrice());
+            
+            // 해당 회차(scheduleId)에서 해당 등급(index+1)의 잔여 좌석수 계산
+            int remainCount = seatInventoryRepository.countAvailableSeats(scheduleId, i + 1);
+            map.put("remainCount", remainCount);
+            
+            gradeData.add(map);
+        }
+
+        // 3. 모델에 담기
+        model.addAttribute("schedule", schedule);
+        model.addAttribute("performance", performance);
+        model.addAttribute("seats", schedule.getSeats()); // 좌석 리스트
+        model.addAttribute("grades", gradeData);          // 등급별 요약 리스트 (중요!)
+        
+        return "reserve/seat";
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
