@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:replace="~{include/top::top}"></div>
+<head>
+    <meta charset="UTF-8">
+    <title>공연 정보 수정</title>
+    <link rel="stylesheet" th:href="@{/css/admin/showEdit.css}">
+</head>
+<body>
+    <div class="is-started-overlay" th:if="${isStarted}" 
+         style="background: #fff3cd; color: #856404; text-align: center; padding: 15px; font-weight: bold; border-bottom: 1px solid #ffeeba;">
+        ⚠️ 판매가 시작되어 일부 정보 수정이 불가능합니다 (조회 전용 모드)
+    </div>
+
+    <section class="admin-container">
+        <h1 class="page-title">공연 정보 및 회차 수정</h1>
+
+        <form th:action="@{/admin/showupdate.do}" method="post" enctype="multipart/form-data" onsubmit="return validateAndSubmit()">
+            <input type="hidden" name="performanceId" th:value="${performance.performanceId}">
+            <div id="drag-selection-rect"></div>
+            
+            <div class="section">
+                <h2>1. 공연 기본 정보</h2>
+                <div class="form-group">
+                    <label>공연 제목</label>
+                    <input type="text" name="title" th:value="${performance.title}" required th:readonly="${isStarted}">
+                </div>
+                
+                <div class="date-row total-period">
+                    <div class="period-title"><strong>📅 공연 전체 운영 기간</strong></div>
+                    <div class="date-item">
+                        <label>전체 시작일</label>
+                        <input type="date" name="startDate" id="startDate" th:value="${performance.startDate}" required onchange="syncOpenDateLimits()" th:readonly="${isStarted}">
+                    </div>
+                    <div class="date-item">
+                        <label>전체 종료일</label>
+                        <input type="date" name="endDate" id="endDate" th:value="${performance.endDate}" required onchange="syncOpenDateLimits()" th:readonly="${isStarted}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>2. 요일별 회차 및 생성 범위 설정</h2>
+                <div class="day-schedule-container" style="display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 10px; padding-bottom: 10px;">
+                    <div th:each="day : ${#strings.arraySplit('월,화,수,목,금,토,일', ',')}" class="day-schedule-item" style="flex: 0 0 120px;">
+                        <div class="day-header">
+                            <span class="day-name">[[${day}]]</span>
+                            <div class="radio-group">
+                                <label><input type="radio" th:name="'is' + ${day} + 'Show'" value="Y" th:onclick="toggleTimeInputs([[${day}]], true)" th:disabled="${isStarted}"> 있음</label>
+                                <label><input type="radio" th:name="'is' + ${day} + 'Show'" value="N" checked th:onclick="toggleTimeInputs([[${day}]], false)" th:disabled="${isStarted}"> 없음</label>
+                            </div>
+                        </div>
+                        <div th:id="'time-area-' + ${day}" class="time-input-area" style="display:none;">
+                            <div th:id="'time-list-' + ${day}" class="time-list"></div>
+                            <button th:if="${!isStarted}" type="button" class="btn-add-time" th:onclick="addTimeInput([[${day}]])">+ 시간 추가</button>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="weeklySchedule" id="weeklyScheduleInput">
+
+                <div id="open-period-container">
+                    <div th:each="period, stat : ${openPeriods}" class="open-period-box" th:id="'open-box-' + ${stat.count}">
+                        <div class="period-title">
+                            <strong>🎟️ 생성할 회차 범위 (세트 [[${stat.count}]])</strong>
+                            <button th:if="${!isStarted && stat.count > 1}" type="button" class="btn-remove" onclick="this.closest('.open-period-box').remove()">삭제</button>
+                        </div>
+                        <div class="date-row">
+                            <div class="date-item">
+                                <label>오픈 시작일</label>
+                                <input type="date" name="openStartDates" class="openStart" th:value="${period.start}" required th:readonly="${isStarted}">
+                            </div>
+                            <div class="date-item">
+                                <label>오픈 종료일</label>
+                                <input type="date" name="openEndDates" class="openEnd" th:value="${period.end}" required th:readonly="${isStarted}">
+                            </div>
+                        </div>
+                        <div class="form-group opening-time-group">
+                            <label>🔔 티켓 예매 시작 일시</label>
+                            <input type="datetime-local" name="openingTimes" th:value="${period.openingTime}" required th:readonly="${isStarted}">
+                        </div>
+                    </div>
+                </div>
+                <button th:if="${!isStarted}" type="button" class="btn-add" onclick="addOpenPeriod()">+ 티켓 오픈 범위 추가</button>
+            </div>
+
+            <div class="section">
+                <h2>3. 이미지 정보</h2>
+                <div class="form-group">
+                    <label>메인 포스터 (기존)</label>
+                    <div id="poster-pre" class="preview-box">
+                        <img th:src="@{/upload/{name}(name=${performance.posterImageName})}" width="180" style="border-radius: 8px;">
+                    </div>
+                    <input th:if="${!isStarted}" type="file" name="posterFile" accept="image/*" onchange="previewSingle(this, 'poster-pre')">
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>4. 좌석 등급 설정 및 배치도 수정</h2>
+                <div id="grade-container">
+                    <div th:each="config, stat : ${gradeConfigs}" class="grade-item">
+                        <span class="grade-label">[[${stat.count}]]번 등급:</span>
+                        <input type="text" name="gradeNames" th:value="${config.gradeName}" required oninput="updateSelectors()" th:readonly="${isStarted}">
+                        <input type="text" name="gradePrices" th:value="${#numbers.formatInteger(config.gradePrice, 0, 'COMMA')}" required oninput="handlePriceInput(this)" th:readonly="${isStarted}">
+                    </div>
+                </div>
+                
+                <div class="seat-work-area">
+                    <p>💡 <b>수정할 등급 버튼을 누른 후 좌석을 드래그하세요.</b></p>
+                    <div id="grade-selectors" class="selector-row"></div>
+                    <div id="seat-map" class="seat-grid" style="display: grid; grid-template-columns: repeat(6, 50px); gap: 10px; justify-content: center; padding: 20px; background: #333; border-radius: 12px;"></div>
+                </div>
+                <input type="hidden" name="seatGradeMap" id="seatGradeMapInput">
+            </div>
+
+            <button th:if="${!isStarted}" type="submit" class="btn-submit">수정 내용 저장하기</button>
+        </form>
+    </section>
+
+    <div th:replace="~{include/bottom::footer}"></div>
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+		// --- [1] 서버 데이터 안전하게 로드 ---
+		const isStarted = /*[[${isStarted}]]*/ false;
+
+		// [수정] templates 리스트보다 가공된 seatGradeMap(JSON 문자열)을 우선 사용합니다.
+		const seatGradeMapRaw = /*[[${seatGradeMap}]]*/ '{}'; 
+		const seatAssignment = JSON.parse(seatGradeMapRaw); 
+
+		const weeklyScheduleRaw = /*[[${weeklySchedule}]]*/ '{}';
+		const initialSchedule = JSON.parse(weeklyScheduleRaw);
+
+		// --- [2] 전역 변수 및 상태 관리 ---
+		let currentSelectedGrade = 1;
+		let isDrawing = false;
+		let startX, startY;
+
+		const selectionRect = document.getElementById('drag-selection-rect');
+		const seatMap = document.getElementById('seat-map');
+
+		// --- [3] 페이지 초기화 실행 ---
+		document.addEventListener("DOMContentLoaded", function() {
+		    initSeatMap();           // 1. 좌석 그리드 생성 및 복원
+		    restoreWeeklySchedule(); // 2. 요일별 스케줄 복구
+		    updateSelectors();       // 3. 등급 선택 버튼 초기화
+		    
+		    if (typeof syncOpenDateLimits === 'function') syncOpenDateLimits();
+		});
+
+		// --- [4] 좌석 그리드 생성 및 기존 데이터 매핑 (수정됨) ---
+		function initSeatMap() {
+		    seatMap.innerHTML = ''; 
+		    const seats = [];
+
+		    // 5행 6열(30석) 생성 루프
+		    for (let i = 1; i <= 30; i++) {
+		        const seatNo = i.toString();
+		        
+		        // [핵심] seatAssignment 객체에 저장된 등급 정보를 가져옴 (기본값 1)
+		        const grade = seatAssignment[seatNo] || 1;
+		        
+		        const seat = document.createElement('div');
+		        // CSS 클래스명이 .grade-color-1 ~ 5와 일치해야 합니다.
+		        seat.className = `seat grade-color-${grade}`;
+		        seat.innerText = seatNo;
+		        seat.dataset.seatNo = seatNo;
+		        
+		        seatMap.appendChild(seat);
+		        seats.push(seat);
+		    }
+		    
+		    // 폼 전송을 위해 hidden input에 현재 배치도 JSON 저장
+		    updateSeatInput();
+
+		    if (!isStarted) {
+		        setupDragLogic(seats);
+		    }
+		}
+
+		// --- [5] 드래그 선택 로직 (기존 유지) ---
+		function setupDragLogic(seats) {
+		    seatMap.onmousedown = (e) => {
+		        if (e.button !== 0) return;
+		        isDrawing = true;
+		        startX = e.pageX; startY = e.pageY;
+		        selectionRect.style.display = 'block';
+		        selectionRect.style.left = startX + 'px'; selectionRect.style.top = startY + 'px';
+		    };
+
+		    window.onmousemove = (e) => {
+		        if (!isDrawing) return;
+		        const l = Math.min(startX, e.pageX), t = Math.min(startY, e.pageY);
+		        const w = Math.abs(startX - e.pageX), h = Math.abs(startY - e.pageY);
+		        selectionRect.style.left = l + 'px'; selectionRect.style.top = t + 'px';
+		        selectionRect.style.width = w + 'px'; selectionRect.style.height = h + 'px';
+		        
+		        seats.forEach(s => {
+		            const b = s.getBoundingClientRect();
+		            const sl = b.left + window.scrollX, st = b.top + window.scrollY;
+		            if (!(l+w < sl || l > sl+b.width || t+h < st || t > st+b.height)) {
+		                s.classList.add('temp-selected');
+		            } else { 
+		                s.classList.remove('temp-selected');
+		            }
+		        });
+		    };
+
+		    window.onmouseup = () => {
+		        if (!isDrawing) return;
+		        isDrawing = false;
+		        selectionRect.style.display = 'none';
+		        
+		        document.querySelectorAll('.seat.temp-selected').forEach(s => {
+		            s.className = `seat grade-color-${currentSelectedGrade}`;
+		            seatAssignment[s.dataset.seatNo] = currentSelectedGrade;
+		            s.classList.remove('temp-selected');
+		        });
+		        updateSeatInput();
+		    };
+		}
+
+		// --- [6] 주간 스케줄 데이터 복구 ---
+		function restoreWeeklySchedule() {
+		    const days = ['월', '화', '수', '목', '금', '토', '일'];
+		    days.forEach(day => {
+		        const times = initialSchedule[day];
+		        if (times && times.length > 0) {
+		            const radioY = document.querySelector(`input[name="is${day}Show"][value="Y"]`);
+		            if (radioY) {
+		                radioY.checked = true;
+		                toggleTimeInputs(day, true);
+		                const listArea = document.getElementById(`time-list-${day}`);
+		                listArea.innerHTML = ""; 
+		                times.forEach(t => addTimeInput(day, t));
+		            }
+		        }
+		    });
+		    collectSchedule();
+		}
+
+		// --- [7] 기타 유틸리티 함수 ---
+		function toggleTimeInputs(day, isShow) {
+		    const area = document.getElementById(`time-area-${day}`);
+		    if(!area) return;
+		    area.style.display = isShow ? 'block' : 'none';
+		    if (isShow && document.getElementById(`time-list-${day}`).children.length === 0) {
+		        addTimeInput(day);
+		    }
+		    collectSchedule();
+		}
+
+		function addTimeInput(day, val = "") {
+		    const list = document.getElementById(`time-list-${day}`);
+		    const div = document.createElement('div');
+		    div.className = 'time-input-item';
+		    div.style.display = 'flex'; div.style.gap = '5px'; div.style.marginBottom = '5px';
+		    
+		    div.innerHTML = `
+		        <input type="text" class="time-val" value="${val}" placeholder="14:00" maxlength="5" 
+		               style="width:65px; text-align:center; padding:5px; border:1px solid #ddd; border-radius:4px;" 
+		               oninput="formatTime(this)" ${isStarted ? 'readonly' : ''}>
+		        ${!isStarted ? `<button type="button" class="btn-remove-time" style="background:#ff5e5e; color:#fff; border:none; border-radius:4px; cursor:pointer; padding:0 8px;" onclick="this.parentElement.remove(); collectSchedule();">×</button>` : ''}
+		    `;
+		    list.appendChild(div);
+		}
+
+		function formatTime(el) {
+		    el.value = el.value.replace(/\D/g,'').replace(/(\d{2})(\d{2})/,'$1:$2');
+		    collectSchedule();
+		}
+
+		function collectSchedule() {
+		    const schedule = {};
+		    ['월','화','수','목','금','토','일'].forEach(day => {
+		        const radioY = document.querySelector(`input[name="is${day}Show"][value="Y"]`);
+		        const isY = radioY ? radioY.checked : false;
+		        const times = Array.from(document.querySelectorAll(`#time-list-${day} .time-val`))
+		                           .map(i => i.value).filter(v => v.length === 5);
+		        schedule[day] = isY ? times : [];
+		    });
+		    const input = document.getElementById('weeklyScheduleInput');
+		    if(input) input.value = JSON.stringify(schedule);
+		}
+
+		function updateSelectors() {
+		    const container = document.getElementById('grade-selectors');
+		    const names = document.getElementsByName('gradeNames');
+		    if(!container) return;
+		    container.innerHTML = "";
+		    names.forEach((input, idx) => {
+		        const num = idx + 1;
+		        const btn = document.createElement('button');
+		        btn.type = "button";
+		        btn.className = `selector-btn ${currentSelectedGrade === num ? 'active' : ''}`;
+		        btn.innerText = input.value || `${num}번 등급`;
+		        btn.style.margin = '0 5px';
+		        btn.onclick = () => { if(!isStarted) { currentSelectedGrade = num; updateSelectors(); } };
+		        container.appendChild(btn);
+		    });
+		}
+
+		function updateSeatInput() {
+		    const input = document.getElementById('seatGradeMapInput');
+		    if(input) input.value = JSON.stringify(seatAssignment);
+		}
+
+		function handlePriceInput(el) {
+		    let val = el.value.replace(/\D/g, "");
+		    el.value = val ? Number(val).toLocaleString() : "";
+		}
+
+		function validateAndSubmit() {
+		    collectSchedule();
+		    if (Object.keys(seatAssignment).length < 30) {
+		        alert("30개의 좌석 등급을 모두 지정해야 합니다.");
+		        return false;
+		    }
+		    return true;
+		}
+
+		function addOpenPeriod() {
+		    if(isStarted) return;
+		    const container = document.getElementById('open-period-container');
+		    if(!container) return;
+		    const newIdx = container.children.length + 1;
+		    const div = document.createElement('div');
+		    div.className = 'open-period-box';
+		    div.innerHTML = `
+		        <div class="period-title">
+		            <strong>🎟️ 생성할 회차 범위 (세트 ${newIdx})</strong>
+		            <button type="button" class="btn-remove" onclick="this.closest('.open-period-box').remove()">삭제</button>
+		        </div>
+		        <div class="date-row">
+		            <div class="date-item"><label>오픈 시작일</label><input type="date" name="openStartDates" class="openStart" required></div>
+		            <div class="date-item"><label>오픈 종료일</label><input type="date" name="openEndDates" class="openEnd" required></div>
+		        </div>
+		        <div class="form-group opening-time-group">
+		            <label>🔔 티켓 예매 시작 일시</label>
+		            <input type="datetime-local" name="openingTimes" required>
+		        </div>`;
+		    container.appendChild(div);
+		}
+		/*]]>*/
+	    </script>
+
+		</body>
+		</html>

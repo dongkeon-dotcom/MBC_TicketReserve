@@ -1,26 +1,32 @@
+
 package com.mbc.admin;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
-@Getter @Setter
+@Getter 
+@Setter
+@ToString // 디버깅용 로그 찍을 때 편합니다.
 public class PerformanceSaveDto {
-    private String title;           // 공연 제목
-    private String startDate;       // 시작일 (2026-03-01)
-    private String endDate;         // 종료일 (2026-04-02)
-    private String openingTime;     // 티켓 오픈 시간
     
-    // 파일 업로드 (Entity에는 파일 자체가 아니라 파일 이름만 저장할 거임)
+    private Long performanceId; // 수정 시 필수
+    private String title;
+    private String startDate;
+    private String endDate;
+ // [중요 수정] HTML의 name="openStartDates"와 매핑되도록 List로 변경
+    private List<String> openStartDates; 
+    private List<String> openEndDates;   
+    private List<String> openingTimes;
+    
     private MultipartFile posterFile; 
     private List<MultipartFile> detailFiles;
 
-    // 가변 등급 정보
-    private List<String> gradeNames;   // ["VIP", "R석", "S석"]
-    private List<String> gradePrices; // [150000, 120000, 80000]
+    private List<String> gradeNames;
+    private List<String> gradePrices;
     
- // --- 이 두 부분이 추가되어야 합니다! ---
-    private String weeklySchedule; // JSON 문자열로 들어옵니다: {"월":["14:00"], ...}
-    private String seatGradeMap;   // JSON 문자열로 들어옵니다: {"1":1, "2":2, ...}
+    private String weeklySchedule;
+    private String seatGradeMap;
 }
