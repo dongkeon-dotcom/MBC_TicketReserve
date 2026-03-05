@@ -327,4 +327,28 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
     }
     
     
+    
+    
+ // 1. 해당 공연의 모든 등급 및 가격 설정 가져오기
+    public List<PerformanceGradeConfig> getGradesByPerformanceId(Long performanceId) {
+        return gradeConfigRepository.findByPerformanceId(performanceId);
+    }
+
+    // 2. 해당 공연의 모든 회차 일정 가져오기
+    public List<PerformanceSchedule> getSchedulesByPerformanceId(Long performanceId) {
+        return scheduleRepository.findByPerformanceId(performanceId);
+    }
+    
+    
+    
+    //자꾸 예매 페이지에서 무한루프 걸려서 수정용 
+    public Performance findById(Long performanceId) {
+        // performanceRepository 부분은 본인이 설정한 리포지토리 변수명으로 맞추세요.
+        return performanceRepository.findById(performanceId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 공연이 존재하지 않습니다. id=" + performanceId));
+    }
+    
+    
+    
+    
 }

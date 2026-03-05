@@ -1,0 +1,228 @@
+/* 기본 레이아웃 */
+.reserve-container {
+    max-width: 1100px;
+    margin: 40px auto;
+    font-family: 'Pretendard', sans-serif;
+    color: #333;
+}
+
+/* 상단 공연 제목 섹션 */
+.performance-header {
+    border-bottom: 2px solid #333;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.performance-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.performance-header p {
+    margin: 5px 0 0 0;
+    color: #666;
+    font-size: 14px;
+}
+
+/* 메인 예매 박스 (달력 | 회차 | 좌석상태) */
+.reserve-main-wrapper {
+    display: flex;
+    border: 1px solid #ddd;
+    height: 450px;
+    background: #fff;
+}
+
+.calendar-box, .schedule-box, .seat-status-box {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.calendar-box {
+    flex: 1.2;
+    border-right: 1px solid #eee;
+}
+
+.schedule-box {
+    flex: 1;
+    background: #f9f9f9;
+}
+
+.seat-status-box {
+    flex: 1;
+    border-left: 1px solid #eee;
+}
+
+h4 {
+    font-size: 16px;
+    margin-top: 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 8px;
+}
+
+/* 달력 스타일 */
+.date-picker-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.date-picker-table th {
+    font-size: 12px;
+    color: #888;
+    padding-bottom: 10px;
+}
+
+.date-picker-table td {
+    text-align: center;
+    padding: 8px 0;
+    font-size: 14px;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    transition: 0.2s;
+}
+
+.date-picker-table td:hover:not(.empty, .disabled) {
+    background: #f0f0f0;
+}
+
+/* 선택된 날짜 (이미지처럼 주황색 원) */
+.date-picker-table td.active {
+    background: #ff5a00 !important;
+    color: #fff !important;
+    font-weight: bold;
+}
+
+.date-picker-table td.disabled {
+    color: #ccc;
+    cursor: default;
+}
+
+/* 회차(시간) 선택 스타일 */
+.time-slot {
+    border: 1px solid #ddd;
+    background: #fff;
+    padding: 12px;
+    margin-bottom: 10px;
+    text-align: center;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.time-slot:hover {
+    border-color: #ff5a00;
+}
+
+.time-slot.selected {
+    border-color: #ff5a00;
+    background: #fff5f0;
+    color: #ff5a00;
+    font-weight: bold;
+}
+
+/* 좌석 정보 스타일 */
+.grade-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.grade-name {
+    color: #666;
+}
+
+.grade-price {
+    font-weight: 600;
+    color: #333;
+}
+
+/* 하단 버튼 영역 */
+.reserve-footer {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.btn-reserve {
+    width: 200px;
+    height: 50px;
+    background: #e63946;
+    color: white;
+    border: none;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.btn-reserve:hover {
+    background: #c1121f;
+}
+
+.btn-global {
+    width: 200px;
+    height: 50px;
+    background: #fff;
+    color: #333;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+/* 공연 일정이 있는 날짜 스타일 */
+.date-picker-table td.has-show {
+    color: #ff5a00; /* 주황색 숫자로 표시 */
+    font-weight: bold;
+}
+
+/* 요일별 색상 */
+.sun { color: #e63946; } /* 일요일 빨간색 */
+.sat { color: #1d3557; } /* 토요일 파란색 */
+
+.calendar-header {
+    text-align: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 15px;
+}
+
+.empty-msg {
+    color: #999;
+    text-align: center;
+    margin-top: 50px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

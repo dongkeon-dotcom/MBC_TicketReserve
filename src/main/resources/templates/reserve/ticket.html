@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>예매 - [[${performance.title}]]</title>
+    <link rel="stylesheet" th:href="@{/css/reserve/ticket.css}">
+</head>
+<body>
+    <div th:replace="~{include/top::top}"></div>
+
+    <div class="reserve-container">
+        <div class="performance-header">
+            <div>
+                <h2 th:text="${performance.title}">공연 제목</h2>
+                <p>📅 [[${performance.startDate}]] ~ [[${performance.endDate}]] | 예스24스테이지 2관</p>
+            </div>
+            <div class="poster-box">
+                <img th:src="@{/upload/|${performance.posterImageName}|}" alt="포스터">
+            </div>
+        </div>
+		
+        <div class="reserve-main-wrapper">
+            <div class="calendar-box">
+				<div class="calendar-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+				    <button type="button" id="prev-month" style="cursor:pointer; border:none; background:none; font-size:1.2rem;">&lt;</button>
+				    
+				    <span id="current-month-display" style="font-weight: bold; font-size: 1.1rem;">2026. 03</span>
+				    
+				    <button type="button" id="next-month" style="cursor:pointer; border:none; background:none; font-size:1.2rem;">&gt;</button>
+				</div>
+                <table class="date-picker-table">
+                    <thead>
+                        <tr>
+                            <th class="sun">일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th class="sat">토</th>
+                        </tr>
+                    </thead>
+                    <tbody id="calendar-body"></tbody>
+                </table>
+                <div class="calendar-footer-info">
+                    <span class="dot-show">●</span> 관람 가능일
+                </div>
+            </div>
+
+            <div class="schedule-box">
+                <h4>회차선택</h4>
+                <div id="time-slot-container">
+                    <p class="empty-msg">좌측 달력에서 날짜를 선택해주세요.</p>
+                </div>
+            </div>
+
+            <div class="seat-status-box">
+                <h4>예매가능좌석</h4>
+                <div id="grade-container">
+                    <p class="empty-msg">날짜와 회차를 선택하면<br>잔여 좌석이 표시됩니다.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="reserve-footer">
+            <button type="button" id="reserve-btn" class="btn-reserve" onclick="goToSeatSelection()" disabled>
+                <span id="btn-text">티켓 오픈 대기 중</span>
+            </button>
+        </div>
+
+        <section class="detail-section" style="margin-top: 50px;">
+            <h3 style="border-bottom: 2px solid #333; padding-bottom: 10px;">상세 정보</h3>
+            <div class="detail-img-list" style="text-align: center;">
+                <div th:each="img : ${performance.detailImages}">
+                    <img th:src="@{/upload/{name}(name=${img.imageName})}" alt="상세내용" style="max-width: 100%;">
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div th:replace="~{include/bottom::footer}"></div>
+	<script th:inline="javascript">
+	    /*<![CDATA[*/
+	    const allSchedules = /*[[${schedules}]]*/ [];    
+	    let selectedScheduleId = null;
+	    
+	    // 현재 달력에 보여줄 연도와 월을 저장하는 변수
+	    let viewYear, viewMonth;
+
+	    // 컨트롤러에서 보낸 가장 빠른 오픈 시간 (openDate로 전달됨)
+	    const openDateStr = /*[[${openDate}]]*/ ''; 
+	    const openTime = new Date(openDateStr).getTime();
+
+	    document.addEventListener('DOMContentLoaded', function() {
+	        // 공연 시작일을 기준으로 초기 달력 연/월 설정
+	        const startStr = /*[[${#temporals.format(performance.startDate, 'yyyy-MM-dd')}]]*/ '';
+	        
+	        if (startStr) {
+	            const parts = startStr.split('-');
+	            viewYear = parseInt(parts[0]);
+	            viewMonth = parseInt(parts[1]) - 1; // JS 월은 0부터 시작
+	            
+	            updateCalendarDisplay(); // 초기 달력 렌더링
+	        }
+
+	        // --- [추가] 이전/다음 버튼 이벤트 리스너 ---
+	        const prevBtn = document.getElementById('prev-month');
+	        const nextBtn = document.getElementById('next-month');
+
+	        if(prevBtn) {
+	            prevBtn.addEventListener('click', function() {
+	                viewMonth--;
+	                if (viewMonth < 0) {
+	                    viewMonth = 11;
+	                    viewYear--;
+	                }
+	                updateCalendarDisplay();
+	            });
+	        }
+
+	        if(nextBtn) {
+	            nextBtn.addEventListener('click', function() {
+	                viewMonth++;
+	                if (viewMonth > 11) {
+	                    viewMonth = 0;
+	                    viewYear++;
+	                }
+	                updateCalendarDisplay();
+	            });
+	        }
+
+	        // 티켓 오픈 상태 체크 시작
+	        updateTicketStatus();
+	        setInterval(updateTicketStatus, 1000);
+	    });
+
+	    // --- [추가] 달력 헤더 텍스트 갱신 및 다시 그리기 ---
+	    function updateCalendarDisplay() {
+	        const monthDisplay = document.getElementById('current-month-display');
+	        if (monthDisplay) {
+	            monthDisplay.innerText = `${viewYear}. ${String(viewMonth + 1).padStart(2, '0')}`;
+	        }
+	        renderCalendar(viewYear, viewMonth);
+	    }
+
+	    // --- 티켓 오픈 상태 업데이트 함수 (이중 잠금 로직 적용) ---
+	    function updateTicketStatus() {
+	        if (!openTime) return;
+
+	        const now = new Date().getTime();
+	        const diff = openTime - now;
+
+	        const btn = document.getElementById('reserve-btn');
+	        const btnText = document.getElementById('btn-text');
+	        const calendarTable = document.querySelector('.date-picker-table');
+	        
+	        const ONE_HOUR = 3600000;
+
+	        if (diff > ONE_HOUR) {
+	            btn.disabled = true;
+	            calendarTable.style.opacity = "0.3";
+	            calendarTable.style.pointerEvents = "none";
+	            
+	            const openDate = new Date(openTime);
+	            btnText.innerText = `${openDate.getMonth()+1}월 ${openDate.getDate()}일 오픈 예정`;
+
+	        } else if (diff > 0 && diff <= ONE_HOUR) {
+	            btn.disabled = true;
+	            calendarTable.style.opacity = "0.1";
+	            calendarTable.style.pointerEvents = "none";
+	            
+	            btnText.innerText = "잠시 후 오픈! 정각에 새로고침 해주세요";
+	            btn.style.backgroundColor = "#555";
+
+	        } else {
+	            btn.disabled = false;
+	            btnText.innerText = "예매하기";
+	            calendarTable.style.opacity = "1";
+	            calendarTable.style.pointerEvents = "auto";
+	            btn.style.backgroundColor = "#ff5a00";
+
+	            if (!btn.dataset.reloaded) {
+	                btn.onclick = function() { location.reload(); };
+	                btn.dataset.reloaded = "true";
+	            } else {
+	                btn.onclick = goToSeatSelection;
+	            }
+	        }
+	    }
+
+	    function renderCalendar(year, month) {
+	        const firstDay = new Date(year, month, 1).getDay();
+	        const lastDate = new Date(year, month + 1, 0).getDate();
+	        const calendarBody = document.getElementById('calendar-body');
+	        if (!calendarBody) return;
+	        
+	        calendarBody.innerHTML = '';
+
+	        let date = 1;
+	        for (let i = 0; i < 6; i++) {
+	            let row = document.createElement('tr');
+	            for (let j = 0; j < 7; j++) {
+	                let cell = document.createElement('td');
+	                if (i === 0 && j < firstDay) {
+	                    cell.classList.add('empty');
+	                } else if (date > lastDate) {
+	                    cell.classList.add('empty');
+	                } else {
+	                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+	                    cell.innerText = date;
+	                    const hasShow = allSchedules.some(s => s.startTime && s.startTime.startsWith(dateStr));
+	                    
+	                    if (hasShow) {
+	                        cell.classList.add('has-show');
+	                        cell.onclick = function() { selectDate(dateStr, this); };
+	                    } else {
+	                        cell.classList.add('disabled');
+	                    }
+	                    date++;
+	                }
+	                row.appendChild(cell);
+	            }
+	            calendarBody.appendChild(row);
+	            if (date > lastDate) break;
+	        }
+	    }
+	    
+	    function selectDate(dateStr, element) {
+	        document.querySelectorAll('.date-picker-table td').forEach(td => td.classList.remove('active'));
+	        element.classList.add('active');
+
+	        const container = document.getElementById('time-slot-container');
+	        if (!container) return;
+	        container.innerHTML = '';
+	        
+	        const filtered = allSchedules.filter(s => s.startTime && s.startTime.startsWith(dateStr));
+
+	        if (filtered.length === 0) {
+	            container.innerHTML = '<p class="empty-msg">해당 날짜에 공연이 없습니다.</p>';
+	            const gradeContainer = document.getElementById('grade-container');
+	            if (gradeContainer) gradeContainer.innerHTML = '<p class="empty-msg">공연 회차를 선택해주세요.</p>';
+	            return;
+	        }
+
+	        filtered.forEach((s, index) => {
+	            const dateObj = new Date(s.startTime);
+	            const timeStr = dateObj.toLocaleTimeString('ko-KR', {
+	                hour: '2-digit', minute: '2-digit', hour12: true
+	            });
+
+	            const div = document.createElement('div');
+	            div.className = 'time-slot';
+	            div.innerText = `${index + 1}회 ${timeStr}`;
+	            
+	            div.onclick = function() {
+	                document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected'));
+	                this.classList.add('selected');
+	                selectedScheduleId = s.scheduleId;
+
+	                const gradeContainer = document.getElementById('grade-container');
+	                if (gradeContainer) {
+	                    gradeContainer.innerHTML = '';
+	                    if (s.seatStatus && s.seatStatus.length > 0) {
+	                        s.seatStatus.forEach(status => {
+	                            const infoDiv = document.createElement('div');
+	                            infoDiv.className = 'grade-info';
+	                            infoDiv.innerHTML = `
+	                                <span class="grade-name">${status.gradeName}</span>
+	                                <span class="grade-price">
+	                                    <b style="color: #ff5a00;">${status.remainCount}</b>석
+	                                </span>
+	                            `;
+	                            gradeContainer.appendChild(infoDiv);
+	                        });
+	                    } else {
+	                        gradeContainer.innerHTML = '<p class="empty-msg">등록된 등급 정보가 없습니다.</p>';
+	                    }
+	                }
+	            };
+	            container.appendChild(div);
+	        });
+	    }
+
+	    function goToSeatSelection() {
+	        if (!selectedScheduleId) {
+	            alert("공연 회차를 선택해주세요.");
+	            return;
+	        }
+	        location.href = "/reserve/seat.do?scheduleId=" + selectedScheduleId;
+	    }
+	    /*]]>*/
+	</script>
+</body>
+</html>

@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Getter 
 @Setter
@@ -14,7 +16,7 @@ public class PerformanceSchedule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long scheduleId;
-
+    @JsonIgnore  // <-- 이 줄을 추가하세요! (Jackson이 이 필드는 JSON으로 안 만들게 함)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "performance_id")
     private Performance performance;

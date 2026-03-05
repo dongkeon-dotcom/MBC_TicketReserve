@@ -61,7 +61,11 @@
 	                                <a th:href="@{/admin/editPage.do(id=${p.performanceId})}" class="btn-edit">
 	                                    <i class="fa-regular fa-pen-to-square"></i> 정보수정
 	                                </a>
-	                                
+									<a th:href="@{/reserve/ticket.do(performanceId=${p.performanceId})}" 
+									   class="btn-reserve" 
+									   style="background-color: #007bff; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; margin: 0 5px;">
+									   예매페이지
+									</a>
 	                                <button type="button" class="btn-delete" 
 	                                        th:onclick="|deleteConfirm(${p.performanceId})|">
 	                                    <i class="fa-regular fa-trash-can"></i> 삭제
