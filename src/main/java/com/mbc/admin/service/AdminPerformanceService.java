@@ -31,6 +31,7 @@ import com.mbc.admin.repositiry.PerformanceScheduleRepository;
 import com.mbc.admin.repositiry.PerformanceSeatTemplateRepository;
 import com.mbc.admin.repositiry.SeatInventoryRepository;
 import com.mbc.admin.repositiry.VenueSeatMasterRepository;
+import com.mbc.aws.S3UploaderService;
 
 @Service
 @Transactional // 모든 과정이 하나의 트랜잭션으로 묶임 (하나라도 실패하면 롤백)
@@ -43,6 +44,7 @@ public class AdminPerformanceService {
     private final PerformanceGradeConfigRepository gradeConfigRepository; // [추가] 가격 설정 삭제용
     private final ObjectMapper objectMapper;
     private final SeatInventoryRepository seatInventoryRepository; // 추가
+    private final S3UploaderService s3UploaderService;
     
     // 생성자 주입 (모든 리포지토리를 포함하도록 업데이트)
     public AdminPerformanceService(
@@ -51,7 +53,8 @@ public class AdminPerformanceService {
             PerformanceSeatTemplateRepository templateRepository,
             PerformanceScheduleRepository scheduleRepository,      // [추가]
             PerformanceGradeConfigRepository gradeConfigRepository,  // [추가]
-            SeatInventoryRepository seatInventoryRepository // 추가
+            SeatInventoryRepository seatInventoryRepository, // 추가
+            S3UploaderService s3UploaderService						// AWS S3 Upload용
     ) {
         this.performanceRepository = performanceRepository;
         this.venueMasterRepository = venueMasterRepository;
@@ -59,6 +62,7 @@ public class AdminPerformanceService {
         this.scheduleRepository = scheduleRepository;              // [주입]
         this.gradeConfigRepository = gradeConfigRepository;        // [주입]
         this.seatInventoryRepository = seatInventoryRepository;
+        this.s3UploaderService = s3UploaderService;					
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule()); 
     }
@@ -155,7 +159,7 @@ public class AdminPerformanceService {
     private void saveImages(Performance performance, PerformanceSaveDto dto) throws Exception {
         // 메인 포스터 저장
         if (dto.getPosterFile() != null && !dto.getPosterFile().isEmpty()) {
-            String savedPosterName = FileUtil.saveFile(dto.getPosterFile());
+            String savedPosterName = s3UploaderService.uploadFile(dto.getPosterFile(),"MAIN_POSTER");
             performance.setPosterImageName(savedPosterName); 
         }
 
@@ -163,7 +167,7 @@ public class AdminPerformanceService {
         if (dto.getDetailFiles() != null && !dto.getDetailFiles().isEmpty()) {
             for (MultipartFile detailFile : dto.getDetailFiles()) {
                 if (!detailFile.isEmpty()) {
-                    String savedName = FileUtil.saveFile(detailFile);
+                    String savedName = s3UploaderService.uploadFile(detailFile,"DETAIL_IMAGE");
                     if (savedName != null) {
                         PerformanceDetailImage detailEntity = new PerformanceDetailImage();
                         detailEntity.setImageName(savedName);
