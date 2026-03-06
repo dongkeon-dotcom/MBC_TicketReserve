@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<body style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif;">
+    <div style="text-align: center;">
+        <h3>결제가 완료되었습니다!</h3>
+        <p>메인 페이지로 이동 중입니다...</p>
+    </div>
+    <script>
+        setTimeout(function() {
+            if (window.opener) {
+                window.opener.location.href = "/main.do"; // 부모 창 이동//상세 페이지로 이동할때 이쪽 바꿔주기 
+                window.close(); // 팝업 닫기
+            } else {
+                location.href = "/main.do";// 상세 페이지로 이동할때 이쪽 바꿔주기 
+            }
+        }, 500);
+    </script>
+</body>
+</html>

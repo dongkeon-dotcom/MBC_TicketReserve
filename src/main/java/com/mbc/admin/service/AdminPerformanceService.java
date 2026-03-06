@@ -376,5 +376,20 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
         return seatInventoryRepository.findById(seatId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 좌석을 찾을 수 없습니다. ID: " + seatId));
     }
-    
+    /**
+     * 좌석을 예약 상태로 변경하는 메서드
+     */
+    public void reserveSeat(Long seatId) {
+        // 1. 해당 seatId로 좌석을 조회 (없으면 에러 처리)
+        // 주의: 프로젝트 내 실제 Seat 엔티티 이름에 맞게 수정하세요.
+        SeatInventory seat = seatInventoryRepository.findById(seatId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 좌석입니다."));
+
+        // 2. 예약 상태 업데이트 (예: isReserved를 1로 변경)
+        // 주의: 엔티티의 필드명에 맞게 수정하세요 (예: setReserved(true) 등)
+        seat.setIsReserved(1); 
+        
+        // 3. 변경 사항 저장
+        seatInventoryRepository.save(seat);
+    }
 }
