@@ -1,5 +1,6 @@
 package com.mbc.controller;
 
+import com.mbc.admin.PerformanceListDto;
 import com.mbc.admin.PerformanceSaveDto;
 import com.mbc.admin.entity.Performance;
 import com.mbc.admin.entity.PerformanceSchedule;
@@ -14,6 +15,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -61,18 +66,24 @@ public class AdminController {
     }
     
     
-    // 목록으로 이동하기위한 페이지 
+ // 목록으로 이동하기 위한 페이지 
     @GetMapping("/listPage.do")
-    public String listPage(Model model) {
-        System.out.println("==> 공연 목록 페이지로 이동 .do");
+    public String listPage(
+            @PageableDefault(size = 10, sort = "performanceId", direction = Sort.Direction.DESC) Pageable pageable,
+            Model model) {
         
-        // DB에서 모든 공연 정보를 가져와서 모델에 담음
-        List<Performance> list = performanceService.getAllPerformances();
-        model.addAttribute("performanceList", list);
+        // 1. 페이징된 엔티티 데이터를 가져옵니다.
+        Page<Performance> performancePage = performanceService.findAll(pageable);
         
-        return "admin/showList"; // templates/admin/showList.html
+        // 2. 엔티티를 DTO로 변환합니다. (Stream 사용)
+        Page<PerformanceListDto> dtoPage = performancePage.map(PerformanceListDto::new);
+        
+        // 3. 모델에 담습니다. (getContent()가 아니라 dtoPage 자체를 넘겨도 좋습니다)
+        model.addAttribute("performanceList", dtoPage.getContent());
+        model.addAttribute("page", dtoPage);
+        
+        return "admin/showList";
     }
-    
     
     
     

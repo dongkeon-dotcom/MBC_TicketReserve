@@ -303,11 +303,7 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
     
  // AdminPerformanceService.java
 
-    public List<Performance> getAllPerformances() {
-        // 최신 등록순으로 보고 싶다면 리포지토리에 findAllByOrderByPerformanceIdDesc() 등을 추가해 사용하세요.
-        return performanceRepository.findAll();
-    }
-    
+   
 
     public Page<Performance> searchByTitle(String keyword, Pageable pageable){
     	return performanceRepository.findByTitleContainingIgnoreCase(keyword, pageable);
@@ -391,5 +387,11 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
         
         // 3. 변경 사항 저장
         seatInventoryRepository.save(seat);
+    }
+    
+    
+ // AdminPerformanceService.java에 추가
+    public Page<Performance> findAll(Pageable pageable) {
+        return performanceRepository.findAll(pageable);
     }
 }

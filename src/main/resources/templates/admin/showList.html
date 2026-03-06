@@ -77,12 +77,59 @@
 	            </table>
 	        </div>
 	        
+			
+			
+			
+			
+			
+			<div class="pagination-container" style="text-align: center; margin-top: 20px;">
+			    <a th:href="@{/admin/list.do(page=0)}">맨처음</a>
+
+			    <a th:href="@{/admin/list.do(page=${page.number / 10 * 10 - 1})}" 
+			       th:if="${page.number >= 10}">이전</a>
+
+			    <span th:each="i : ${#numbers.sequence(page.number / 10 * 10, T(Math).min(page.number / 10 * 10 + 9, page.totalPages - 1))}">
+			        <a th:href="@{/admin/list.do(page=${i})}" 
+			           th:text="${i + 1}"
+			           th:style="${i == page.number} ? 'font-weight:bold; color:red;' : ''">1</a>
+			    </span>
+
+			    <a th:href="@{/admin/list.do(page=${(page.number / 10 + 1) * 10})}" 
+			       th:if="${(page.number / 10 + 1) * 10 < page.totalPages}">다음</a>
+
+			    <a th:href="@{/admin/list.do(page=${page.totalPages - 1})}">맨끝</a>
+			</div>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
 	        <div style="text-align: center; margin-top: 40px;">
 	            <a th:href="@{/main.do}" style="color: #999; text-decoration: none; font-size: 0.9em;">
 	                <i class="fa-solid fa-house"></i> 메인페이지로 이동
 	            </a>
 	        </div>
 	    </div>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
 		
 		
 		<div th:replace="include/bottom::footer"></div>
