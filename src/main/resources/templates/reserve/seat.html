@@ -1,121 +1,221 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
+	<link rel="stylesheet" th:href="@{/css/reserve/seat.css}">
+
     <meta charset="UTF-8">
     <title>좌석 선택 - [[${performance.title}]]</title>
-    <link rel="stylesheet" th:href="@{/css/reserve/seat.css}">
 </head>
-<body>
+	<body>
 
-    <div class="step-bar-container">
-        <ul class="step-bar">
-            <li><span>01</span> 날짜/회차선택</li>
-            <li class="active"><span>02</span> 등급/좌석선택</li>
-            <li><span>03</span> 권종/할인/매수선택</li>
-            <li><span>04</span> 배송선택/예매확인</li>
-            <li><span>05</span> 결제</li>
-        </ul>
-    </div>
+	    <div class="step-bar-container">
+	        <ul class="step-bar">
+	            <li><span>01</span> 날짜/회차선택</li>
+	            <li class="active"><span>02</span> 등급/좌석선택</li>
+	            <li><span>03</span> 권종/할인/매수선택</li>
+	            <li><span>04</span> 배송선택/예매확인</li>
+	            <li><span>05</span> 결제</li>
+	        </ul>
+	    </div>
 
-    <div class="seat-selection-wrapper">
-        <div class="seat-map-section">
-            <div class="performance-mini-info">
-                <div class="info-text">
-                    <h3 th:text="${performance.title}">공연 제목</h3>
-                    <p>[[${#temporals.format(schedule.startTime, 'yyyy.MM.dd(E) HH:mm')}]]</p>
-                </div>
-                <button class="btn-change-date" onclick="history.back()">회차변경</button>
-            </div>
+	    <div class="seat-selection-wrapper">
+	        <div class="seat-map-section">
+	            <div class="performance-mini-info">
+	                <div class="info-text">
+	                    <h3 th:text="${performance.title}">공연 제목</h3>
+	                    <p>[[${#temporals.format(schedule.startTime, 'yyyy.MM.dd(E) HH:mm')}]]</p>
+	                </div>
+	                <button class="btn-change-date" onclick="openModal()">회차변경</button>
+	            </div>
 
-            <div class="map-viewport">
-                <div class="stage">STAGE</div>
-                <div class="seat-grid">
-					<div class="seat-grid">
-					    <div th:each="seat : ${seats}" 
-					         class="seat"
-					         /* 등급에 따른 클래스(grade-1, grade-2...)와 예약 여부 클래스 추가 */
-					         th:classappend="|grade-${seat.seatType} ${seat.isReserved == 1 ? 'is-paid' : 'available'}|"
-					         th:data-id="${seat.seatId}"
-					         th:data-name="${seat.seatNumber}"
-					         th:onclick="${seat.isReserved == 0} ? 'selectSeat(this)' : ''">
-					    </div>
-					</div>
-                </div>
-            </div>
+	            <div class="map-viewport">
+	                <div class="floating-controls">
+	                    <button onclick="zoomSeat(0.1)">+</button>
+	                    <button onclick="zoomSeat(-0.1)">-</button>
+	                    <button onclick="location.reload()">↻</button>
+	                </div>
 
-            <div class="selected-bottom-bar">
-                <div class="selected-label">선택된 좌석</div>
-                <div id="selected-seat-tag" class="seat-tag">좌석을 선택하세요</div>
-                <button class="btn-reset" onclick="resetSelection()">초기화</button>
-            </div>
-        </div>
+	                <div class="stage">STAGE</div>
+	                
+	                <div class="seat-grid" id="seat-grid">
+	                    <div th:each="seat : ${seats}" 
+	                         class="seat"
+	                         th:classappend="|grade-${seat.seatType} ${seat.isReserved == 1 ? 'is-paid' : 'available'}|"
+	                         th:data-id="${seat.seatId}"
+	                         th:data-name="${seat.seatNumber}"> 
+	                    </div>
+	                </div>
+	            </div>
+	        </div>
 
-        <div class="info-sidebar">
-            <div class="minimap-area">
-                <div class="minimap-placeholder">MINI MAP</div>
-            </div>
+	        <div class="info-sidebar">
+	            <div class="minimap-area">
+	                <div class="minimap-placeholder">MINI MAP</div>
+	            </div>
 
-            <div class="grade-status-area">
-                <div class="grade-header">
-                    <span>등급 선택</span>
-                    <button class="btn-refresh" onclick="location.reload()">새로고침</button>
-                </div>
-                
-                <div class="grade-list">
-                    <div th:each="grade : ${grades}" class="grade-item">
-                        <span class="color-dot"></span>
-                        <span class="grade-name" th:text="${grade.gradeName}">등급</span>
-                        <span class="grade-price" th:text="${#numbers.formatInteger(grade.price, 3, 'COMMA') + '원'}">0원</span>
-                        <span class="remain-count"><b th:text="${grade.remainCount}">0</b>석</span>
-                    </div>
-                </div>
-            </div>
+	            <div class="grade-status-area">
+	                <div class="selected-bottom-bar">
+	                    <div class="selected-label">선택된 좌석</div>
+	                    <div id="selected-seat-tag" class="seat-tag">좌석을 선택하세요</div>
+	                    <button class="btn-reset" onclick="resetSelection()">초기화</button>
+	                </div>
+	                
+	                <div class="grade-header">
+	                    <span>등급 선택</span>
+	                    <button class="btn-refresh" onclick="location.reload()">새로고침</button>
+	                </div>
+	                
+	                <div class="grade-list">
+	                    <div th:each="grade : ${grades}" class="grade-item">
+	                        <span class="grade-name" th:text="${grade.gradeName}">등급</span>
+	                        <span class="grade-price" th:text="${#numbers.formatInteger(grade.price, 3, 'COMMA') + '원'}">0원</span>
+	                        <span class="remain-count"><b th:text="${grade.remainCount}">0</b>석</span>
+	                    </div>
+	                </div>
+	            </div>
 
-            <div class="sidebar-buttons">
-                <button class="btn-prev" onclick="history.back()">이전단계</button>
-                <button id="payment-btn" class="btn-next" disabled onclick="goToPayment()">다음단계</button>
-            </div>
-        </div>
-    </div>
+	            <div class="sidebar-buttons">
+	                <button class="btn-prev" onclick="history.back()">이전단계</button>
+	                <button id="payment-btn" class="btn-next" disabled onclick="goToPayment()">다음단계</button>
+	            </div>
+	        </div>
+	    </div>
 
-
-    <script th:inline="javascript">
-        let currentSelectedId = null;
-
-		function selectSeat(el) {
-		    if (el.classList.contains('selected')) {
-		        el.classList.remove('selected');
-		        currentSelectedId = null;
-		        updateUI("-", true);
-		    } else {
-		        // 기존에 선택된 다른 좌석이 있다면 해제 (단일 선택)
-		        const prev = document.querySelector('.seat.selected');
-		        if(prev) prev.classList.remove('selected');
+	    
+		<div id="date-change-modal" class="modal-overlay">
+		    <div class="modal-content">
+		        <div class="modal-header">
+		            <h3>날짜/회차 변경</h3>
+		            <button class="close-btn" onclick="closeModal()">×</button>
+		        </div>
 		        
-		        el.classList.add('selected');
-		        currentSelectedId = el.getAttribute('data-id');
-		        updateUI(el.getAttribute('data-name'), false);
-		    }
-		}
+		        <div class="calendar-controls">
+		            <button onclick="changeMonth(-1)">&lt;</button>
+		            <span id="calendar-title"></span>
+		            <button onclick="changeMonth(1)">&gt;</button>
+		        </div>
+		        
+		        <table class="date-picker-table">
+		            <thead>
+		                <tr>
+		                    <th>일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th>
+		                </tr>
+		            </thead>
+		            <tbody id="modal-calendar-body"></tbody>
+		        </table>
+		        
+		        <div id="modal-time-slot-container"></div>
+		    </div>
+		</div>
+		
+		
+		
+		<!--//////////////////////-->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        window.allSchedules = /*[[${schedules}]]*/ [];
+        window.currentSelectedId = null;
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth();
+        let currentZoom = 1.0;
 
-        function updateUI(name, isDisabled) {
-            const display = document.getElementById('selected-seat-tag');
-            const btn = document.getElementById('payment-btn');
-            
-            display.innerText = name === "-" ? "좌석을 선택하세요" : name;
-            btn.disabled = isDisabled;
-        }
+        window.zoomSeat = function(delta) {
+            currentZoom = Math.max(0.5, Math.min(2.0, currentZoom + delta));
+            const grid = document.getElementById('seat-grid');
+            if (grid) {
+                grid.style.transform = `scale(${currentZoom})`;
+                grid.style.transformOrigin = "top left";
+                grid.style.width = (100 / currentZoom) + "%";
+            }
+        };
 
-        function resetSelection() {
+        document.querySelector('.seat-grid').addEventListener('click', function(e) {
+            const seat = e.target.closest('.seat.available');
+            if (!seat) return;
             document.querySelectorAll('.seat.selected').forEach(s => s.classList.remove('selected'));
-            currentSelectedId = null;
-            updateUI("-", true);
-        }
+            seat.classList.add('selected');
+            window.currentSelectedId = seat.getAttribute('data-id');
+            document.getElementById('selected-seat-tag').innerText = seat.getAttribute('data-name');
+            document.getElementById('payment-btn').disabled = false;
+        });
 
-        function goToPayment() {
-            if(!currentSelectedId) return;
-            location.href = "/reserve/payment.do?seatId=" + currentSelectedId;
+        window.openModal = function() { document.getElementById('date-change-modal').style.display = 'block'; renderModalCalendar(currentYear, currentMonth); };
+        window.closeModal = function() { document.getElementById('date-change-modal').style.display = 'none'; };
+        window.changeMonth = function(diff) { currentMonth += diff; if(currentMonth>11){currentMonth=0; currentYear++} if(currentMonth<0){currentMonth=11; currentYear--} renderModalCalendar(currentYear, currentMonth); };
+        
+        function renderModalCalendar(year, month) {
+            const tbody = document.getElementById('modal-calendar-body');
+            document.getElementById('calendar-title').innerText = `${year}년 ${month + 1}월`;
+            tbody.innerHTML = '';
+            const firstDay = new Date(year, month, 1).getDay();
+            const lastDate = new Date(year, month + 1, 0).getDate();
+            let date = 1;
+            for (let i = 0; i < 6; i++) {
+                let row = document.createElement('tr');
+                for (let j = 0; j < 7; j++) {
+                    let cell = document.createElement('td');
+                    if ((i === 0 && j < firstDay) || date > lastDate) { cell.innerText = ''; } 
+                    else {
+                        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+                        cell.innerText = date;
+                        if (window.allSchedules.some(s => s.startTime.startsWith(dateStr))) {
+                            cell.onclick = () => selectModalDate(dateStr);
+                        }
+                        date++;
+                    }
+                    row.appendChild(cell);
+                }
+                tbody.appendChild(row);
+                if (date > lastDate) break;
+            }
         }
+        
+		// 모달 열기 함수 (JS 하단에 작성)
+		window.openModal = function() {
+		    document.getElementById('date-change-modal').style.display = 'flex';
+		    renderModalCalendar(currentYear, currentMonth);
+		};
+
+		// 모달 닫기 함수
+		window.closeModal = function() {
+		    document.getElementById('date-change-modal').style.display = 'none';
+		};
+		
+		
+		
+		
+		
+        function selectModalDate(dateStr) {
+            const container = document.getElementById('modal-time-slot-container');
+            container.innerHTML = '';
+            window.allSchedules.filter(s => s.startTime.startsWith(dateStr)).forEach(s => {
+                const btn = document.createElement('button');
+                btn.innerText = s.startTime.substring(11, 16);
+                btn.onclick = () => { location.href = "/reserve/seat.do?scheduleId=" + s.scheduleId; };
+                container.appendChild(btn);
+            });
+        }
+        
+        window.resetSelection = function() {
+            document.querySelectorAll('.seat.selected').forEach(s => s.classList.remove('selected'));
+            window.currentSelectedId = null;
+            document.getElementById('selected-seat-tag').innerText = "좌석을 선택하세요";
+            document.getElementById('payment-btn').disabled = true;
+        };
+        
+//결제 페이지로 이동 
+
+		window.goToPayment = function() {
+		    // 1. 좌석 선택 여부 확인
+		    if (!window.currentSelectedId) {
+		        alert("좌석을 선택해 주세요.");
+		        return;
+		    }
+		    
+		    // 2. 결제 컨트롤러로 이동
+		    location.href = "/payment/payment.do?seatId=" + window.currentSelectedId;
+		};
+        /*]]>*/
     </script>
 </body>
 </html>

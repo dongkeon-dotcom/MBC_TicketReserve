@@ -1,0 +1,70 @@
+/* 결제 확인 페이지 전체 레이아웃 */
+body {
+    font-family: 'Pretendard', sans-serif;
+    background-color: #f9f9f9;
+    padding: 40px;
+}
+
+h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+}
+
+.reservation-summary {
+    background: #fff;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.item {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.item:last-child {
+    border-bottom: none;
+}
+
+.item strong {
+    display: inline-block;
+    width: 100px;
+    color: #666;
+}
+
+/* 버튼 영역 */
+.payment-action {
+    max-width: 500px;
+    margin: 30px auto;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.payment-action button {
+    padding: 12px 30px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* 뒤로가기 버튼 스타일 */
+.payment-action button:first-child {
+    background-color: #e0e0e0;
+    color: #333;
+}
+
+/* 결제하기 버튼 스타일 */
+.payment-action button:last-child {
+    background-color: #ff4d4d;
+    color: white;
+}
+
+.payment-action button:hover {
+    opacity: 0.9;
+}

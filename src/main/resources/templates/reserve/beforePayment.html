@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>결제 전 확인</title>
+</head>
+<body>
+	<link rel="stylesheet" th:href="@{/css/reserve/beforePayment.css}">
+
+    <h2>예매 내역 확인</h2>
+    
+    <div class="reservation-summary">
+        <div class="item">
+            <strong>뮤지컬 제목:</strong> <span th:text="${performance.title}">제목</span>
+        </div>
+        <div class="item">
+            <strong>일시:</strong> <span th:text="${#temporals.format(schedule.startTime, 'yyyy.MM.dd(E) HH:mm')}">일시</span>
+        </div>
+		<div class="item">
+		    <strong>좌석 등급:</strong> 
+		    <span th:each="grade : ${performance.grades}" 
+		          th:if="${grade.gradeOrder == seat.seatType}" 
+		          th:text="${grade.gradeName}">등급명</span>
+		</div>
+        <div class="item">
+            <strong>좌석 번호:</strong> <span th:text="${seat.seatNumber}">A-1</span>
+        </div>
+        <div class="item">
+            <strong>가격:</strong> <span th:text="${#numbers.formatInteger(seat.price, 3, 'COMMA') + '원'}">0원</span>
+        </div>
+    </div>
+
+    <div class="payment-action">
+        <button onclick="history.back()">뒤로가기</button>
+        <button onclick="proceedToPayment()">결제하기</button>
+    </div>
+<!--/////////////////////////////////////////////////////////////////////-->
+
+
+<form id="orderForm" action="/payment/order/complete" method="POST" style="display:none;">
+    <input type="hidden" name="paymentId" id="paymentId" value="">
+    <input type="hidden" name="totalAmount" th:value="${seat.price}">
+    <input type="hidden" name="seatId" th:value="${seat.seatId}">
+</form>
+
+<script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
+<script th:inline="javascript">
+    // 1. 서버 데이터를 자바스크립트 변수로 안전하게 전달
+    const storeId = /*[[${storeId}]]*/ "";
+    const channelKey = /*[[${channelKey}]]*/ "";
+    const userEmail = /*[[${userEmail}]]*/ "";
+    const userPhone = /*[[${userPhone}]]*/ "";
+	const userName = /*[[${userName}]]*/ "고객"; // 서버에서 넘어온 이름
+    const seatPrice = /*[[${seat.price}]]*/ 0;
+    const seatId = /*[[${seat.seatId}]]*/ 0;
+    const perfTitle = /*[[${performance.title}]]*/ "뮤지컬";
+
+    // 2. 전역 함수로 선언하여 HTML 버튼에서 접근 가능하게 함
+    window.proceedToPayment = async function() {
+        console.log("결제 시도 - StoreId:", storeId, "Email:", userEmail);
+
+        if(!storeId || !channelKey) {
+            alert("결제 설정이 로드되지 않았습니다.");
+            return;
+        }
+
+        try {
+            const response = await PortOne.requestPayment({
+                storeId: storeId,
+                channelKey: channelKey,
+                paymentId: "order_" + new Date().getTime(),
+                orderName: perfTitle,
+                totalAmount: seatPrice,
+                currency: "CURRENCY_KRW",
+                payMethod: "CARD",
+                customer: {
+					fullName: userName, // 고객 이름 추가
+                    email: userEmail,
+                    emails: [userEmail], // 여기에 콤마 추가 완료!
+                    phoneNumber: userPhone 
+                }
+            });
+
+            if (response.code != null) {
+                return alert("결제 실패: " + response.message);
+            }
+
+            alert("결제 성공! 상세 페이지로 이동합니다.");
+            
+            const paymentIdInput = document.getElementById('paymentId');
+            if(paymentIdInput) {
+                paymentIdInput.value = response.paymentId;
+                document.getElementById('orderForm').submit();
+            }
+        } catch (e) {
+            console.error("에러 상세:", e);
+            alert("결제창 호출 중 에러 발생: " + e.message);
+        }
+    };
+</script>
+</body>
+</html>
