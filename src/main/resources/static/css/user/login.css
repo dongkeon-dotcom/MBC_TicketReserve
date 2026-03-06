@@ -21,7 +21,16 @@
     border-radius: 8px;
     font-size: 16px;
 }
-
+.login-container {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08); /* 세련된 그림자 효과 */
+    display: inline-block;
+    text-align: left;
+    width: 100%;
+    max-width: 500px;
+}
 .btn-login {
     width: 100%;
     height: 55px;
@@ -55,11 +64,54 @@
 .divider-container {
     text-align: center;
     margin: 30px 0;
-    position: relative;
+}
+.divider {
+    border: none;
+    border-top: 1px solid #eee;
+    position: absolute;
+    width: 100%;
+    top: 50%;
+    left: 0;
+    z-index: 1;
 }
 .divider-container span {
-    background: #fcfcfc;
+    position: relative;
+    z-index: 2; /* 선보다 위로 오게 */
+    background: #fff; /* 컨테이너 배경색과 일치시켜 선을 가림 */
     padding: 0 15px;
     color: #999;
     font-size: 14px;
+}
+
+.join-guide {
+    margin-top: 40px;      /* 소셜 버튼들과의 간격 */
+    text-align: center;    /* 문구 중앙 정렬 */
+    font-size: 15px;
+    color: #666;           /* 약간 흐린 회색으로 안내 느낌 부여 */
+    padding: 20px 0;
+    border-top: 1px solid #f5f5f5; /* 구분선 살짝 추가 (선택사항) */
+}
+
+/* 회원가입 링크 버튼 */
+.btn-join {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-left: 12px;     /* "아직 회원이 아니신가요?" 문구와의 간격 */
+    color: #333;           /* 강조를 위해 조금 더 진한 색상 */
+    font-size: 15px;
+    font-weight: 700;      /* 굵게 처리해서 클릭 유도 */
+    text-decoration: underline; /* 링크 느낌을 위해 밑줄 추가 */
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.btn-join:hover {
+    color: #FF4D00;        /* 호버 시 포인트 컬러(주황색 등)로 변경 */
+}
+
+.error-msg {
+    color: #ff4d4d;
+    font-size: 14px;
+    padding: 5px 0 !important;
 }
