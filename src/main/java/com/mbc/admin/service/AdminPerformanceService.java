@@ -310,11 +310,13 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
     }
     
 
+    
+    
     /**
      * 공연 삭제 로직
      */
     public void deletePerformance(Long performanceId) {
-        // [순서가 매우 중요합니다]
+        // fk 안한줄알았는데 지멋대로 만들었는지 fk를 가지고있습ㄴ디다 
         
         // 1. 가장 하위 데이터인 '재고 좌석(Inventory)'부터 삭제 (FK 해결)
         seatInventoryRepository.deleteByPerformanceId(performanceId);
@@ -357,10 +359,18 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
                 .orElseThrow(() -> new IllegalArgumentException("해당 공연이 존재하지 않습니다. id=" + performanceId));
     }
     
+    
+    //스케쥴찾기 
     public PerformanceSchedule findScheduleById(Long scheduleId) {
         return scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 회차를 찾을 수 없습니다. ID: " + scheduleId));
     }
     
+    
+   //  beforePaymentPage 여기에서 좌석정보를 불러오기위한 매서드 
+    public SeatInventory findSeatById(Long seatId) {
+        return seatInventoryRepository.findById(seatId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 좌석을 찾을 수 없습니다. ID: " + seatId));
+    }
     
 }
