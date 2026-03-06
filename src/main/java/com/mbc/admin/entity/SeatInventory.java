@@ -1,4 +1,6 @@
 package com.mbc.admin.entity;
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,8 +23,13 @@ public class SeatInventory {
     private String seatNumber;  // 1 ~ 30 (관리자 화면의 좌석 번호)
     private Integer seatType;   // 관리자가 선택한 등급 번호 (1~5)
     private Integer price;      // 해당 등급의 가격
-    private Integer isReserved = 0; // 0: 미예약, 1: 예약완료
-
+    private Integer isReserved = 0; // 0: 미예약, 1: 예약완료, 2: 선점 중
+    
+    
+    
+    private LocalDateTime reservedAt; // 선점 시간 기록
+    private String reservedBy;       // 누가 선점했는지(세션ID나 회원ID)
+    
     @Version
     private Long version = 0L;  // 동시성 제어용 (낙관적 락)
 

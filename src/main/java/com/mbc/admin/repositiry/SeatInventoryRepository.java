@@ -42,5 +42,12 @@ public interface SeatInventoryRepository extends JpaRepository<SeatInventory, Lo
     int countAvailableSeats(@Param("scheduleId") Long scheduleId, @Param("seatType") Integer seatType);
 
     
+    
+    
+    
+    List<SeatInventory> findByReservedByAndIsReserved(String reservedBy, Integer isReserved);
+    
+    
+    
 }
 //실제로 판매될 개별 좌석을 저정하고 확인하기 위해 사용 

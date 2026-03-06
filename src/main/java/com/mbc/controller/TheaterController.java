@@ -2,6 +2,8 @@ package com.mbc.controller;
 import com.mbc.admin.entity.Performance;
 import com.mbc.admin.service.AdminPerformanceService; // 기존 서비스 재사용 가능
 
+import jakarta.servlet.http.HttpSession;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,11 +12,17 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
 import com.mbc.admin.entity.PerformanceGradeConfig; // 관리자 엔티티 패키지 경로
 import com.mbc.admin.entity.PerformanceSchedule;
 import com.mbc.admin.entity.SeatInventory;
@@ -134,6 +142,33 @@ public class TheaterController {
         
         return "reserve/seat";
     }
+
+
+
+
+
+
+@PostMapping("/selectSeat.do")
+@ResponseBody
+public ResponseEntity<String> selectSeat(@RequestParam Long seatId, HttpSession session) {
+    // 세션에서 현재 사용자 정보를 가져오거나 생성
+    String userId = session.getId(); 
+    
+    try {
+        // 서비스의 선점 로직 호출
+        boolean success = performanceService.selectSeat(seatId, userId);
+        
+        if (success) {
+            return ResponseEntity.ok("좌석 선점 성공");
+        } else {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 다른 사용자가 선택한 좌석입니다.");
+        }
+    } catch (ObjectOptimisticLockingFailureException e) {
+        // 동시에 여러 명이 클릭해서 버전 충돌이 발생한 경우
+        return ResponseEntity.status(HttpStatus.CONFLICT).body("잠시 후 다시 시도해주세요.");
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("오류가 발생했습니다.");
+    }
 }
 
 
@@ -170,10 +205,4 @@ public class TheaterController {
 
 
 
-
-
-
-
-
-
-
+}

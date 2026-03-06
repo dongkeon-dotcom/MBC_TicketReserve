@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -390,8 +391,96 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
     }
     
     
- // AdminPerformanceService.java에 추가
+ // 목록화 하고  공연 기간이지난경우 뒤로 아닌경우 앞으로 배치 되도록 함 
     public Page<Performance> findAll(Pageable pageable) {
-        return performanceRepository.findAll(pageable);
+        // 1. 모든 공연을 가져온 뒤 자바 메모리에서 정렬 (공연 수가 수백 개 이하일 때 적합)
+        List<Performance> all = performanceRepository.findAll();
+        LocalDate now = LocalDate.now();
+
+        all.sort((p1, p2) -> {
+            boolean p1Expired = p1.getEndDate().isBefore(now);
+            boolean p2Expired = p2.getEndDate().isBefore(now);
+            
+            if (p1Expired && !p2Expired) return 1;  // p1이 지났으면 뒤로
+            if (!p1Expired && p2Expired) return -1; // p2가 지났으면 앞으로
+            return p2.getPerformanceId().compareTo(p1.getPerformanceId()); // 둘 다 같으면 최신순
+        });
+
+        // 2. 수동으로 페이징 처리하여 반환
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), all.size());
+        return new PageImpl<>(all.subList(start, end), pageable, all.size());
     }
+    
+    /**
+     * [좌석 선점 로직]
+     * 동시 접속 방지를 위해 좌석 상태를 2(선점 중)로 변경합니다.
+     */
+    @Transactional
+    public boolean selectSeat(Long seatId, String userId) {
+        // 1. 좌석 조회 (Optimistic Lock을 위해 버전 체크가 포함됨)
+        SeatInventory seat = seatInventoryRepository.findById(seatId)
+            .orElseThrow(() -> new IllegalArgumentException("좌석을 찾을 수 없습니다. ID: " + seatId));
+
+        // 2. 이미 예약(1)된 좌석인지 확인
+        if (seat.getIsReserved() == 1) {
+            return false;
+        }
+
+        // 3. 선점 중(2)인데 5분이 지나지 않았는지 확인 // 여기서 시간 조절 가능 
+        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+        if (seat.getIsReserved() == 2 && seat.getReservedAt() != null 
+            && seat.getReservedAt().isAfter(fiveMinutesAgo)) {
+            return false; // 아직 5분이 안 지남 -> 선점 불가
+        }
+
+        // 4. 좌석 선점 처리 (isReserved = 2)
+        seat.setIsReserved(2);
+        seat.setReservedAt(LocalDateTime.now());
+        seat.setReservedBy(userId);
+        
+        // 데이터 저장 (이 시점에 @Version이 자동 체크됨)
+        seatInventoryRepository.save(seat); 
+        return true;
+    }
+    
+    
+   //예약사항 저장 매서드 
+    public void save(SeatInventory seat) {
+        seatInventoryRepository.save(seat);
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }

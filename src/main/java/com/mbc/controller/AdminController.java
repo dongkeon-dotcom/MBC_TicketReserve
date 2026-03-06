@@ -69,23 +69,29 @@ public class AdminController {
  // 목록으로 이동하기 위한 페이지 
     @GetMapping("/listPage.do")
     public String listPage(
+            @RequestParam(value = "keyword", required = false) String keyword,
             @PageableDefault(size = 10, sort = "performanceId", direction = Sort.Direction.DESC) Pageable pageable,
             Model model) {
         
-        // 1. 페이징된 엔티티 데이터를 가져옵니다.
-        Page<Performance> performancePage = performanceService.findAll(pageable);
+        // 1. 검색어 여부에 따라 서비스 메서드 호출
+        Page<Performance> performancePage;
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            performancePage = performanceService.searchByTitle(keyword, pageable);
+        } else {
+            performancePage = performanceService.findAll(pageable);
+        }
         
-        // 2. 엔티티를 DTO로 변환합니다. (Stream 사용)
+        // 2. DTO 변환
         Page<PerformanceListDto> dtoPage = performancePage.map(PerformanceListDto::new);
         
-        // 3. 모델에 담습니다. (getContent()가 아니라 dtoPage 자체를 넘겨도 좋습니다)
+        // 3. 모델 전달 (검색어 포함)
         model.addAttribute("performanceList", dtoPage.getContent());
         model.addAttribute("page", dtoPage);
+        model.addAttribute("keyword", keyword); // 검색창에 입력값 유지용
         
         return "admin/showList";
     }
-    
-    
+      
     
     @GetMapping("/editPage.do")
     public String editPage(@RequestParam("id") Long performanceId, Model model) { 
