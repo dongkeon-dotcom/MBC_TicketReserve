@@ -26,11 +26,11 @@ public class S3UploaderService {
 			return null;
 		}
 		try {
-			String fileName = "TICKET/" + folderName + "/" + UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-			
+			String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+			String upload = "TICKET/" + folderName + "/" + fileName;
 			PutObjectRequest putObjectRequest = PutObjectRequest .builder()
 					.bucket(bucketName)
-					.key(fileName)
+					.key(upload)
 					.contentType(file.getContentType())
 					.build();
 			

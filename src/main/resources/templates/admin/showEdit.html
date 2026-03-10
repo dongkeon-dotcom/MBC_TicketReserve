@@ -99,7 +99,7 @@
 	            <div class="form-group">
 	                <label>메인 포스터 (기존)</label>
 	                <div id="poster-pre" class="preview-box">
-	                    <img th:src="@{|https://s3-202601052.s3.ap-northeast-2.amazonaws.com/${performance.posterImageName}|}" width="180" style="border-radius: 8px;">
+	                    <img th:src="@{|https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/${performance.posterImageName}|}" width="180" style="border-radius: 8px;">
 	                </div>
 	                <input th:if="${!isStarted}" type="file" name="posterFile" accept="image/*" onchange="previewSingle(this, 'poster-pre')">
 	            </div>

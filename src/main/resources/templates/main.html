@@ -12,7 +12,7 @@
 
 <section class="full-banner-container" id="banner-container">
     <div class="banner-item active" id="current-banner" 
-         th:style="'background-image: url(https://s3-202601052.s3.ap-northeast-2.amazonaws.com/' + ${randomProducts[0].posterImageName} + ');'">
+         th:style="'background-image: url(https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/' + ${randomProducts[0].posterImageName} + ');'">
         <div class="banner-content">
             <a th:href="@{/performance/detail.do(id=${randomProducts[0].performanceId})}">
                 <h2 th:text="${randomProducts[0].title}">공연 제목</h2>
@@ -51,7 +51,7 @@
 	    
 	    // 1. 새 배너를 미리 위쪽(-100%)에 생성
 	    const newBanner = $(`
-	        <div class="banner-item" style="top: -100%; background-image: url('https://s3-202601052.s3.ap-northeast-2.amazonaws.com/${next.posterImageName}');">
+	        <div class="banner-item" style="top: -100%; background-image: url('https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/${next.posterImageName}');">
 	            <div class="banner-content">
 	                <a href="/performance/detail.do?id=${next.performanceId}"><h2>${next.title}</h2></a>
 	                <p>${next.startDate} ~ ${next.endDate}</p>

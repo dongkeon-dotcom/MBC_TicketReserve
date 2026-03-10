@@ -51,7 +51,7 @@
 		                        <td th:text="${p.performanceId}">1</td>
 		                        <td>
 		                            <img th:if="${p.posterImageName != null}" 
-		                                 th:src="@{https://s3-202601052.s3.ap-northeast-2.amazonaws.com/{name}(name=${p.posterImageName})}" 
+		                                 th:src="@{https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/{name}(name=${p.posterImageName})}" 
 		                                 class="poster-thumb" alt="포스터" style="width: 50px; height: auto;">
 		                            <span th:unless="${p.posterImageName != null}" style="color: #ccc;">No Image</span>
 		                        </td>
