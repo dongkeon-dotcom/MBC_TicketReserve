@@ -51,13 +51,14 @@ public class SeatInventory {
      * @param seatType 등급 번호 (1~5)
      * @param price 등급에 따른 가격
      */
-    public static SeatInventory createSeat(PerformanceSchedule schedule, String seatNumber, Integer seatType, Integer price) {
+    public static SeatInventory createSeat(PerformanceSchedule schedule, String seatNumber, Integer seatType, Integer price,boolean isSecret) {
         SeatInventory seat = new SeatInventory();
         seat.setSchedule(schedule);
         seat.setSeatNumber(seatNumber);
         seat.setSeatType(seatType);
         seat.setPrice(price);
-        seat.setIsReserved(0); // 생성 시 초기값
+     // 보유석(3)이면 3을 넣고, 아니면 0(예약가능)을 넣음
+        seat.setIsReserved(isSecret ? 3 : 0);
         return seat;
     }
 }
