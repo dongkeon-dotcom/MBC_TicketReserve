@@ -1,7 +1,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <link rel="stylesheet" th:href="@{/css/user/login.css}">
 <body>
-<div th:replace="include/top::top"></div>
+<div th:replace="~{include/top::top}"></div>
 <section>
 <div class="login-wrapper" style="text-align: center;">
     <div class="login-container"
@@ -95,6 +95,6 @@ window.onload = function() {
     }
 }
 </script>
-<div th:replace="include/bottom::footer"></div>
+<div th:replace="~{include/bottom::footer}"></div>
 </body>
 </html>

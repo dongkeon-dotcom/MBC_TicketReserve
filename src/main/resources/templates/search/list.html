@@ -4,7 +4,7 @@
     <link th:href="@{/css/search/list.css}" rel="stylesheet" />
 </head>
 <body>
-    <div th:replace="include/top::top"></div>
+    <div th:replace="~{include/top::top}"></div>
 
     <section class="search-result-container">
         <div class="search-summary-wrapper">
@@ -69,6 +69,6 @@
 		</div>
     </section>
 
-    <div th:replace="include/bottom::footer"></div>    
+    <div th:replace="~{include/bottom::footer}"></div>    
 </body>
 </html>

@@ -1,0 +1,98 @@
+/* 컨테이너 및 탭 스타일 */
+.reservation-wrapper {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+}
+
+.list-tabs {
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    padding: 10px 0;
+    border: 2px solid #333;
+    background: white;
+}
+.tab.active { color: #000; }
+.tab-divider { margin: 0 15px; color: #ccc; }
+
+/* 카드 스타일 */
+.reserve-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    overflow: hidden;
+}
+
+.card-title {
+    background: #f1f1f1;
+    padding: 12px 15px;
+    font-weight: bold;
+    font-size: 16px;
+    border-bottom: 1px solid #ddd;
+}
+
+.card-content {
+    display: flex;
+    padding: 15px;
+    position: relative;
+}
+
+/* 포스터 영역 */
+.poster-section{
+	width: 100px;
+	margin-right: 15px;
+	flex-shrink: 0;
+}
+
+.poster-section img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    border: 1px solid #eee;
+    display: block;
+}
+
+/* 정보 영역 */
+.info-section {
+    flex: 1;
+    font-size: 13px;
+    line-height: 1.8;
+}
+.info-row { display: flex; }
+.label { width: 110px; color: #888; }
+.value { color: #333; }
+.blue-text { color: #0066cc; font-weight: bold; }
+.red-text { color: #ff4d4d; }
+
+.arrow-section {
+    display: flex;
+    align-items: center;
+    font-size: 30px;
+    color: #ccc;
+    padding-left: 10px;
+}
+
+/* 페이지네이션 스타일 (이미지 1 기준) */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 30px;
+    gap: 15px;
+}
+.page-nav, .page-num {
+    text-decoration: none;
+    color: #333;
+    font-size: 18px;
+    font-weight: bold;
+}
+.page-numbers {
+    display: flex;
+    gap: 20px;
+}
+.page-num { color: #ccc; }
+.page-num.active { color: #000; border-bottom: 2px solid #000; }

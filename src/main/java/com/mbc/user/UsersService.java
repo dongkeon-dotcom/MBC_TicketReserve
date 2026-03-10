@@ -1,5 +1,6 @@
 package com.mbc.user;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 public class UsersService {
 
 	private final UsersRepository usersRepo;
+	private final UserReservationRepository userReservationRepo;
 	
 	/* 이메일 테스트 시작*/
 	private final JavaMailSender mailSender;
@@ -92,6 +94,11 @@ public class UsersService {
 	            .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 	    
 	    user.setPassword(newPw); // 더티 체킹으로 자동 업데이트
+	}
+	
+	// 유저 예매정보 가져오기
+	public List<UserReservationDTO> getMyReservations(Long userIdx){
+		return userReservationRepo.findReservationListByUserId(userIdx);
 	}
 	
 	

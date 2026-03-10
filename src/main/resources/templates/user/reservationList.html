@@ -1,0 +1,85 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>마이페이지</title>
+    <link rel="stylesheet" th:href="@{/css/user/reservationList.css}">
+</head>
+<body>
+    <div th:replace="~{include/top::top}"></div>
+
+<section class="reservation-wrapper">
+    <div class="list-tabs">
+        <span class="tab active">예매내역</span>
+        <span class="tab-divider">|</span>
+        <span class="tab">취소내역</span>
+    </div>
+
+    <div th:each="res : ${list}" class="reserve-card">
+        <div class="card-title">
+            <span th:text="${res.title}"></span>
+        </div>
+        
+        <div class="card-content">
+            <div class="poster-section">
+                <img th:src="@{'https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/' + ${res.posterImageName}}" alt="포스터">
+            </div>
+            
+            <div class="info-section">
+                <div class="info-row">
+                    <span class="label">예매번호</span>
+                    <span class="value blue-text" th:text="${res.reserveNum}"></span>
+                </div>
+                <div class="info-row">
+                    <span class="label">예매일</span>
+                    <span class="value" th:text="${#temporals.format(res.reserveDate, 'yyyy.MM.dd')}"></span>
+                </div>
+                <div class="info-row">
+                    <span class="label">관람일시</span>
+                    <span class="value" th:text="${#temporals.format(res.startTime, 'yyyy.MM.dd HH:mm')}"></span>
+                </div>
+                <div class="info-row">
+                    <span class="label">취소마감일시</span>
+                    <span class="value red-text"
+                    		th:if="${res.startTime != null}"
+                    		th:text="${#temporals.format(res.startTime.minusDays(1), 'yyyy년 MM월 dd일 HH:mm 까지')}"></span>
+                </div>
+                <div class="info-row">
+                    <span class="label">상태</span>
+                    <span class="value" th:switch="${res.status}">
+                    	<span th:case="'CONFIRMED'">결제완료</span>
+                    	<span th:case="'CANCELLED'">예매취소</span>
+                    	<span th:case="'WATCHED'">관람완료</span></span>
+                </div>
+            </div>
+            <div class="arrow-section">
+                <span class="arrow-icon">›</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="pagination-container">
+        <a href="#" class="page-nav first">|&lt;</a>
+        <a href="#" class="page-nav prev">&lt;</a>
+        <div class="page-numbers">
+            <a href="#" class="page-num active">1</a>
+            <a href="#" class="page-num">2</a>
+            <a href="#" class="page-num">3</a>
+            <a href="#" class="page-num">4</a>
+            <a href="#" class="page-num">5</a>
+        </div>
+        <a href="#" class="page-nav next">&gt;</a>
+        <a href="#" class="page-nav last">&gt;|</a>
+    </div>
+</section>
+<script th:inline="javascript">
+/*<![CDATA[*/
+const message = /*[[${msg}]]*/ null;
+if (message) {
+    alert(message);
+}
+/*]]>*/
+</script>
+
+    <div th:replace="~{include/bottom::footer}"></div>
+</body>
+</html>

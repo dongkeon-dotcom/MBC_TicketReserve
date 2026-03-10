@@ -6,7 +6,7 @@
     <link th:href="@{/css/user/edit.css}" rel="stylesheet" />
 </head>
 <body>
-    <div th:replace="include/top::top"></div>
+    <div th:replace="~{include/top::top}"></div>
 
     <section class="member-wrapper">
         <div class="edit-container" style="text-align: center; padding: 50px 0;">
@@ -139,6 +139,6 @@ function back(){
 }
 </script>
 
-<div th:replace="include/bottom::footer"></div>
+<div th:replace="~{include/bottom::footer}"></div>
 </body>
 </html>

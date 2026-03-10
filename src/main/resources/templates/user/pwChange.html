@@ -6,12 +6,13 @@
     <link th:href="@{/css/user/pwChange.css}" rel="stylesheet" />
 </head>
 <body>
-    <div th:replace="include/top::top"></div>
+    <div th:replace="~{include/top::top}"></div>
 
 <section class="pw-change-wrapper">
     <h1>비밀번호 변경</h1>
     <form id="pwForm" th:action="@{/user/pwChangeOK.do}" method="POST">
-        <input type="hidden" name="userId" th:value="${session.user.userId}">
+        <input type="hidden" name="userId" th:value="${user.userId}">
+        <input type="hidden" name="userIdx" th:value="${user.userIdx}">
         
         <table class="pw-table">
             <tr>

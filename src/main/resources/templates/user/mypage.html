@@ -5,7 +5,7 @@
     <link rel="stylesheet" th:href="@{/css/user/mypage.css}">
 </head>
 <body>
-    <div th:replace="include/top::top"></div>
+    <div th:replace="~{include/top::top}"></div>
 
     <section class="mypage-wrapper">
         <div class="welcome-box">
@@ -53,6 +53,6 @@ if (message) {
 /*]]>*/
 </script>
 
-    <div th:replace="include/bottom::footer"></div>
+    <div th:replace="~{include/bottom::footer}"></div>
 </body>
 </html>

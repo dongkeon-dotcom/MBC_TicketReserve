@@ -1,5 +1,5 @@
 <html xmlns:th="http://www.thymeleaf.org">
-	<div th:replace="include/top::top"></div>
+	<div th:replace="~{include/top::top}"></div>
 	<link rel="stylesheet" th:href="@{/css/admin/showList.css}">
 	
 	
@@ -101,7 +101,7 @@
 		
 		
 		
-		<div th:replace="include/bottom::footer"></div>
+		<div th:replace="~{include/bottom::footer}"></div>
 		
 		
 		<script>
