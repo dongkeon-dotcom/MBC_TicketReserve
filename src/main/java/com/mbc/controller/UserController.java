@@ -3,6 +3,9 @@ package com.mbc.controller;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -155,8 +158,17 @@ public class UserController {
 		
 	}
 
-	@GetMapping("/pwChnage.do")
-	public String pwEdit() {
+	@GetMapping("/pwChange.do")
+	public String pwEdit(HttpSession session, Model model) {
+		
+		Users user = (Users) session.getAttribute("user");
+	    
+	    if (user == null) {
+	        // 로그인 세션이 없으면 로그인 페이지로
+	        return "redirect:/login"; 
+	    }
+	    
+	    model.addAttribute("user", user);
 		
 		return "user/pwChange";
 	}
@@ -185,14 +197,18 @@ public class UserController {
 	}
 	
 	@GetMapping("reservationList.do")
-	public String reservationList(Model model, HttpSession session) {
+	public String reservationList(
+			@RequestParam(defaultValue = "CONFIRMED") String status,
+			@RequestParam(defaultValue = "0") int page,
+			Model model, HttpSession session) {
 		Users user = (Users) session.getAttribute("user");
+		Pageable pageable = PageRequest.of(page, 5);
 		
-		List<UserReservationDTO> list = service.getMyReservations(user.getUserIdx());
-		model.addAttribute("list", list);
-		System.out.println("************************************************************************");
-		System.out.println(list);
-		System.out.println("************************************************************************");
+		Page<UserReservationDTO> reservePage = service.getMyReservations(user.getUserIdx(), status, pageable);
+		model.addAttribute("list", reservePage.getContent());
+		model.addAttribute("currentPage", reservePage.getNumber());
+		model.addAttribute("totalPages", reservePage.getTotalPages());
+		model.addAttribute("currentStatus", status);
 		return "user/reservationList";
 	}
 	
