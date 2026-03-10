@@ -9,12 +9,16 @@
 
 <section class="reservation-wrapper">
     <div class="list-tabs">
-        <span class="tab active">예매내역</span>
+    	<a th:href="@{/user/reservationList.do(status='CONFIRMED')}"
+    		class="tab" th:classappend="${currentStatus == 'CONFIRMED' ? 'active' : ''}">예매내역</a>
         <span class="tab-divider">|</span>
-        <span class="tab">취소내역</span>
+    	<a th:href="@{/user/reservationList.do(status='CANCELLED')}"
+    		class="tab" th:classappend="${currentStatus == 'CANCELLED' ? 'active' : ''}">취소내역</a>
     </div>
 
-    <div th:each="res : ${list}" class="reserve-card">
+    <div th:each="res : ${list}" class="reserve-card" th:data-status="${res.status}">
+    	<a th:href="@{/user/reservationOne.do(reserveNum=${res.reserveNum})}" class="full-link"></a>
+    	 
         <div class="card-title">
             <span th:text="${res.title}"></span>
         </div>
@@ -57,19 +61,30 @@
         </div>
     </div>
 
-    <div class="pagination-container">
-        <a href="#" class="page-nav first">|&lt;</a>
-        <a href="#" class="page-nav prev">&lt;</a>
-        <div class="page-numbers">
-            <a href="#" class="page-num active">1</a>
-            <a href="#" class="page-num">2</a>
-            <a href="#" class="page-num">3</a>
-            <a href="#" class="page-num">4</a>
-            <a href="#" class="page-num">5</a>
-        </div>
-        <a href="#" class="page-nav next">&gt;</a>
-        <a href="#" class="page-nav last">&gt;|</a>
-    </div>
+		<div class="pagination" th:if="${totalPages > 0}" 
+		     th:with="pageGroupSize=5,
+		              currentGroup=${currentPage / pageGroupSize},
+		              startPage=${currentGroup * pageGroupSize},
+		              endPage=${(startPage + pageGroupSize - 1 < totalPages - 1) ? (startPage + pageGroupSize - 1) : (totalPages - 1)}">
+		    
+		    <a th:href="@{/user/reservationList.do(status=${currentStatus}, page=0)}" 
+		       class="arrow-btn" th:classappend="${currentPage == 0} ? 'disabled' : ''">|<</a>
+		    
+		    <a th:href="@{/user/reservationList.do(status=${currentStatus}, page=${startPage - 1})}" 
+		       class="arrow-btn" th:classappend="${startPage == 0} ? 'disabled' : ''">&lt;</a>
+		
+		    <span th:each="i : ${#numbers.sequence(startPage, endPage)}">
+		        <a th:href="@{/user/reservationList.do(status=${currentStatus}, page=${i})}"
+		           th:text="${i + 1}"
+		           th:classappend="${i == currentPage} ? 'active' : ''"></a>
+		    </span>
+		
+		    <a th:href="@{/user/reservationList.do(status=${currentStatus}, page=${endPage + 1})}" 
+		       class="arrow-btn" th:classappend="${endPage >= totalPages - 1} ? 'disabled' : ''">&gt;</a>
+		    
+		    <a th:href="@{/user/reservationList.do(status=${currentStatus}, page=${totalPages - 1})}" 
+		       class="arrow-btn" th:classappend="${currentPage >= totalPages - 1} ? 'disabled' : ''">>|</a>
+		</div>
 </section>
 <script th:inline="javascript">
 /*<![CDATA[*/

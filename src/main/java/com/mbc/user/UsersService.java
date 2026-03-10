@@ -4,6 +4,10 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -97,8 +101,8 @@ public class UsersService {
 	}
 	
 	// 유저 예매정보 가져오기
-	public List<UserReservationDTO> getMyReservations(Long userIdx){
-		return userReservationRepo.findReservationListByUserId(userIdx);
+	public Page<UserReservationDTO> getMyReservations(Long userIdx, String status, Pageable pageable){
+		return userReservationRepo.findReservationListByUserIdAndStatus(userIdx, status, pageable);
 	}
 	
 	
