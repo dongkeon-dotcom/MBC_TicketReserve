@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>관리자 - 공연 등록</title>
     <link rel="stylesheet" th:href="@{/css/admin/showInsert.css}">
-    <div th:replace="include/top::top"></div>
+    <div th:replace="~{include/top::top}"></div>
 </head>
 <body>
   
@@ -97,7 +97,7 @@
         </form>
     </section>
 
-    <div th:replace="include/bottom::footer"></div>
+    <div th:replace="~{include/bottom::footer}"></div>
 
     <script>
         var seatAssignment = {}, currentSelectedGrade = 1;

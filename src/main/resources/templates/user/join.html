@@ -6,7 +6,7 @@
     <link rel="stylesheet" th:href="@{/css/user/join.css}">
 </head>
 <body>
-    <div th:replace="include/top::top"></div>
+    <div th:replace="~{include/top::top}"></div>
 
     <section>
         <div class="join-container" style="text-align: center;">
@@ -206,6 +206,6 @@
         }
     </script>
 
-    <div th:replace="include/bottom::footer"></div>
+    <div th:replace="~{include/bottom::footer}"></div>
 </body>
 </html>

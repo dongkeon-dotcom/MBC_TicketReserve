@@ -1,5 +1,6 @@
 package com.mbc.controller;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.mbc.user.UserReservationDTO;
 import com.mbc.user.Users;
 import com.mbc.user.UsersService;
 
@@ -85,6 +87,7 @@ public class UserController {
 		
 		if(userOpt.isPresent() && userOpt.get().getPassword().equals(password)) {
 			session.setAttribute("user", userOpt.get());
+			System.out.println("테스트: " + userOpt.get());
 			return "redirect:/"; 
 		} else{
 			rttr.addFlashAttribute("msg", "아이디 또는 비밀번호가 일치하지 않습니다.");
@@ -182,8 +185,14 @@ public class UserController {
 	}
 	
 	@GetMapping("reservationList.do")
-	public String reservationList() {
+	public String reservationList(Model model, HttpSession session) {
+		Users user = (Users) session.getAttribute("user");
 		
+		List<UserReservationDTO> list = service.getMyReservations(user.getUserIdx());
+		model.addAttribute("list", list);
+		System.out.println("************************************************************************");
+		System.out.println(list);
+		System.out.println("************************************************************************");
 		return "user/reservationList";
 	}
 	
