@@ -1,0 +1,68 @@
+/* 기본 초기화: 스크롤이 가능하도록 수정 */
+html {
+    height: 100%;
+}
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%; /* 전체 높이를 보장하되 스크롤 가능하게 */
+    font-family: 'Pretendard', sans-serif;
+    background: #f8f9fa;
+}
+
+/* 1. 풀스크린 배너 (첫 화면) */
+.full-banner-container {
+    width: 100%;
+    height: 100vh; /* 화면 높이 100% 꽉 채움 */
+    position: relative;
+    overflow: hidden;
+}
+
+.banner-item {
+    width: 100%;
+    height: 100vh; /* 화면 전체 높이 */
+    position: absolute;
+    top: -100%;    /* 초기에는 위쪽에 숨김 */
+    left: 0;
+    transition: top 1s ease-in-out; /* 위에서 아래로 움직이는 애니메이션 */
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 현재 화면에 있는 배너 */
+#current-banner {
+    top: 0;
+}
+
+.banner-item.active { opacity: 1; }
+
+/* 배너 내부 텍스트 영역 */
+.banner-content {
+    text-align: center;
+    color: white;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 40px;
+    border-radius: 10px;
+}
+.banner-content a { text-decoration: none; color: white; }
+.banner-content h2 { font-size: 3rem; margin: 0 0 10px; }
+
+/* 2. 티켓팅 공지 스타일 (스크롤해서 내려오면 보임) */
+.ticket-notice-container {
+    width: 800px;
+    margin: 40px auto; /* 위쪽 여백을 주어 배너와 구분 */
+    background: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.notice-header { background: #ff4d4d; color: white; padding: 8px 15px; border-radius: 4px; margin-right: 20px; }
+.notice-body a { text-decoration: none; color: #333; }
+.notice-body h4 { margin: 0 0 5px 0; font-size: 18px; }
+.notice-body p { margin: 0; color: #555; font-size: 14px; }

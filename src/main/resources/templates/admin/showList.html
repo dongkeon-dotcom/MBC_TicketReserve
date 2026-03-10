@@ -7,127 +7,96 @@
 	<head>
 	    <meta charset="UTF-8">
 	    <title>공연 관리 목록 - 관리자</title>
-	    <link rel="stylesheet" th:href="@{/css/admin_style.css}">
-	    <link rel="stylesheet" th:href="@{/css/admin_list.css}">
+	    <link rel="stylesheet" th:href="@{/css/showList.css}">
 	</head>
 	<body>
-	    <div class="admin-container">
-	        <h1 class="page-title">공연 통합 관리 시스템</h1>
+		<div class="admin-container">
+		        <h1 class="page-title">공연 통합 관리 시스템</h1>
 
-	        <div class="section">
-	            <div class="list-header">
-	                <h2>등록된 공연 현황</h2>
-	                <a th:href="@{/admin/insertPage.do}" class="btn-add-main">+ 새 공연 등록하기</a>
-	            </div>
+		        <div class="section">
+		            <div class="list-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+		                <h2>등록된 공연 현황</h2>
+		                
+		                <form th:action="@{/admin/listPage.do}" method="get" style="display: flex; gap: 5px;">
+		                    <input type="text" name="keyword" th:value="${keyword}" placeholder="공연 제목 검색" 
+		                           style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+		                    <button type="submit" style="padding: 8px 15px; cursor: pointer;">검색</button>
+		                </form>
 
-	            <p class="guide-text">* 현재 시스템에 등록된 모든 공연 리스트입니다. 수정 버튼을 통해 상세 정보와 좌석 배치를 변경할 수 있습니다.</p>
+		                <a th:href="@{/admin/insertPage.do}" class="btn-add-main">+ 새 공연 등록하기</a>
+		            </div>
 
-	            <table class="admin-table">
-	                <thead>
-	                    <tr>
-	                        <th style="width: 80px;">번호</th>
-	                        <th style="width: 100px;">포스터</th>
-	                        <th>공연 제목</th>
-	                        <th style="width: 250px;">공연 운영 기간</th>
-	                        <th style="width: 200px;">관리 액션</th>
-	                    </tr>
-	                </thead>
-	                <tbody>
-	                    <tr th:if="${#lists.isEmpty(performanceList)}">
-	                        <td colspan="5" style="padding: 100px 0; color: #bbb; font-size: 1.1em;">
-	                            <i class="fa-solid fa-inbox" style="font-size: 2em; display: block; margin-bottom: 10px;"></i>
-	                            등록된 공연 데이터가 존재하지 않습니다.
-	                        </td>
-	                    </tr>
-	                    
-	                    <tr th:each="p : ${performanceList}">
-	                        <td th:text="${p.performanceId}">1</td>
-	                        <td>
-	                            <img th:if="${p.posterImageName != null}" 
-	                                 th:src="@{https://s3-202601052.s3.ap-northeast-2.amazonaws.com/{name}(name=${p.posterImageName})}" 
-	                                 class="poster-thumb" alt="포스터">
-	                            <span th:unless="${p.posterImageName != null}" style="color: #ccc;">No Image</span>
-	                        </td>
-	                        <td class="perf-title">
-	                            <span th:text="${p.title}">공연 제목이 표시됩니다.</span>
-	                        </td>
-	                        <td class="perf-date">
-	                            <span th:text="${p.startDate}">2026-03-01</span> 
-	                            <span style="color: #ddd; margin: 0 5px;">~</span> 
-	                            <span th:text="${p.endDate}">2026-04-02</span>
-	                        </td>
-	                        <td>
-	                            <div class="action-group">
-	                                <a th:href="@{/admin/editPage.do(id=${p.performanceId})}" class="btn-edit">
-	                                    <i class="fa-regular fa-pen-to-square"></i> 정보수정
-	                                </a>
-									<a th:href="@{/reserve/ticket.do(performanceId=${p.performanceId})}" 
-									   class="btn-reserve" 
-									   style="background-color: #007bff; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; margin: 0 5px;">
-									   예매페이지
-									</a>
-	                                <button type="button" class="btn-delete" 
-	                                        th:onclick="|deleteConfirm(${p.performanceId})|">
-	                                    <i class="fa-regular fa-trash-can"></i> 삭제
-	                                </button>
-	                            </div>
-	                        </td>
-	                    </tr>
-	                </tbody>
-	            </table>
-	        </div>
-	        
-			
-			
-			
-			
-			
-			<div class="pagination-container" style="text-align: center; margin-top: 20px;">
-			    <a th:href="@{/admin/list.do(page=0)}">맨처음</a>
+		            <p class="guide-text">* 현재 시스템에 등록된 모든 공연 리스트입니다. 수정 버튼을 통해 상세 정보와 좌석 배치를 변경할 수 있습니다.</p>
 
-			    <a th:href="@{/admin/list.do(page=${page.number / 10 * 10 - 1})}" 
-			       th:if="${page.number >= 10}">이전</a>
+		            <table class="admin-table">
+		                <thead>
+		                    <tr>
+		                        <th style="width: 80px;">번호</th>
+		                        <th style="width: 100px;">포스터</th>
+		                        <th>공연 제목</th>
+		                        <th style="width: 250px;">공연 운영 기간</th>
+		                        <th style="width: 200px;">관리 액션</th>
+		                    </tr>
+		                </thead>
+		                <tbody>
+		                    <tr th:if="${#lists.isEmpty(performanceList)}">
+		                        <td colspan="5" style="padding: 100px 0; color: #bbb; font-size: 1.1em;">
+		                            등록된 공연 데이터가 존재하지 않습니다.
+		                        </td>
+		                    </tr>
+		                    
+		                    <tr th:each="p : ${performanceList}" 
+		                        th:classappend="${T(java.time.LocalDate).now().isAfter(T(java.time.LocalDate).parse(p.endDate))} ? 'expired' : ''">
+		                        
+		                        <td th:text="${p.performanceId}">1</td>
+		                        <td>
+		                            <img th:if="${p.posterImageName != null}" 
+		                                 th:src="@{https://s3-202601052.s3.ap-northeast-2.amazonaws.com/{name}(name=${p.posterImageName})}" 
+		                                 class="poster-thumb" alt="포스터" style="width: 50px; height: auto;">
+		                            <span th:unless="${p.posterImageName != null}" style="color: #ccc;">No Image</span>
+		                        </td>
+		                        <td class="perf-title">
+		                            <span th:text="${p.title}">공연 제목</span>
+		                        </td>
+		                        <td class="perf-date">
+		                            <span th:text="${p.startDate}">2026-03-01</span> 
+		                            <span>~</span> 
+		                            <span th:text="${p.endDate}">2026-04-02</span>
+		                        </td>
+		                        <td>
+		                            <div class="action-group">
+		                                <a th:href="@{/admin/editPage.do(id=${p.performanceId})}">정보수정</a>
+		                                <a th:href="@{/reserve/ticket.do(performanceId=${p.performanceId})}">예매페이지</a>
+		                                <button type="button" th:onclick="|deleteConfirm(${p.performanceId})|">삭제</button>
+		                            </div>
+		                        </td>
+		                    </tr>
+		                </tbody>
+		            </table>
+		        </div>
+		        
+		        <div class="pagination" style="text-align: center; margin-top: 40px; margin-bottom: 20px;">
+		            <a th:href="@{/admin/listPage.do(page=0, keyword=${keyword})}">[맨처음]</a>
 
-			    <span th:each="i : ${#numbers.sequence(page.number / 10 * 10, T(Math).min(page.number / 10 * 10 + 9, page.totalPages - 1))}">
-			        <a th:href="@{/admin/list.do(page=${i})}" 
-			           th:text="${i + 1}"
-			           th:style="${i == page.number} ? 'font-weight:bold; color:red;' : ''">1</a>
-			    </span>
+		            <a th:href="@{/admin/listPage.do(page=${(page.number / 10 - 1) * 10 + 9}, keyword=${keyword})}" 
+		               th:if="${page.number >= 10}">[이전]</a>
 
-			    <a th:href="@{/admin/list.do(page=${(page.number / 10 + 1) * 10})}" 
-			       th:if="${(page.number / 10 + 1) * 10 < page.totalPages}">다음</a>
+		            <span th:each="i : ${#numbers.sequence(
+		                (page.number / 10) * 10, 
+		                T(java.lang.Math).min((page.number / 10) * 10 + 9, page.totalPages - 1)
+		            )}">
+		                <a th:href="@{/admin/listPage.do(page=${i}, keyword=${keyword})}" 
+		                   th:text="${i + 1}" 
+		                   th:style="${i == page.number} ? 'font-weight:bold; color:blue;' : ''">1</a>
+		            </span>
 
-			    <a th:href="@{/admin/list.do(page=${page.totalPages - 1})}">맨끝</a>
-			</div>
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-			
-	        <div style="text-align: center; margin-top: 40px;">
-	            <a th:href="@{/main.do}" style="color: #999; text-decoration: none; font-size: 0.9em;">
-	                <i class="fa-solid fa-house"></i> 메인페이지로 이동
-	            </a>
-	        </div>
-	    </div>
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
+		            <a th:href="@{/admin/listPage.do(page=${(page.number / 10 + 1) * 10}, keyword=${keyword})}" 
+		               th:if="${(page.number / 10 + 1) * 10 < page.totalPages}">[다음]</a>
+
+		            <a th:if="${page.totalPages > 0}" th:href="@{/admin/listPage.do(page=${page.totalPages - 1}, keyword=${keyword})}">[맨끝]</a>
+		        </div>
+		        
+		     
 		
 		
 		

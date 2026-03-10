@@ -12,7 +12,6 @@
         <h1 class="page-title">새 공연 및 회차별 오픈 등록</h1>
 
         <form th:action="@{/admin/showsave.do}" method="post" enctype="multipart/form-data" onsubmit="return validateAndSubmit()">
-            <div id="drag-selection-rect"></div>
             
             <div class="section">
                 <h2>1. 공연 기본 정보</h2>
@@ -20,36 +19,26 @@
                     <label>공연 제목</label>
                     <input type="text" name="title" placeholder="예: B 공연 (2026)" required>
                 </div>
-                
-                <div class="date-row total-period">
-                    <div class="period-title"><strong>📅 공연 전체 운영 기간</strong> (이 범위 내에서만 회차 생성이 가능합니다)</div>
-                    <div class="date-item">
-                        <label>전체 시작일</label>
-                        <input type="date" name="startDate" id="startDate" required onchange="syncOpenDateLimits()">
-                    </div>
-                    <div class="date-item">
-                        <label>전체 종료일</label>
-                        <input type="date" name="endDate" id="endDate" required onchange="syncOpenDateLimits()">
-                    </div>
+                <div class="date-row">
+                    <div class="date-item"><label>전체 시작일</label><input type="date" name="startDate" id="startDate" required></div>
+                    <div class="date-item"><label>전체 종료일</label><input type="date" name="endDate" id="endDate" required></div>
                 </div>
             </div>
 
             <div class="section">
                 <h2>2. 요일별 회차 및 생성 범위 설정</h2>
-                <p class="guide-text">공연을 진행할 요일과 시간을 선택한 후, 티켓팅 회차별로 <strong>오픈 범위</strong>를 지정하세요.</p>
-                
                 <div class="day-schedule-container">
                     <div th:each="day : ${#strings.arraySplit('월,화,수,목,금,토,일', ',')}" class="day-schedule-item">
                         <div class="day-header">
                             <span class="day-name">[[${day}]]</span>
                             <div class="radio-group">
-                                <label><input type="radio" th:name="'is' + ${day} + 'Show'" value="Y" th:onclick="toggleTimeInputs([[${day}]], true)"> 있음</label>
-                                <label><input type="radio" th:name="'is' + ${day} + 'Show'" value="N" checked th:onclick="toggleTimeInputs([[${day}]], false)"> 없음</label>
+                                <label><input type="radio" th:name="'is' + ${day} + 'Show'" value="Y" th:data-day="${day}" onclick="handleRadioClick(this, true)"> 있음</label>
+                                <label><input type="radio" th:name="'is' + ${day} + 'Show'" value="N" checked th:data-day="${day}" onclick="handleRadioClick(this, false)"> 없음</label>
                             </div>
                         </div>
                         <div th:id="'time-area-' + ${day}" class="time-input-area" style="display:none;">
                             <div th:id="'time-list-' + ${day}" class="time-list"></div>
-                            <button type="button" class="btn-add-time" th:onclick="addTimeInput([[${day}]])">+ 시간 추가</button>
+                            <button type="button" class="btn-add-time" th:data-day="${day}" onclick="addTimeInputByData(this)">+ 시간 추가</button>
                         </div>
                     </div>
                 </div>
@@ -57,59 +46,42 @@
 
                 <div id="open-period-container">
                     <div class="open-period-box" id="open-box-1">
-                        <div class="period-title">
-                            <strong>🎟️ 생성할 회차 범위 (세트 1)</strong>
-                        </div>
+                        <div class="period-title"><strong>🎟️ 생성할 회차 범위 (세트 1)</strong></div>
                         <div class="date-row">
-                            <div class="date-item">
-                                <label>오픈 시작일</label>
-                                <input type="date" name="openStartDates" class="openStart" required>
-                            </div>
-                            <div class="date-item">
-                                <label>오픈 종료일</label>
-                                <input type="date" name="openEndDates" class="openEnd" required>
-                            </div>
+                            <div class="date-item"><label>오픈 시작일</label><input type="date" name="openStartDates" class="openStart" required></div>
+                            <div class="date-item"><label>오픈 종료일</label><input type="date" name="openEndDates" class="openEnd" required></div>
                         </div>
-                        <div class="form-group opening-time-group">
-                            <label>🔔 위 회차들의 티켓 예매 시작 일시 (이 시간 3일 전 좌석 자동생성)</label>
+                        <div class="form-group">
+                            <label>🔔 티켓 예매 시작 일시</label>
                             <input type="datetime-local" name="openingTimes" required>
                         </div>
                     </div>
                 </div>
-                
-                <button type="button" class="btn-add" onclick="addOpenPeriod()" style="width:100%; background:#6c757d; margin-top:15px;">
-                    + 티켓 오픈 범위(회차 세트) 추가
-                </button>
+                <button type="button" class="btn-add" onclick="addOpenPeriod()" style="width:100%; margin-top:15px;">+ 티켓 오픈 범위 추가</button>
             </div>
 
             <div class="section">
                 <h2>3. 이미지 정보</h2>
                 <div class="form-group">
-                    <label>메인 포스터 (1장)</label>
+                    <label>메인 포스터</label>
                     <input type="file" name="posterFile" accept="image/*" required onchange="previewSingle(this, 'poster-pre')">
                     <div id="poster-pre" class="preview-box"></div>
-                </div>
-                <div class="form-group">
-                    <label>상세 설명 이미지 (최대 5장)</label>
-                    <input type="file" name="detailFiles" id="detailFiles" accept="image/*" multiple onchange="previewMultiple(this, 'detail-pre')">
-                    <div id="detail-pre" class="preview-container"></div>
                 </div>
             </div>
 
             <div class="section">
-                <h2>4. 좌석 등급 설정 및 배치도 드래그</h2>
+                <h2>4. 좌석 등급 설정 및 배치도 선택</h2>
                 <button type="button" class="btn-add" onclick="addGradeRow()">+ 등급 추가</button>
-
                 <div id="grade-container">
                     <div class="grade-item" id="grade-row-1">
                         <span class="grade-label">1번 등급:</span>
                         <input type="text" name="gradeNames" placeholder="등급명" required oninput="updateSelectors()">
                         <input type="text" name="gradePrices" placeholder="가격(원)" required oninput="handlePriceInput(this)">
+                        <label><input type="checkbox" name="isSecret" onchange="togglePrice(this); updateSelectors();"> 제작사 보유석</label>
                     </div>
                 </div>
-                
                 <div class="seat-work-area">
-                    <p>💡 <b>등급 선택 후 좌석을 드래그하세요. (5행 6열)</b></p>
+                    <p>💡 <b>등급 선택 후 좌석을 클릭하세요.</b></p>
                     <div id="grade-selectors" class="selector-row"></div>
                     <div id="seat-map" class="seat-grid"></div>
                 </div>
@@ -123,243 +95,153 @@
     <div th:replace="include/bottom::footer"></div>
 
     <script>
-        let gradeCount = 1;
-        let openBoxCount = 1;
-        let currentSelectedGrade = 1;
-        let isDrawing = false;
-        let startX, startY;
-        const seatAssignment = {};
-        let selectedDetailFiles = [];
-        let tempSelectedSeats = [];
+        var seatAssignment = {}, currentSelectedGrade = 1;
 
-        const selectionRect = document.getElementById('drag-selection-rect');
-        const seatMap = document.getElementById('seat-map');
+        document.addEventListener("DOMContentLoaded", function() {
+            const seatMap = document.getElementById('seat-map');
+            
+            // 1. 좌석 30개 생성 및 클릭 이벤트 설정
+            for (let i = 1; i <= 30; i++) {
+                const seat = document.createElement('div');
+                seat.className = 'seat'; 
+                seat.innerText = i; 
+                seat.dataset.seatNo = i;
+                
+                // 클릭 시 해당 등급 적용 함수 실행
+                seat.addEventListener('click', function() {
+                    applySeatGrade(this);
+                });
+                
+                seatMap.appendChild(seat);
+            }
+            updateSelectors();
+        });
 
-        // --- [핵심: 날짜 동적 제한 로직] ---
-        function syncOpenDateLimits() {
-            const totalStart = document.getElementById('startDate').value;
-            const totalEnd = document.getElementById('endDate').value;
+        // 좌석 클릭 시 등급 적용 로직
+        function applySeatGrade(seatElement) {
+            const rows = document.querySelectorAll('.grade-item');
+            const row = rows[currentSelectedGrade - 1];
+            if (!row) { alert("등급을 먼저 추가해주세요."); return; }
 
-            const openStarts = document.querySelectorAll('.openStart');
-            const openEnds = document.querySelectorAll('.openEnd');
+            const gradeName = row.querySelector('input[name="gradeNames"]').value;
+            const price = row.querySelector('input[name="gradePrices"]').value;
+            const isSecret = row.querySelector('input[name="isSecret"]').checked;
 
-            openStarts.forEach(input => {
-                if (totalStart) input.min = totalStart;
-                if (totalEnd) input.max = totalEnd;
-            });
-            openEnds.forEach(input => {
-                if (totalStart) input.min = totalStart;
-                if (totalEnd) input.max = totalEnd;
-            });
+            // 클래스 초기화 후 등급 부여
+            seatElement.className = 'seat'; 
+            if (isSecret) {
+                seatElement.classList.add('secret-seat');
+            } else {
+                seatElement.classList.add('grade-color-' + currentSelectedGrade);
+            }
+            
+            // 데이터 저장
+            seatAssignment[seatElement.dataset.seatNo] = { 
+                grade: currentSelectedGrade, 
+                gradeName, 
+                price, 
+                isSecret 
+            };
+            document.getElementById('seatGradeMapInput').value = JSON.stringify(seatAssignment);
         }
 
-        function addOpenPeriod() {
+        // 유틸리티 로직들
+        window.syncOpenDateLimits = function() {
             const minDate = document.getElementById('startDate').value;
             const maxDate = document.getElementById('endDate').value;
-
-            if(!minDate || !maxDate) {
-                alert("먼저 공연 전체 운영 기간을 상단에서 입력해주세요.");
-                return;
-            }
-
-            openBoxCount++;
-            const div = document.createElement('div');
-            div.className = 'open-period-box';
-            div.id = `open-box-${openBoxCount}`;
-            div.innerHTML = `
-                <div class="period-title"><strong>🎟️ 생성할 회차 범위 (세트 ${openBoxCount})</strong>
-                <button type="button" class="btn-remove" onclick="this.closest('.open-period-box').remove()" style="float:right;">삭제</button></div>
-                <div class="date-row">
-                    <div class="date-item"><label>오픈 시작일</label>
-                        <input type="date" name="openStartDates" class="openStart" required min="${minDate}" max="${maxDate}"></div>
-                    <div class="date-item"><label>오픈 종료일</label>
-                        <input type="date" name="openEndDates" class="openEnd" required min="${minDate}" max="${maxDate}"></div>
-                </div>
-                <div class="form-group opening-time-group">
-                    <label>🔔 티켓 예매 시작 일시</label>
-                    <input type="datetime-local" name="openingTimes" required>
-                </div>`;
-            document.getElementById('open-period-container').appendChild(div);
-        }
-
-        // --- 가격 콤마 ---
-        function handlePriceInput(el) {
-            let val = el.value.replace(/\D/g, "");
-            el.value = val ? Number(val).toLocaleString() : "";
-        }
-
-        // --- 이미지 미리보기 ---
-        function previewSingle(input, targetId) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    document.getElementById(targetId).innerHTML = `<img src="${e.target.result}" style="width:180px; border-radius:8px; margin-top:10px;">`;
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        function previewMultiple(input, targetId) {
-            const newFiles = Array.from(input.files);
-            if (selectedDetailFiles.length + newFiles.length > 5) {
-                alert("최대 5장까지 가능합니다.");
-                return;
-            }
-            newFiles.forEach(f => selectedDetailFiles.push(f));
-            renderPreviews(document.getElementById(targetId));
-        }
-
-        function renderPreviews(container) {
-            container.innerHTML = "";
-            selectedDetailFiles.forEach((file, idx) => {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    const div = document.createElement('div');
-                    div.style.cssText = "position:relative; display:inline-block; margin:5px;";
-                    div.innerHTML = `<img src="${e.target.result}" style="width:80px; height:80px; object-fit:cover; border-radius:5px;">
-                                     <button type="button" onclick="removeFile(${idx})" style="position:absolute; top:0; right:0; background:red; color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer;">×</button>`;
-                    container.appendChild(div);
-                };
-                reader.readAsDataURL(file);
+            document.querySelectorAll('input[name="openStartDates"], input[name="openEndDates"]').forEach(input => {
+                if(minDate) input.setAttribute('min', minDate);
+                if(maxDate) input.setAttribute('max', maxDate);
             });
-            updateInputFiles();
-        }
+        };
 
-        function removeFile(idx) {
-            selectedDetailFiles.splice(idx, 1);
-            renderPreviews(document.getElementById('detail-pre'));
-        }
+        window.handleInputTime = function(el) {
+            let val = el.value.replace(/\D/g, ''); 
+            if (val.length >= 3) el.value = val.substring(0, 2) + ':' + val.substring(2, 4);
+            else el.value = val;
+            collectSchedule();
+        };
 
-        function updateInputFiles() {
-            const dt = new DataTransfer();
-            selectedDetailFiles.forEach(f => dt.items.add(f));
-            document.getElementById('detailFiles').files = dt.files;
-        }
+        window.handleRadioClick = function(el, isShow) {
+            const day = el.getAttribute('data-day');
+            document.getElementById('time-area-' + day).style.display = isShow ? 'block' : 'none';
+            if (isShow && document.getElementById('time-list-' + day).children.length === 0) addTimeInput(day);
+        };
 
-        // --- 등급 및 셀렉터 ---
-        function addGradeRow() {
-            if (gradeCount >= 5) return;
-            gradeCount++;
+        window.addTimeInputByData = (el) => addTimeInput(el.getAttribute('data-day'));
+        
+        window.addTimeInput = function(day) {
             const div = document.createElement('div');
-            div.className = 'grade-item';
-            div.innerHTML = `<span class="grade-label">${gradeCount}번 등급:</span>
-                             <input type="text" name="gradeNames" required oninput="updateSelectors()">
-                             <input type="text" name="gradePrices" required oninput="handlePriceInput(this)">
-                             <button type="button" onclick="this.parentElement.remove(); gradeCount--; updateSelectors();">×</button>`;
-            document.getElementById('grade-container').appendChild(div);
-            updateSelectors();
-        }
+            div.className = 'time-row';
+            div.innerHTML = `<input type="text" class="time-val" placeholder="14:00" maxlength="5" oninput="handleInputTime(this)">
+                             <button type="button" class="btn-remove-time" onclick="this.parentElement.remove(); collectSchedule()">×</button>`;
+            document.getElementById('time-list-' + day).appendChild(div);
+            collectSchedule();
+        };
 
-        function updateSelectors() {
-            const container = document.getElementById('grade-selectors');
-            const names = document.getElementsByName('gradeNames');
-            container.innerHTML = "";
-            names.forEach((input, idx) => {
-                const num = idx + 1;
-                const btn = document.createElement('button');
-                btn.type = "button";
-                btn.className = `selector-btn ${currentSelectedGrade === num ? 'active' : ''}`;
-                btn.innerText = input.value || `${num}번 등급`;
-                btn.onclick = () => { currentSelectedGrade = num; updateSelectors(); };
-                container.appendChild(btn);
-            });
-        }
-
-        // --- 요일/시간 설정 ---
-        function toggleTimeInputs(day, isShow) {
-            document.getElementById(`time-area-${day}`).style.display = isShow ? 'block' : 'none';
-            if(isShow && document.getElementById(`time-list-${day}`).children.length === 0) addTimeInput(day);
-        }
-
-        function addTimeInput(day) {
-            const div = document.createElement('div');
-            div.className = 'time-input-item';
-            div.innerHTML = `<input type="text" class="time-val" placeholder="14:00" maxlength="5" oninput="this.value=this.value.replace(/\\D/g,'').replace(/(\\d{2})(\\d{2})/,'$1:$2'); collectSchedule();">
-                             <button type="button" onclick="this.parentElement.remove(); collectSchedule();">×</button>`;
-            document.getElementById(`time-list-${day}`).appendChild(div);
-        }
-
-        function collectSchedule() {
+        window.collectSchedule = function() {
             const schedule = {};
             ['월','화','수','목','금','토','일'].forEach(day => {
                 const isY = document.querySelector(`input[name="is${day}Show"]:checked`)?.value === 'Y';
-                const times = Array.from(document.querySelectorAll(`#time-list-${day} .time-val`)).map(i => i.value).filter(v => v.length===5);
+                const times = Array.from(document.querySelectorAll(`#time-list-${day} .time-val`)).map(i => i.value).filter(v => v.length >= 4);
                 schedule[day] = isY ? times : [];
             });
             document.getElementById('weeklyScheduleInput').value = JSON.stringify(schedule);
-        }
-
-        // --- 좌석 그리드 (5*6) ---
-        const seats = [];
-        for (let i = 1; i <= 30; i++) {
-            const seat = document.createElement('div');
-            seat.className = 'seat';
-            seat.innerText = i;
-            seat.dataset.seatNo = i;
-            seatMap.appendChild(seat);
-            seats.push(seat);
-        }
-
-        seatMap.onmousedown = (e) => {
-            if (e.button !== 0) return;
-            isDrawing = true;
-            startX = e.pageX; startY = e.pageY;
-            selectionRect.style.display = 'block';
-            selectionRect.style.left = startX + 'px'; selectionRect.style.top = startY + 'px';
-            selectionRect.style.width = '0px'; selectionRect.style.height = '0px';
+        };
+        
+        window.addOpenPeriod = function() {
+            const minDate = document.getElementById('startDate').value;
+            const maxDate = document.getElementById('endDate').value;
+            if(!minDate || !maxDate) { alert("전체 공연 기간을 먼저 입력하세요."); return; }
+            const count = document.querySelectorAll('.open-period-box').length + 1;
+            const div = document.createElement('div');
+            div.className = 'open-period-box';
+            div.innerHTML = `<div class="period-title"><strong>🎟️ 생성할 회차 범위 (세트 ${count})</strong> <button type="button" onclick="this.closest('.open-period-box').remove()">삭제</button></div>
+                <div class="date-row"><div class="date-item"><label>시작일</label><input type="date" name="openStartDates" required min="${minDate}" max="${maxDate}"></div>
+                <div class="date-item"><label>종료일</label><input type="date" name="openEndDates" required min="${minDate}" max="${maxDate}"></div></div>
+                <div class="form-group"><label>🔔 티켓 예매 시작 일시</label><input type="datetime-local" name="openingTimes" required></div>`;
+            document.getElementById('open-period-container').appendChild(div);
         };
 
-        window.onmousemove = (e) => {
-            if (!isDrawing) return;
-            const l = Math.min(startX, e.pageX), t = Math.min(startY, e.pageY);
-            const w = Math.abs(startX - e.pageX), h = Math.abs(startY - e.pageY);
-            selectionRect.style.left = l + 'px'; selectionRect.style.top = t + 'px';
-            selectionRect.style.width = w + 'px'; selectionRect.style.height = h + 'px';
-            
-            tempSelectedSeats = [];
-            seats.forEach(s => {
-                const b = s.getBoundingClientRect();
-                const sl = b.left + window.scrollX, st = b.top + window.scrollY;
-                if (!(l+w < sl || l > sl+b.width || t+h < st || t > st+b.height)) {
-                    tempSelectedSeats.push(s);
-                    s.style.outline = "2px solid #fff";
-                } else { s.style.outline = "none"; }
+        window.togglePrice = function(checkbox) {
+            const parent = checkbox.closest('.grade-item');
+            const priceInput = parent.querySelector('input[name="gradePrices"]');
+            if (checkbox.checked) { priceInput.readOnly = true; priceInput.value = "0"; } 
+            else { priceInput.readOnly = false; priceInput.value = ""; }
+        };
+
+        window.addGradeRow = function() {
+            const container = document.getElementById('grade-container');
+            const nextNum = container.querySelectorAll('.grade-item').length + 1;
+            if (nextNum > 5) { alert("최대 5개까지 가능합니다."); return; }
+            const div = document.createElement('div');
+            div.className = 'grade-item';
+            div.innerHTML = `<span class="grade-label">${nextNum}번 등급:</span>
+                <input type="text" name="gradeNames" required oninput="updateSelectors()">
+                <input type="text" name="gradePrices" required oninput="handlePriceInput(this)">
+                <label><input type="checkbox" name="isSecret" onchange="togglePrice(this); updateSelectors();"> 제작사 보유석</label>
+                <button type="button" onclick="this.parentElement.remove(); updateSelectors();">×</button>`;
+            container.appendChild(div);
+            updateSelectors();
+        };
+
+        window.updateSelectors = function() {
+            const container = document.getElementById('grade-selectors');
+            const rows = document.querySelectorAll('.grade-item');
+            container.innerHTML = "";
+            rows.forEach((row, idx) => {
+                const num = idx + 1;
+                const btn = document.createElement('button');
+                btn.type = "button";
+                btn.className = 'selector-btn ' + (currentSelectedGrade === num ? 'active' : '');
+                btn.innerText = (row.querySelector('input[name="isSecret"]').checked ? "🔒 " : "") + (row.querySelector('input[name="gradeNames"]').value || num + "번 등급");
+                btn.onclick = function() { currentSelectedGrade = num; updateSelectors(); };
+                container.appendChild(btn);
             });
         };
 
-        window.onmouseup = () => {
-            if (!isDrawing) return;
-            isDrawing = false;
-            selectionRect.style.display = 'none';
-            tempSelectedSeats.forEach(s => {
-                s.className = `seat grade-color-${currentSelectedGrade}`;
-                s.style.outline = "none";
-                seatAssignment[s.dataset.seatNo] = currentSelectedGrade;
-            });
-            document.getElementById('seatGradeMapInput').value = JSON.stringify(seatAssignment);
-        };
-
-        function validateAndSubmit() {
-            collectSchedule();
-            const totalStart = document.getElementById('startDate').value;
-            const totalEnd = document.getElementById('endDate').value;
-            const opens = document.querySelectorAll('.open-period-box');
-
-            for(let box of opens) {
-                const s = box.querySelector('.openStart').value;
-                const e = box.querySelector('.openEnd').value;
-                if (s < totalStart || e > totalEnd) { 
-                    alert("오픈 범위(" + s + " ~ " + e + ")가 전체 운영 기간(" + totalStart + " ~ " + totalEnd + ")을 벗어났습니다."); 
-                    return false; 
-                }
-            }
-
-            if (Object.keys(seatAssignment).length < 30) { alert("모든 좌석 등급을 지정하세요."); return false; }
-            document.getElementsByName('gradePrices').forEach(p => p.value = p.value.replace(/,/g, ""));
-            return true;
-        }
-
-        updateSelectors();
+        window.handlePriceInput = function(el) { el.value = el.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","); };
+        window.validateAndSubmit = function() { collectSchedule(); return true; };
     </script>
 </body>
 </html>
