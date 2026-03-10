@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.mbc.admin.entity.PerformanceSchedule;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -22,8 +24,9 @@ public class OrderList {
     @Column(name = "reserve_num", nullable = false, unique = true, length = 50)
     private String reserveNum;
 
-    @Column(name = "show_idx", nullable = false)
-    private Long showIdx;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "show_idx") // referencedColumnName 속성 삭제
+    private PerformanceSchedule schedule;
 
     @Column(name = "user_idx", nullable = false)
     private Long userIdx;

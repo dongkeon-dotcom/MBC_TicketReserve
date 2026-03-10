@@ -23,7 +23,8 @@ public class PerformanceSaveDto {
     
     private MultipartFile posterFile; 
     private List<MultipartFile> detailFiles;
-
+    private List<Long> deleteImageIds;          // 삭제할 이미지 ID들
+    
     private List<String> gradeNames;
     private List<String> gradePrices;
     

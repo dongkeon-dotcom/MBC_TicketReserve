@@ -234,48 +234,62 @@
 		        return;
 		    }
 
-		    filtered.forEach((s, index) => {
-		        const startTime = new Date(s.startTime);
-		        const timeStr = startTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
+			filtered.forEach((s, index) => {
+					        const startTime = new Date(s.startTime);
+					        const timeStr = startTime.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-		        // [변경] 공연 시작 1시간 전인지 계산 (밀리초 단위: 1시간 = 3,600,000ms)
-		        const isTimeOver = (startTime.getTime() - now.getTime()) < 3600000;
+					        const isTimeOver = (startTime.getTime() - now.getTime()) < 3600000;
 
-		        const div = document.createElement('div');
-		        div.className = 'time-slot';
-		        
-		        if (isTimeOver) {
-		            // 1시간 미만으로 남았거나 이미 지난 공연
-		            div.classList.add('disabled');
-		            div.innerText = `${index + 1}회 ${timeStr} (예매마감)`;
-		            div.style.opacity = "0.5";
-		            div.style.cursor = "not-allowed";
-		        } else {
-		            // 예매 가능한 공연
-		            div.innerText = `${index + 1}회 ${timeStr}`;
-		            div.onclick = function() {
-		                document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected'));
-		                this.classList.add('selected');
-		                selectedScheduleId = s.scheduleId;
+					        const div = document.createElement('div');
+					        div.className = 'time-slot';
+					        
+					        if (isTimeOver) {
+					            div.classList.add('disabled');
+					            div.innerText = `${index + 1}회 ${timeStr} (예매마감)`;
+					            div.style.opacity = "0.5";
+					            div.style.cursor = "not-allowed";
+					        } else {
+					            div.innerText = `${index + 1}회 ${timeStr}`;
+								div.onclick = function() {
+								    const clickedElement = this;
 
-		                const gradeContainer = document.getElementById('grade-container');
-		                gradeContainer.innerHTML = '';
-		                if (s.seatStatus && s.seatStatus.length > 0) {
-		                    s.seatStatus.forEach(status => {
-		                        const infoDiv = document.createElement('div');
-		                        infoDiv.className = 'grade-info';
-		                        infoDiv.innerHTML = `
-		                            <span class="grade-name">${status.gradeName}</span>
-		                            <span class="grade-price"><b style="color: #ff5a00;">${status.remainCount}</b>석</span>
-		                        `;
-		                        gradeContainer.appendChild(infoDiv);
-		                    });
-		                }
-		            };
-		        }
-		        container.appendChild(div);
-		    });
-		}
+								    fetch('/reserve/check-reservation.do?scheduleId=' + s.scheduleId)
+								        .then(response => response.json())
+								        .then(data => {
+								            if (data.reserved) {
+								                alert("이미 해당 회차에 대한 예매 내역이 존재합니다. (1인 1매 제한)");
+								                return;
+								            }
+
+								            document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected'));
+								            clickedElement.classList.add('selected');
+								            selectedScheduleId = s.scheduleId;
+
+								            const gradeContainer = document.getElementById('grade-container');
+								            gradeContainer.innerHTML = '';
+								            
+								            if (s.seatStatus && s.seatStatus.length > 0) {
+								                s.seatStatus.forEach(status => {
+								                    const infoDiv = document.createElement('div');
+								                    infoDiv.className = 'grade-info';
+								                    infoDiv.innerHTML = `
+								                        <span class="grade-name">${status.gradeName}</span>
+								                        <span class="grade-price"><b style="color: #ff5a00;">${status.remainCount}</b>석</span>
+								                    `;
+								                    gradeContainer.appendChild(infoDiv);
+								                });
+								            }
+								        })
+								        .catch(error => {
+								            console.error("예매 여부 확인 중 오류:", error);
+								            alert("예매 정보를 확인하는 중 오류가 발생했습니다.");
+								        });
+								};
+					        } // if-else 닫음
+					        container.appendChild(div);
+					    }); // <--- forEach를 닫는 }); 추가 (기존에 누락됨)
+					} // <--
+					
 		function goToSeatSelection() {
 		    if (!selectedScheduleId) {
 		        alert("공연 회차를 선택해주세요.");

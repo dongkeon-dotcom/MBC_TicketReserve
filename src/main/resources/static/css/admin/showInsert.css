@@ -25,7 +25,8 @@
 
 /* --- [4] 좌석 설정 및 그리드 (클릭 모드) --- */
 .grade-item { display: flex; gap: 10px; margin-bottom: 12px; align-items: center; }
-.seat-work-area { margin-top: 30px; text-align: center; background: #f9f9f9; padding: 30px; border-radius: 15px; }
+.seat-work-area {
+	 margin-top: 30px; text-align: center; background: #f9f9f9; padding: 30px; border-radius: 15px; }
 .seat-grid { 
     display: grid; 
     grid-template-columns: repeat(6, 50px); 
