@@ -2,8 +2,13 @@ package com.mbc.user;
 
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -12,6 +17,25 @@ import lombok.RequiredArgsConstructor;
 public class UsersService {
 
 	private final UsersRepository usersRepo;
+	
+	/* 이메일 테스트 시작*/
+	private final JavaMailSender mailSender;
+	
+	@Value("${spring.mail.username}")
+	private String fromEmail;
+	
+	public void sendEmail() throws MessagingException{
+		MimeMessage message = mailSender.createMimeMessage();
+		MimeMessageHelper helper = new MimeMessageHelper(message, true);
+		
+		helper.setTo("suntan1234@naver.com");
+		helper.setFrom(fromEmail);
+		helper.setSubject("이메일 발송 테스트 입니다. (제목) ");
+		helper.setText("이메일 발송 테스트 입니다. (내용) ");
+		
+		mailSender.send(message);		
+	}	
+	/* 이메일 테스트 끝*/
 	
 	@Transactional
 	public void join(Users user) {

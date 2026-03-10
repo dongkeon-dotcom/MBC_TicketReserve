@@ -2,6 +2,8 @@ package com.mbc.controller;
 
 import java.util.Optional;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +16,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.mbc.user.Users;
 import com.mbc.user.UsersService;
 
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
@@ -23,6 +26,19 @@ import lombok.RequiredArgsConstructor;
 public class UserController {
 	
 	private final UsersService service;
+	
+	@ResponseBody
+	@PostMapping("/mail.do")
+	public ResponseEntity<String> EmailSendTest() {
+		try {
+			service.sendEmail();
+			return ResponseEntity.ok("success");
+		} catch (MessagingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("fail");
+		}
+	}
 	
 	@GetMapping("join.do")
 	public String join(Model model) {
