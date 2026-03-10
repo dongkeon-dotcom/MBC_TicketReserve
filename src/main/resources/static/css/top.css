@@ -56,8 +56,11 @@ nav a:hover {
 
 /* ---  기존 섹션 및 푸터 스타일 --- */
 section {
-    background-color: #CCCCCC;
-    min-height: 450px;
+    /* background-color: #CCCCCC;  <- 지우거나 필요한 색상으로 변경 */
+    /* min-height: 450px;        <- 이 줄을 지우거나 대폭 줄이세요 */
+    min-height: auto;           /* 콘텐츠 크기에 맞게 자동으로 조절 */
+    padding: 0;                 /* 위아래 패딩도 0으로 */
+    margin: 0;                  /* 마진도 0으로 */
 }
 
 footer {

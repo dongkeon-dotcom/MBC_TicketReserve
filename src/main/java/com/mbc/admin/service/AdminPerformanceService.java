@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -182,14 +183,13 @@ public class AdminPerformanceService {
     /**
      * [공통] 특정 기간 동안의 회차 및 좌석 인벤토리를 생성하는 핵심 메서드
      */
-public void generateSchedulesForPeriod(Performance performance, LocalDate openStart, LocalDate openEnd, PerformanceSaveDto dto, int index) throws Exception {
+    public void generateSchedulesForPeriod(Performance performance, LocalDate openStart, LocalDate openEnd, PerformanceSaveDto dto, int index) throws Exception {
         
         // [A] 등급 설정(GradeConfig) 생성 (이미 존재하지 않을 때만 실행)
         if (performance.getGrades().isEmpty()) {
             for (int i = 0; i < dto.getGradeNames().size(); i++) {
                 PerformanceGradeConfig grade = new PerformanceGradeConfig();
                 grade.setGradeName(dto.getGradeNames().get(i));
-                // 가격 콤마 제거 로직 포함
                 String priceStr = dto.getGradePrices().get(i).replace(",", "");
                 grade.setGradePrice(Integer.parseInt(priceStr)); 
                 grade.setGradeOrder(i + 1);
@@ -200,16 +200,23 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
         // [B] JSON 파싱
         Map<String, List<String>> scheduleMap = objectMapper.readValue(
             dto.getWeeklySchedule(), new TypeReference<Map<String, List<String>>>() {});
-        Map<String, Integer> seatGradeMap = objectMapper.readValue(
-            dto.getSeatGradeMap(), new TypeReference<Map<String, Integer>>() {});
         
-        // [C] 템플릿(설계도) 저장 - 수정 시에도 새로운 배치 정보를 저장해야 함
+        // seatGradeMap 파싱 타입을 Map<String, Map<String, Object>>로 변경
+        Map<String, Map<String, Object>> seatGradeMap = objectMapper.readValue(
+            dto.getSeatGradeMap(), new TypeReference<Map<String, Map<String, Object>>>() {});
+        
+        // [C] 템플릿(설계도) 저장
         if (templateRepository.findByPerformance(performance).isEmpty()) {
-            for (Map.Entry<String, Integer> entry : seatGradeMap.entrySet()) {
+            for (Map.Entry<String, Map<String, Object>> entry : seatGradeMap.entrySet()) {
                 PerformanceSeatTemplate template = new PerformanceSeatTemplate();
                 template.setPerformance(performance);
                 template.setSeatNumber(entry.getKey());
-                template.setGradeOrder(entry.getValue());
+                
+                // 중첩 Map에서 "grade" 값 추출
+                Object gradeVal = entry.getValue().get("grade");
+                int gradeOrder = (gradeVal != null) ? Integer.parseInt(String.valueOf(gradeVal)) : 1;
+                
+                template.setGradeOrder(gradeOrder);
                 templateRepository.save(template);
             }
         }
@@ -237,7 +244,13 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
                         String seatNo = master.getSeatNumber(); 
                         seat.setSeatNumber(seatNo); 
                         
-                        int gradeNum = seatGradeMap.getOrDefault(seatNo, 1);
+                        // 등급 추출 로직: 중첩 Map에서 grade 꺼내기
+                        Map<String, Object> seatData = seatGradeMap.get(seatNo);
+                        int gradeNum = 1;
+                        if (seatData != null && seatData.get("grade") != null) {
+                            gradeNum = Integer.parseInt(String.valueOf(seatData.get("grade")));
+                        }
+                        
                         // 등급 인덱스 초과 방지
                         if (gradeNum > performance.getGrades().size()) gradeNum = 1;
                         
@@ -247,14 +260,16 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
                         seat.setPrice(matchedGrade.getGradePrice());
                         seat.setIsReserved(0);
                         
-                        schedule.addSeat(seat);
-                    }
+                        schedule.addSeat(seat);                    }
                     performance.addSchedule(schedule);
                 }
             }
             current = current.plusDays(1);
         }
     }
+    	
+    	
+    	
 
     private String getKoreanDayOfWeek(LocalDate date) {
         return switch (date.getDayOfWeek()) {
@@ -451,25 +466,52 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
     }
     
     
+    //새고하면 좌석 풀리기 
+    @Transactional
+    public void cancelSeat(Long seatId, String userId) {
+        SeatInventory seat = seatInventoryRepository.findById(seatId).orElse(null);
+        // 내가 선점한 좌석(2)인 경우에만 해제
+        if (seat != null && seat.getIsReserved() == 2 && userId.equals(seat.getReservedBy())) {
+            seat.setIsReserved(0);
+            seat.setReservedAt(null);
+            seat.setReservedBy(null);
+            seatInventoryRepository.save(seat);
+        }
+    }
     
     
     
     
     
+    //메인에서 8개 뽑아서 돌릴려고 
+    public List<Performance> findAllPerformances() {
+        return performanceRepository.findAll();
+    }
     
     
     
     
     
+ // 1. 전체 회차 중 가장 빠른 예약 오픈 시간을 가진 회차 찾기
+ // AdminPerformanceService.java
+    public PerformanceSchedule findFastestOpeningSchedule() {
+        return scheduleRepository.findTopByOpeningTimeAfterOrderByOpeningTimeAsc(LocalDateTime.now());
+    }
     
     
     
     
-    
-    
-    
-    
-    
+    @Transactional
+    public void updateSeatToSecret(Long seatId) {
+        SeatInventory seat = seatInventoryRepository.findById(seatId)
+            .orElseThrow(() -> new IllegalArgumentException("좌석을 찾을 수 없습니다."));
+        
+        // 3 = 보유석으로 상태값 변경
+        seat.setIsReserved(3); 
+        
+        // JPA 더티 체킹으로 자동 저장되지만, 명시적으로 save를 호출해도 무방합니다.
+        seatInventoryRepository.save(seat);
+    }
     
     
     

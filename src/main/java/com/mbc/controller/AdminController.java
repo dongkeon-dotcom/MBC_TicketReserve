@@ -14,11 +14,14 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -93,87 +96,88 @@ public class AdminController {
     }
       
     
+
+    
     @GetMapping("/editPage.do")
-    public String editPage(@RequestParam("id") Long performanceId, Model model) { 
-        System.out.println("==> 관리자 공연 수정 (ID: " + performanceId + ")");
-        
-        // 1. 공연 정보 조회
+    public String editPage(@RequestParam("id") Long performanceId, Model model) {
         Performance performance = performanceService.getPerformance(performanceId);
-        if (performance == null) {
-            return "redirect:/admin/listPage.do";
-        }
+        if (performance == null) return "redirect:/admin/listPage.do";
+
         model.addAttribute("performance", performance);
-        
-        // 2. 가격 설정 조회
         model.addAttribute("gradeConfigs", performanceService.getGradeConfigs(performanceId));
-        
-        // 3. 좌석 템플릿 조회 및 JS용 Map 변환
+
         List<PerformanceSeatTemplate> templates = performanceService.getTemplates(performanceId);
         model.addAttribute("templates", templates);
-        
-        // [중요] HTML에서 좌석을 그리기 위해 { "1": 1, "2": 2 } 형태의 JSON 생성
+
         Map<String, Integer> seatGradeMap = new HashMap<>();
         for (PerformanceSeatTemplate t : templates) {
             seatGradeMap.put(t.getSeatNumber().toString(), t.getGradeOrder());
         }
 
-        // 4. 오픈 세트 및 판매 시작 여부(isStarted) 계산
         List<Map<String, Object>> openPeriods = new ArrayList<>();
         Map<String, List<String>> weeklyMap = new HashMap<>();
-        String[] days = {"월", "화", "수", "목", "금", "토", "일"};
-        for(String d : days) weeklyMap.put(d, new ArrayList<>());
-
-        boolean isStarted = false; // 기본값 false (에러 방지)
         LocalDateTime now = LocalDateTime.now();
 
-        if (performance.getSchedules() != null && !performance.getSchedules().isEmpty()) {
-            Map<LocalDateTime, Map<String, Object>> periodGroups = new LinkedHashMap<>();
+        if (performance.getSchedules() != null) {
+            // openingTime 기준으로 그룹화
+            Map<LocalDateTime, List<PerformanceSchedule>> grouped = performance.getSchedules().stream()
+                    .filter(s -> s.getOpeningTime() != null)
+                    .collect(Collectors.groupingBy(PerformanceSchedule::getOpeningTime));
 
-            for (PerformanceSchedule sched : performance.getSchedules()) {
-                LocalDateTime st = sched.getStartTime();
-                LocalDateTime ot = sched.getOpeningTime();
-                LocalDate sd = st.toLocalDate();
+            // [핵심 수정] 엔트리를 시간순으로 정렬하여 리스트 생성
+            List<Map.Entry<LocalDateTime, List<PerformanceSchedule>>> sortedEntries = grouped.entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey()) 
+                    .collect(Collectors.toList());
 
-                // 판매 시작 여부 체크: 어떤 회차라도 예매 시작 시간이 지났다면 true
-                if (ot != null && now.isAfter(ot)) {
-                    isStarted = true;
-                }
+            for (Map.Entry<LocalDateTime, List<PerformanceSchedule>> entry : sortedEntries) {
+                LocalDateTime ot = entry.getKey();
+                List<PerformanceSchedule> schedules = entry.getValue();
 
-                // 주간 요일/시간 추출
-                String korDay = getKoreanDay(st.getDayOfWeek());
-                String timeStr = st.toLocalTime().toString().substring(0, 5); 
-                
-                if (!weeklyMap.get(korDay).contains(timeStr)) {
-                    weeklyMap.get(korDay).add(timeStr);
-                }
+                Map<String, Object> p = new HashMap<>();
+                p.put("openingTime", ot);
 
-                // 기간 세트 정보 추출 (OpeningTime 기준 그룹화)
+                // HTML 이스케이프 충돌 방지를 위한 포맷팅 문자열 생성
                 if (ot != null) {
-                    if (!periodGroups.containsKey(ot)) {
-                        Map<String, Object> p = new HashMap<>();
-                        p.put("openingTime", ot);
-                        p.put("start", sd);
-                        p.put("end", sd);
-                        periodGroups.put(ot, p);
-                    } else {
-                        Map<String, Object> p = periodGroups.get(ot);
-                        if (sd.isBefore((LocalDate)p.get("start"))) p.put("start", sd);
-                        if (sd.isAfter((LocalDate)p.get("end"))) p.put("end", sd);
-                    }
+                    p.put("formattedOpeningTime", ot.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")));
+                } else {
+                    p.put("formattedOpeningTime", "");
+                }
+                
+                // 각 세트별 날짜 범위 계산
+                LocalDate minDate = schedules.stream()
+                        .map(s -> s.getStartTime().toLocalDate())
+                        .min(LocalDate::compareTo).orElse(LocalDate.now());
+                LocalDate maxDate = schedules.stream()
+                        .map(s -> s.getStartTime().toLocalDate())
+                        .max(LocalDate::compareTo).orElse(LocalDate.now());
+                
+                p.put("start", minDate);
+                p.put("end", maxDate);
+                
+                // 해당 회차의 오픈 시간이 지났는지 개별적으로 판단
+                boolean isThisSetStarted = now.isAfter(ot);
+                p.put("isStarted", isThisSetStarted); 
+                
+                openPeriods.add(p);
+
+                // 주간 스케줄 데이터 구성
+                for (PerformanceSchedule sched : schedules) {
+                    String korDay = getKoreanDay(sched.getStartTime().getDayOfWeek());
+                    String timeStr = sched.getStartTime().toLocalTime().toString().substring(0, 5);
+                    weeklyMap.computeIfAbsent(korDay, k -> new ArrayList<>()).add(timeStr);
                 }
             }
-            openPeriods.addAll(periodGroups.values());
         }
 
-        // 5. 모델에 데이터 담기
-        model.addAttribute("isStarted", isStarted); // 에러 해결의 핵심!
+        // 모델에 전달
         model.addAttribute("openPeriods", openPeriods);
         
+        // 페이지 전체의 '조회 전용 모드'를 결정할 플래그
+        model.addAttribute("isStarted", openPeriods.stream().anyMatch(p -> (Boolean)p.get("isStarted")));
+
         try {
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            // 요일별 시간 JSON
             model.addAttribute("weeklySchedule", mapper.writeValueAsString(weeklyMap));
-            // 좌석 배치 JSON
             model.addAttribute("seatGradeMap", mapper.writeValueAsString(seatGradeMap));
         } catch (Exception e) {
             model.addAttribute("weeklySchedule", "{}");
@@ -183,7 +187,7 @@ public class AdminController {
         return "admin/showEdit";
     }
     
-
+    
     
     
     //======================================================================
@@ -271,7 +275,17 @@ public class AdminController {
     }   
     
     
-    
+    @PostMapping("/seat/set-secret.do")
+    @ResponseBody
+    public ResponseEntity<String> setSecretSeat(@RequestParam("seatId") Long seatId) {
+        try {
+            // 서비스에서 좌석 상태를 3으로 바꾸는 메서드 호출
+            performanceService.updateSeatToSecret(seatId);
+            return ResponseEntity.ok("보유석 설정 완료");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("설정 실패");
+        }
+    }
     
     
     

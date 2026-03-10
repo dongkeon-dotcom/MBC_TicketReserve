@@ -1,6 +1,8 @@
 package com.mbc.admin.entity;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,7 +17,7 @@ public class SeatInventory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long seatId;
-
+    @JsonIgnore // <--- 이 줄을 반드시 추가하세요! (루프 차단)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schedule_id")
     private PerformanceSchedule schedule;

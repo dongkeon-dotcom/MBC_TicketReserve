@@ -10,6 +10,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "performance") // DB에 이미 만든 테이블 이름과 정확히 맞춰주세요
 @Getter @Setter
@@ -26,14 +28,17 @@ public class Performance {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     // 상세 이미지와 1:N 관계
+    @JsonIgnore // 상세 이미지와의 관계 무시
     @OneToMany(mappedBy = "performance", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PerformanceDetailImage> detailImages = new ArrayList<>();
 
     // 등급 설정과 1:N 관계
+    @JsonIgnore // 상세 이미지와의 관계 무시
     @OneToMany(mappedBy = "performance", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PerformanceGradeConfig> grades = new ArrayList<>();
 
     // 회차 스케줄과 1:N 관계
+    @JsonIgnore // 상세 이미지와의 관계 무시
     @OneToMany(mappedBy = "performance", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PerformanceSchedule> schedules = new ArrayList<>();
 

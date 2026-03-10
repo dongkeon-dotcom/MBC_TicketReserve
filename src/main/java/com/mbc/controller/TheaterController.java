@@ -99,14 +99,16 @@ public class TheaterController {
      */
     @GetMapping("/seat.do")
     public String seatPage(@RequestParam("scheduleId") Long scheduleId, Model model) {
-        // 1. 현재 회차 및 공연 정보 조회
+        // 1. 데이터 조회
         PerformanceSchedule schedule = performanceService.findScheduleById(scheduleId);
         Performance performance = schedule.getPerformance();
         
-        // [핵심 해결] 엔티티 대신 순수 Map 리스트로 변환하여 전달
-        //엔티티로 넘기니깐 자꾸 무한루프 걸려서 맵으로 바꿔서 전달중 
-        List<PerformanceSchedule> schedulesFromEntity = (performance.getSchedules() != null) ? performance.getSchedules() : new ArrayList<>();
+        // [수정] 보유석(3)을 제외하지 않고, 모든 좌석을 그대로 사용합니다.
+        // 그래야 화면에 보유석 자리가 비어 보이지 않고 회색으로 표시됩니다.
+        List<SeatInventory> allSeats = schedule.getSeats();
         
+        // 2. 스케줄 정보 가공
+        List<PerformanceSchedule> schedulesFromEntity = (performance.getSchedules() != null) ? performance.getSchedules() : new ArrayList<>();
         List<Map<String, Object>> schedulesForJS = new ArrayList<>();
         for (PerformanceSchedule s : schedulesFromEntity) {
             Map<String, Object> map = new HashMap<>();
@@ -115,37 +117,31 @@ public class TheaterController {
             schedulesForJS.add(map);
         }
         
-        // 2. 등급 정보 및 잔여석 계산 로직 (유지)
+        // 3. 등급별 정보 및 잔여 좌석 계산
         List<PerformanceGradeConfig> gradeConfigs = performance.getGrades();
         List<Map<String, Object>> gradeData = new ArrayList<>();
-        
         for (int i = 0; i < gradeConfigs.size(); i++) {
             PerformanceGradeConfig config = gradeConfigs.get(i);
             Map<String, Object> map = new HashMap<>();
             map.put("gradeName", config.getGradeName());
             map.put("price", config.getGradePrice());
+            
+            // 주의: 보유석(3)을 제외하고 카운트하려면 countAvailableSeats 메서드 내부 로직을 확인하세요.
+            // 현재 countAvailableSeats가 보유석을 자동으로 제외하고 있다면 그대로 두시면 됩니다.
             int remainCount = seatInventoryRepository.countAvailableSeats(scheduleId, i + 1);
             map.put("remainCount", remainCount);
             gradeData.add(map);
         }
-
-        // 3. 모델에 담기
-        model.addAttribute("schedule", schedule);
-        // 중요: 엔티티를 직접 넘기면 타임리프가 무한 루프를 돌 수 있으니, 필요한 것만 넘기거나 
-        // performance 엔티티 안의 schedules를 제거한 DTO로 넘기는 것이 안전합니다.
-        model.addAttribute("performance", performance); 
-        model.addAttribute("seats", schedule.getSeats());
-        model.addAttribute("grades", gradeData);
         
-        // [핵심 해결] 엔티티가 아닌 가공된 Map 리스트를 전달
+        // 4. 모델에 담기
+        model.addAttribute("performance", performance); 
+        model.addAttribute("schedule", schedule);
+        model.addAttribute("seats", allSeats); // [수정] 전체 좌석 리스트 전달
+        model.addAttribute("grades", gradeData);
         model.addAttribute("schedules", schedulesForJS); 
         
         return "reserve/seat";
     }
-
-
-
-
 
 
 @PostMapping("/selectSeat.do")
@@ -174,8 +170,13 @@ public ResponseEntity<String> selectSeat(@RequestParam Long seatId, HttpSession 
 
 
 
-
-
+//새고하면 좌석풀
+@PostMapping("/cancelSeat.do")
+@ResponseBody
+public ResponseEntity<String> cancelSeat(@RequestParam("seatId") Long seatId, HttpSession session) {
+    performanceService.cancelSeat(seatId, session.getId());
+    return ResponseEntity.ok("선점 취소 완료");
+}
 
 
 

@@ -1,17 +1,82 @@
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>메인 페이지</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+</head>
 <body>
+
 <div th:replace="include/top::top"></div>
-<section>
-<div align="center"> 
-  <h1> thymeleaf (index) </h1> 
-</div>
 
-
-
-
-
-
+<section class="full-banner-container" id="banner-container">
+    <div class="banner-item active" id="current-banner" 
+         th:style="'background-image: url(https://s3-202601052.s3.ap-northeast-2.amazonaws.com/' + ${randomProducts[0].posterImageName} + ');'">
+        <div class="banner-content">
+            <a th:href="@{/performance/detail.do(id=${randomProducts[0].performanceId})}">
+                <h2 th:text="${randomProducts[0].title}">공연 제목</h2>
+            </a>
+            <p th:text="${randomProducts[0].startDate} + ' ~ ' + ${randomProducts[0].endDate}">날짜</p>
+        </div>
+    </div>
 </section>
+
+<section class="content-section">
+    <div class="ticket-notice-container" th:if="${fastTitle != null}">
+        <div class="notice-header">
+            <span>⏰ 다가오는 티켓팅</span>
+        </div>
+        <div class="notice-body">
+         <a th:href="@{/reserve/ticket.do(performanceId=${fastId})}">
+                <h4 th:text="${fastTitle}">공연 제목</h4>
+                <p th:if="${fastOpeningTime != null}" 
+                   th:text="'티켓팅 시작: ' + ${#temporals.format(fastOpeningTime, 'yyyy.MM.dd HH:mm')}"></p>
+            </a>
+        </div>
+    </div>
+</section>
+
 <div th:replace="include/bottom::footer"></div>
 
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    let currentIndex = 0;
+    const products = /*[[${randomProducts}]]*/ []; 
+
+	JavaScript
+	setInterval(() => {
+	    currentIndex = (currentIndex + 1) % products.length;
+	    const next = products[currentIndex];
+	    
+	    // 1. 새 배너를 미리 위쪽(-100%)에 생성
+	    const newBanner = $(`
+	        <div class="banner-item" style="top: -100%; background-image: url('https://s3-202601052.s3.ap-northeast-2.amazonaws.com/${next.posterImageName}');">
+	            <div class="banner-content">
+	                <a href="/performance/detail.do?id=${next.performanceId}"><h2>${next.title}</h2></a>
+	                <p>${next.startDate} ~ ${next.endDate}</p>
+	            </div>
+	        </div>
+	    `);
+	    
+	    $('#banner-container').append(newBanner);
+	    
+	    // 2. 아주 짧은 지연 후 애니메이션 시작
+	    setTimeout(() => {
+	        // 기존 배너를 아래로 밀어냄
+	        $('#current-banner').css('top', '100%'); 
+	        // 새 배너를 현재 위치로 가져옴
+	        newBanner.css('top', '0'); 
+	    }, 50);
+	    
+	    // 3. 1초 뒤(애니메이션 끝난 후) 기존 배너 제거
+	    setTimeout(() => {
+	        $('#current-banner').remove();
+	        newBanner.attr('id', 'current-banner');
+	    }, 1000);
+	    
+	}, 5000);
+    /*]]>*/
+</script>
+</body>
 </html>

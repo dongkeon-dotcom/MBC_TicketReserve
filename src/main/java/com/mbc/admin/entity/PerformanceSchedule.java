@@ -27,6 +27,7 @@ public class PerformanceSchedule {
     private LocalDateTime updatedAt;
 
     // 회차별 실제 좌석 인벤토리와 1:N
+    @JsonIgnore // <--- 이 부분도 JSON 생성 시 루프를 막기 위해 추가해주세요!
     @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SeatInventory> seats = new ArrayList<>();
 

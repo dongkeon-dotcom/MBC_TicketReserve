@@ -37,6 +37,16 @@ public interface PerformanceScheduleRepository extends JpaRepository<Performance
     @Modifying // 삭제/수정 쿼리에는 필수
     @Query("DELETE FROM PerformanceSchedule s WHERE s.performance.performanceId = :performanceId")
     void deleteByPerformanceId(@Param("performanceId") Long performanceId);
+    
+    
+ // 가장 최근의, 아직 오픈 전인 데이터 1건만 DB에서 바로 가져옴
+    @Query("SELECT s FROM PerformanceSchedule s WHERE s.openingTime > :now ORDER BY s.openingTime ASC LIMIT 1")
+    PerformanceSchedule findTopByOpeningTimeAfterOrderByOpeningTimeAsc(@Param("now") LocalDateTime now);
+    
+    
+    
+    
+    
 } 
     // (나머지 리포지토리도 동일하게 deleteByPerformanceId 추가 필요)
     
