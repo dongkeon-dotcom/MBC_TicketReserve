@@ -99,7 +99,7 @@
         </form>
     </section>
 
-    <div th:replace="include/bottom::footer"></div>
+	<div th:replace="~{include/bottom::footer}"></div>
 	<script>
 	    var seatAssignment = {}, currentSelectedGrade = 1;
 	    let isDragging = false;
