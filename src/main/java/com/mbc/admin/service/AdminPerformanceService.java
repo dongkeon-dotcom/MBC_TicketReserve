@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,9 +32,11 @@ import com.mbc.admin.repositiry.PerformanceGradeConfigRepository;
 import com.mbc.admin.repositiry.PerformanceRepository;
 import com.mbc.admin.repositiry.PerformanceScheduleRepository;
 import com.mbc.admin.repositiry.PerformanceSeatTemplateRepository;
+import com.mbc.admin.repositiry.PerformenceDetailImageRepository;
 import com.mbc.admin.repositiry.SeatInventoryRepository;
 import com.mbc.admin.repositiry.VenueSeatMasterRepository;
 import com.mbc.aws.S3UploaderService;
+import com.mbc.reservation.OrderListRepository;
 
 @Service
 @Transactional // 모든 과정이 하나의 트랜잭션으로 묶임 (하나라도 실패하면 롤백)
@@ -47,7 +50,8 @@ public class AdminPerformanceService {
     private final ObjectMapper objectMapper;
     private final SeatInventoryRepository seatInventoryRepository; // 추가
     private final S3UploaderService s3UploaderService;
-    
+    private final PerformenceDetailImageRepository  detailImageRepository ;
+    private final  OrderListRepository orderListRepository;
     // 생성자 주입 (모든 리포지토리를 포함하도록 업데이트)
     public AdminPerformanceService(
             PerformanceRepository performanceRepository, 
@@ -56,7 +60,9 @@ public class AdminPerformanceService {
             PerformanceScheduleRepository scheduleRepository,      // [추가]
             PerformanceGradeConfigRepository gradeConfigRepository,  // [추가]
             SeatInventoryRepository seatInventoryRepository, // 추가
-            S3UploaderService s3UploaderService						// AWS S3 Upload용
+            S3UploaderService s3UploaderService	,					// AWS S3 Upload용
+            PerformenceDetailImageRepository  detailImageRepository,
+            OrderListRepository orderListRepository
     ) {
         this.performanceRepository = performanceRepository;
         this.venueMasterRepository = venueMasterRepository;
@@ -67,6 +73,8 @@ public class AdminPerformanceService {
         this.s3UploaderService = s3UploaderService;					
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule()); 
+        this.detailImageRepository  = detailImageRepository;
+        this.orderListRepository =orderListRepository;
     }
 
     /**
@@ -100,43 +108,36 @@ public class AdminPerformanceService {
      * [2] 공연 수정 처리 (Update)
      * 기존 데이터를 삭제 후 재등록하여 정합성을 유지합니다.
      */
+    @Transactional
     public void processShowUpdate(PerformanceSaveDto dto) throws Exception {
-    	// 1. 기존 공연 정보 로드
+        // 1. 기존 공연 정보 로드
         Performance performance = performanceRepository.findById(dto.getPerformanceId())
                 .orElseThrow(() -> new IllegalArgumentException("해당 공연이 존재하지 않습니다. ID: " + dto.getPerformanceId()));
 
         // 2. 기본 정보 업데이트 (제목, 날짜 등)
         updatePerformanceBasicInfo(performance, dto);
 
-        // 3. 이미지 업데이트 (새 파일이 있을 때만 추가 저장)
-        saveImages(performance, dto);
+        // 3. 이미지 업데이트 (포스터 + 상세이미지)
+        saveImages(performance, dto); // 아래 정의한 saveImages 메서드 호출
 
-        // 4. [중요] 판매 시작 여부 체크 (비즈니스 로직에 따라 추가 가능)
-        // 만약 이미 예매가 진행된 좌석이 있다면 삭제 시 에러가 발생할 수 있습니다.
-        
-        // 5. 기존 연관 데이터 초기화
-        // orphanRemoval = true 설정이 되어 있다면 clear() 만으로 DB에서 삭제됩니다.
+        // 5. 기존 연관 데이터 초기화 (회차/등급/좌석 재설정 시)
+        // 주의: 실제 예매된 좌석이 있을 경우 예외 처리가 필요합니다.
         performance.getGrades().clear();
         performance.getSchedules().clear();
         
-        // 기존 템플릿(좌석 배치도)도 현재 수정된 드래그 정보로 갱신하기 위해 삭제
         List<PerformanceSeatTemplate> oldTemplates = templateRepository.findByPerformance(performance);
-        templateRepository.deleteAll(oldTemplates);
+        //templateRepository.deleteAll(oldTemplates);
 
         // 6. 수정된 설정으로 등급 및 회차/좌석 재생성
-        // 수정 페이지에서 전달된 다중 오픈 세트 리스트를 순회하며 생성합니다.
         List<String> startDates = dto.getOpenStartDates();
         if (startDates != null) {
             for (int i = 0; i < startDates.size(); i++) {
                 LocalDate start = LocalDate.parse(startDates.get(i));
                 LocalDate end = LocalDate.parse(dto.getOpenEndDates().get(i));
-                
-                // 재사용: 등록 시 사용했던 로직을 그대로 호출하여 정합성 유지
                 generateSchedulesForPeriod(performance, start, end, dto, i);
             }
         }
 
-        // 7. 변경 감지(Dirty Checking)에 의해 자동 반영되지만, 명시적으로 save
         performanceRepository.save(performance);
     }
 
@@ -154,33 +155,39 @@ public class AdminPerformanceService {
      * [공통] 이미지 저장 로직 (메인 포스터 + 상세 이미지)
      */
     private void saveImages(Performance performance, PerformanceSaveDto dto) throws Exception {
-        // 메인 포스터 저장
+        // 1. 메인 포스터 처리
         if (dto.getPosterFile() != null && !dto.getPosterFile().isEmpty()) {
-            String savedPosterName = s3UploaderService.uploadFile(dto.getPosterFile(),"MAIN_POSTER");
-            performance.setPosterImageName(savedPosterName); 
+            String newPosterPath = s3UploaderService.uploadFile(dto.getPosterFile(), "MAIN_POSTER");
+            performance.setPosterImageName(newPosterPath);
         }
 
-        // 상세 이미지 저장
+        // 2. 삭제할 상세 이미지 처리
+        if (dto.getDeleteImageIds() != null && !dto.getDeleteImageIds().isEmpty()) {
+            for (Long imageId : dto.getDeleteImageIds()) {
+                detailImageRepository.deleteById(imageId);
+            }
+        }
+
+        // 3. 신규 상세 이미지 추가 처리
         if (dto.getDetailFiles() != null && !dto.getDetailFiles().isEmpty()) {
-            for (MultipartFile detailFile : dto.getDetailFiles()) {
-                if (!detailFile.isEmpty()) {
-                    String savedName = s3UploaderService.uploadFile(detailFile,"DETAIL_IMAGE");
-                    if (savedName != null) {
-                        PerformanceDetailImage detailEntity = new PerformanceDetailImage();
-                        detailEntity.setImageName(savedName);
-                        performance.addDetailImage(detailEntity); 
-                    }
+            for (MultipartFile file : dto.getDetailFiles()) {
+                if (!file.isEmpty()) {
+                    String path = s3UploaderService.uploadFile(file, "DETAIL_IMAGE");
+                    PerformanceDetailImage detailImage = new PerformanceDetailImage();
+                    detailImage.setPerformance(performance);
+                    detailImage.setImageName(path);
+                    detailImageRepository.save(detailImage);
                 }
             }
         }
     }
-
     /**
      * [공통] 특정 기간 동안의 회차 및 좌석 인벤토리를 생성하는 핵심 메서드
      */
-public void generateSchedulesForPeriod(Performance performance, LocalDate openStart, LocalDate openEnd, PerformanceSaveDto dto, int index) throws Exception {
+   
+    public void generateSchedulesForPeriod(Performance performance, LocalDate openStart, LocalDate openEnd, PerformanceSaveDto dto, int index) throws Exception {
         
-        // [A] 등급 설정(GradeConfig) 생성
+        // [A] 등급 설정(GradeConfig) 생성 (최초 1회만 실행됨)
         if (performance.getGrades().isEmpty()) {
             for (int i = 0; i < dto.getGradeNames().size(); i++) {
                 PerformanceGradeConfig grade = new PerformanceGradeConfig();
@@ -192,23 +199,41 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
             }
         }
 
-        // [B] JSON 파싱
+        // [B] JSON 파싱 - 요일별 시간 목록
         Map<String, List<String>> scheduleMap = objectMapper.readValue(
             dto.getWeeklySchedule(), new TypeReference<Map<String, List<String>>>() {});
         
-        Map<String, Map<String, Object>> seatGradeMap = objectMapper.readValue(
-            dto.getSeatGradeMap(), new TypeReference<Map<String, Map<String, Object>>>() {});
+        // [중요] seatGradeMap 파싱 로직 강화 (복합 객체 대응)
+        Map<String, Object> rawSeatMap = objectMapper.readValue(
+            dto.getSeatGradeMap(), new TypeReference<Map<String, Object>>() {});
         
-        // [C] 템플릿(설계도) 저장
+        Map<String, Integer> seatGradeMap = new HashMap<>();
+        for (Map.Entry<String, Object> entry : rawSeatMap.entrySet()) {
+            Object val = entry.getValue();
+            
+            // 1. 이미 숫자라면 그대로 사용
+            if (val instanceof Integer) {
+                seatGradeMap.put(entry.getKey(), (Integer) val);
+            } 
+            // 2. {grade: 1, ...} 형태의 객체라면 'grade' 키 추출
+            else if (val instanceof Map) {
+                Map<String, Object> mapVal = (Map<String, Object>) val;
+                Object gradeVal = mapVal.get("grade");
+                seatGradeMap.put(entry.getKey(), Integer.parseInt(gradeVal.toString()));
+            } 
+            // 3. 기타(문자열 등)라면 강제 파싱
+            else {
+                seatGradeMap.put(entry.getKey(), Integer.parseInt(val.toString()));
+            }
+        }
+        
+        // [C] 템플릿(설계도) 저장 (최초 1회만 실행됨)
         if (templateRepository.findByPerformance(performance).isEmpty()) {
-            for (Map.Entry<String, Map<String, Object>> entry : seatGradeMap.entrySet()) {
+            for (Map.Entry<String, Integer> entry : seatGradeMap.entrySet()) {
                 PerformanceSeatTemplate template = new PerformanceSeatTemplate();
                 template.setPerformance(performance);
                 template.setSeatNumber(entry.getKey());
-                
-                Object gradeVal = entry.getValue().get("grade");
-                int gradeOrder = (gradeVal != null) ? Integer.parseInt(String.valueOf(gradeVal)) : 1;
-                
+                int gradeOrder = (entry.getValue() != null) ? entry.getValue() : 1;
                 template.setGradeOrder(gradeOrder);
                 templateRepository.save(template);
             }
@@ -217,8 +242,7 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
         List<VenueSeatMaster> masters = venueMasterRepository.findAll();
 
         // [D] 예매 오픈 시간 파싱
-        String openingTimeStr = dto.getOpeningTimes().get(index); 
-        LocalDateTime openingTime = LocalDateTime.parse(openingTimeStr);
+        LocalDateTime openingTime = LocalDateTime.parse(dto.getOpeningTimes().get(index));
 
         // [E] 날짜별 순회하며 스케줄 생성
         LocalDate current = openStart;
@@ -228,39 +252,33 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
 
             if (times != null && !times.isEmpty()) {
                 for (String timeStr : times) {
+                    LocalDateTime startDateTime = current.atTime(LocalTime.parse(timeStr));
+
+                    boolean isAlreadyExists = performance.getSchedules().stream()
+                            .anyMatch(s -> s.getStartTime().equals(startDateTime));
+                    if (isAlreadyExists) continue;
+
                     PerformanceSchedule schedule = new PerformanceSchedule();
-                    schedule.setStartTime(current.atTime(LocalTime.parse(timeStr)));
+                    schedule.setStartTime(startDateTime);
                     schedule.setOpeningTime(openingTime);
 
                     for (VenueSeatMaster master : masters) {
                         String seatNo = master.getSeatNumber(); 
                         
-                        // 1. 데이터 파싱
-                        Map<String, Object> seatData = seatGradeMap.get(seatNo);
-                        int gradeNum = 1;
+                        Integer gradeNum = seatGradeMap.get(seatNo);
+                        if (gradeNum == null) gradeNum = 1;
+                        
                         boolean isSecret = false; 
 
-                        if (seatData != null) {
-                            if (seatData.get("grade") != null) {
-                                gradeNum = Integer.parseInt(String.valueOf(seatData.get("grade")));
-                            }
-                            if (seatData.get("isSecret") != null) {
-                                isSecret = Boolean.parseBoolean(String.valueOf(seatData.get("isSecret")));
-                            }
-                        }
-                        
-                        // 2. 등급 매칭
                         if (gradeNum > performance.getGrades().size()) gradeNum = 1;
                         PerformanceGradeConfig matchedGrade = performance.getGrades().get(gradeNum - 1);
                         
-                        // 3. [핵심] 수정된 createSeat 호출 (5개 파라미터 전달)
-                        // 주의: SeatInventory.java의 createSeat 메서드도 파라미터 5개짜리로 수정되어 있어야 합니다.
                         SeatInventory seat = SeatInventory.createSeat(
                             schedule, 
                             seatNo, 
                             matchedGrade.getGradeOrder(), 
                             matchedGrade.getGradePrice(),
-                            isSecret // 마지막에 보유석 여부 전달
+                            isSecret
                         );
                         
                         schedule.addSeat(seat);
@@ -271,7 +289,6 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
             current = current.plusDays(1);
         }
     }
-    	
 
     private String getKoreanDayOfWeek(LocalDate date) {
         return switch (date.getDayOfWeek()) {
@@ -393,20 +410,15 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
     /**
      * 좌석을 예약 상태로 변경하는 메서드
      */
-    public void reserveSeat(Long seatId) {
-        // 1. 해당 seatId로 좌석을 조회 (없으면 에러 처리)
-        // 주의: 프로젝트 내 실제 Seat 엔티티 이름에 맞게 수정하세요.
+    @Transactional
+    public void reserveSeat(Long seatId, Long userIdx) {
         SeatInventory seat = seatInventoryRepository.findById(seatId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 좌석입니다."));
 
-        // 2. 예약 상태 업데이트 (예: isReserved를 1로 변경)
-        // 주의: 엔티티의 필드명에 맞게 수정하세요 (예: setReserved(true) 등)
-        seat.setIsReserved(1); 
-        
-        // 3. 변경 사항 저장
+        seat.setIsReserved(1); // 예약 완료
+        seat.setReservedBy(String.valueOf(userIdx)); // 예약자 기록
         seatInventoryRepository.save(seat);
     }
-    
     
  // 목록화 하고  공연 기간이지난경우 뒤로 아닌경우 앞으로 배치 되도록 함 
     public Page<Performance> findAll(Pageable pageable) {
@@ -514,6 +526,20 @@ public void generateSchedulesForPeriod(Performance performance, LocalDate openSt
         // JPA 더티 체킹으로 자동 저장되지만, 명시적으로 save를 호출해도 무방합니다.
         seatInventoryRepository.save(seat);
     }
+    
+
+    //1인당 회차 당 1매 매수제한 
+    public boolean hasAlreadyReserved(Long userIdx, Long scheduleId) {
+    // 1. 해당 사용자가 특정 회차에 예매한 내역이 있는지 확인
+    // OrderListRepository에 메서드가 없다면 생성해야 합니다.
+    return orderListRepository.existsByUserIdxAndSchedule_ScheduleId(userIdx, scheduleId);
+}
+    
+    
+    
+    
+    
+    
     
     
     

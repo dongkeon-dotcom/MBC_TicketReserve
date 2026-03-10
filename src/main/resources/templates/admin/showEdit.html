@@ -94,16 +94,50 @@
 <button type="button" class="btn-add" onclick="addOpenPeriod()">+ 티켓 오픈 범위 추가</button>
 	        </div>
 
-	        <div class="section">
-	            <h2>3. 이미지 정보</h2>
-	            <div class="form-group">
-	                <label>메인 포스터 (기존)</label>
-	                <div id="poster-pre" class="preview-box">
-	                    <img th:src="@{|https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/${performance.posterImageName}|}" width="180" style="border-radius: 8px;">
-	                </div>
-	                <input th:if="${!isStarted}" type="file" name="posterFile" accept="image/*" onchange="previewSingle(this, 'poster-pre')">
-	            </div>
-	        </div>
+		
+			<div class="section">
+			    <h2>3. 이미지 정보</h2>
+			    
+			    <div class="form-group" style="margin-bottom: 30px;">
+			        <label><strong>메인 포스터</strong></label>
+			        <div id="poster-pre" class="preview-box" style="margin: 10px 0;">
+			            <img th:src="@{|https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/${performance.posterImageName}|}" 
+			                 width="180" style="border-radius: 8px; border: 1px solid #ddd;">
+			        </div>
+			        <input  type="file" name="posterFile" accept="image/*" onchange="previewSingle(this, 'poster-pre')">
+			    </div>
+
+			    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+				<div class="form-group">
+				    <div style="display: flex; align-items: center; justify-content: space-between;">
+				        <label><strong>상세 이미지 목록 (가로 5개 배열)</strong></label>
+				        <label class="btn-add-img" style="cursor: pointer; background: #007bff; color: white; padding: 5px 15px; border-radius: 4px; font-size: 14px;">
+				            이미지 추가하기
+				            <input type="file" name="detailFiles" multiple accept="image/*" onchange="previewMultiple(this, 'new-detail-pre')" style="display: none;">
+				        </label>
+				    </div>
+
+				    <div id="detail-image-previews" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
+						<div th:each="img : ${performance.detailImages}" 
+						     class="detail-img-item" 
+						     th:id="'img-item-' + ${img.imageId}" 
+						     style="position: relative; width: 18%; min-width: 100px;">
+						     
+						    <img th:src="@{|https://s3-202601052.s3.ap-northeast-2.amazonaws.com/${img.imageName}|}" 
+						         style="width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 8px; border: 1px solid #ddd;">
+						    
+						    <label th:onclick="|removeExistingImage('${img.imageId}')|" 
+						           style="position: absolute; top: 5px; right: 5px; background: rgba(255,0,0,0.8); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; font-size: 14px;">
+						        ×
+						        <input type="checkbox" name="deleteImageIds" th:value="${img.imageId}" style="display: none;">
+						    </label>
+						</div>
+				    </div>
+
+				    <div id="new-detail-pre" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;"></div>
+				</div>
+			</div>
 
 	        <div class="section">
 	            <h2>4. 좌석 등급 설정 및 배치도 수정</h2>
@@ -326,27 +360,82 @@
             return true;
         }
 
-        function addOpenPeriod() {
-            if(isStarted) return;
-            const container = document.getElementById('open-period-container');
-            const totalStart = document.getElementById('startDate').value;
-            const totalEnd = document.getElementById('endDate').value;
+		function addOpenPeriod() {
+		    if(isStarted && false) return; // 전체 판매 시작 여부와 관계없이 추가는 가능해야 함
+		    
+		    const container = document.getElementById('open-period-container');
+		    const totalStart = document.getElementById('startDate').value;
+		    const totalEnd = document.getElementById('endDate').value;
 
-            const newIdx = container.children.length + 1;
-            const div = document.createElement('div');
-            div.className = 'open-period-box';
-            div.innerHTML = `
-                <div class="period-title">
-                    <strong>🎟️ 생성할 회차 범위 (세트 ${newIdx})</strong>
-                    <button type="button" class="btn-remove" onclick="this.closest('.open-period-box').remove()">삭제</button>
-                </div>
-                <div class="date-row">
-                    <input type="date" name="openStartDates" class="openStart" min="${totalStart}" max="${totalEnd}" required>
-                    <input type="date" name="openEndDates" class="openEnd" min="${totalStart}" max="${totalEnd}" required>
-                </div>
-                <input type="datetime-local" name="openingTimes" required>`;
-            container.appendChild(div);
-        }
+		    if (!totalStart || !totalEnd) {
+		        alert("공연 전체 운영 기간을 먼저 설정해주세요.");
+		        return;
+		    }
+
+		    const newIdx = container.querySelectorAll('.open-period-box').length + 1;
+		    const div = document.createElement('div');
+		    div.className = 'open-period-box';
+		    div.id = `open-box-${newIdx}`;
+		    
+		    div.innerHTML = `
+		        <div class="period-title" style="margin-top:20px; border-top:1px dashed #ccc; pt:10px;">
+		            <strong>🎟️ 생성할 회차 범위 (세트 ${newIdx}) - <span style="color:blue;">추가분</span></strong>
+		            <button type="button" class="btn-remove" onclick="this.closest('.open-period-box').remove()" 
+		                    style="background:#ff5e5e; color:white; border:none; padding:2px 8px; cursor:pointer;">삭제</button>
+		        </div>
+		        <div class="date-row" style="display:flex; gap:10px; margin-top:10px;">
+		            <div class="date-item">
+		                <label>오픈 시작일</label>
+		                <input type="date" name="openStartDates" class="openStart" min="${totalStart}" max="${totalEnd}" required>
+		            </div>
+		            <div class="date-item">
+		                <label>오픈 종료일</label>
+		                <input type="date" name="openEndDates" class="openEnd" min="${totalStart}" max="${totalEnd}" required>
+		            </div>
+		        </div>
+		        <div class="form-group opening-time-group" style="margin-top:10px;">
+		            <label>🔔 티켓 예매 시작 일시 </label>
+		            <input type="datetime-local" name="openingTimes" required>
+		        </div>`;
+		    
+		    container.appendChild(div);
+		}
+		
+		function previewMultiple(input, containerId) {
+		    const container = document.getElementById(containerId);
+		    // 기존에 추가된 미리보기는 유지하고 싶다면 아래 줄 주석 처리, 전체 교체면 유지
+		    // container.innerHTML = ""; 
+
+		    if (input.files) {
+		        Array.from(input.files).forEach(file => {
+		            const reader = new FileReader();
+		            reader.onload = (e) => {
+		                const div = document.createElement("div");
+		                div.style.cssText = "position: relative; width: calc(20% - 10px); min-width: 100px;";
+		                div.innerHTML = `
+		                    <img src="${e.target.result}" style="width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 8px; border: 1px solid #ddd;">
+		                    <div onclick="this.parentElement.remove()" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px;">×</div>
+		                `;
+		                container.appendChild(div);
+		            };
+		            reader.readAsDataURL(file);
+		        });
+		    }
+		}
+		
+		function removeExistingImage(imageId) {
+		    // 1. 해당 이미지 요소를 화면에서 숨김
+		    const item = document.getElementById('img-item-' + imageId);
+		    if (item) {
+		        item.style.display = 'none';
+		        
+		        // 2. 해당 체크박스를 찾아 강제로 체크 상태로 만듦
+		        const checkbox = item.querySelector('input[type="checkbox"]');
+		        if (checkbox) {
+		            checkbox.checked = true;
+		        }
+		    }
+		}
         /*]]>*/
     </script>
 </body>

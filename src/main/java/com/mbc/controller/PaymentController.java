@@ -102,56 +102,46 @@ public class PaymentController {
     public String completeOrder(@RequestParam("paymentId") String paymentId,
                                 @RequestParam("totalAmount") Integer totalAmount,
                                 @RequestParam("seatId") Long seatId,
-                                @RequestParam("performanceId") Long performanceId,
+                                @RequestParam("scheduleId") Long scheduleId, // 회차 ID
                                 HttpSession session,
                                 RedirectAttributes rttr) {
         
         Users user = (Users) session.getAttribute("user");
-        if (user == null) {
-            return "redirect:/user/login.do";
-        }
+        if (user == null) return "redirect:/user/login.do";
 
         try {
-            // 1. 좌석 정보 조회 (좌석 번호와 등급 정보를 가져오기 위함)
+            // 1. 좌석 정보 및 회차 정보 조회
             SeatInventory seat = performanceService.findSeatById(seatId);
+            PerformanceSchedule schedule = performanceService.findScheduleById(scheduleId); // [추가]
 
-            // 2. 좌석 상태 최종 업데이트 (isReserved = 1 로 변경)
-            performanceService.reserveSeat(seatId);
-
-            // 3. 주문 정보 저장
-            // [중요] SeatInventory에서 조회한 seatNumber와 seatType을 여기서 담아줍니다.
+            // 2. 주문 정보 저장 (이제 빌더에서 .schedule()을 사용합니다)
             OrderList order = OrderList.builder()
                     .reserveNum(paymentId)
-                    .showIdx(performanceId)
+                    .schedule(schedule) // [수정] showIdx 대신 schedule 객체 전달
                     .userIdx(user.getUserIdx())
                     .name(user.getName())
                     .phone(user.getPhone())
-                    .seatNum(seat.getSeatNumber())         // 좌석 번호 저장
-                    .seatGrade(String.valueOf(seat.getSeatType())) // 등급 저장
+                    .seatNum(seat.getSeatNumber())
+                    .seatGrade(String.valueOf(seat.getSeatType()))
                     .paymentAmount(totalAmount)
                     .status("CONFIRMED")
-                    .reserveDate(LocalDateTime.now())      // 결제 시간 기록
+                    .reserveDate(LocalDateTime.now())
                     .build();
 
             orderListRepository.save(order);
 
+            // 3. 좌석 상태 확정 (userIdx를 넘겨 예약자 기록)
+            performanceService.reserveSeat(seatId, user.getUserIdx());
+
             rttr.addFlashAttribute("msg", "예매가 성공적으로 완료되었습니다!");
             return "reserve/complete";
 
-        } catch (ObjectOptimisticLockingFailureException e) {
-            // [중요] 동시 결제 시도 시 낙관적 락 예외 발생
-            rttr.addFlashAttribute("error", "결제 처리 중 문제가 발생했습니다. 좌석이 이미 점유되었을 수 있습니다.");
-            return "redirect:/"; 
         } catch (Exception e) {
-            e.printStackTrace(); // 어떤 에러인지 콘솔에서 확인 가능하게 함
-            rttr.addFlashAttribute("error", "예매 처리 중 오류가 발생했습니다: " + e.getMessage());
+            e.printStackTrace(); 
+            rttr.addFlashAttribute("error", "예매 처리 중 오류가 발생했습니다.");
             return "redirect:/";
         }
-    
     }
-    
-    
-    
     
     
     

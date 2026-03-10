@@ -1,6 +1,7 @@
 package com.mbc.controller;
 import com.mbc.admin.entity.Performance;
 import com.mbc.admin.service.AdminPerformanceService; // 기존 서비스 재사용 가능
+import com.mbc.user.Users;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.mbc.admin.entity.PerformanceGradeConfig; // 관리자 엔티티 패키지 경로
 import com.mbc.admin.entity.PerformanceSchedule;
@@ -98,13 +100,31 @@ public class TheaterController {
      * 좌석 선택 페이지
      */
     @GetMapping("/seat.do")
-    public String seatPage(@RequestParam("scheduleId") Long scheduleId, Model model) {
+    public String seatPage(@RequestParam("scheduleId") Long scheduleId, 
+                           HttpSession session, 
+                           Model model, 
+                           RedirectAttributes rttr) {
+        
+        // 0. 로그인 체크 및 사용자 정보 가져오기
+        Users user = (Users) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:/user/login.do";
+        }
+
+        // [추가] 1. 이미 예매했는지 체크 (1인 1매 제한)
+        boolean alreadyReserved = performanceService.hasAlreadyReserved(user.getUserIdx(), scheduleId);
+        
+        if (alreadyReserved) {
+            // 경고 메시지 전달
+            rttr.addFlashAttribute("error", "이미 해당 회차에 대한 예매 내역이 존재합니다. (1인 1매 제한)");
+            // 공연 목록 페이지나 메인으로 리다이렉트
+            return "redirect:/"; 
+        }
+
         // 1. 데이터 조회
         PerformanceSchedule schedule = performanceService.findScheduleById(scheduleId);
         Performance performance = schedule.getPerformance();
         
-        // [수정] 보유석(3)을 제외하지 않고, 모든 좌석을 그대로 사용합니다.
-        // 그래야 화면에 보유석 자리가 비어 보이지 않고 회색으로 표시됩니다.
         List<SeatInventory> allSeats = schedule.getSeats();
         
         // 2. 스케줄 정보 가공
@@ -126,8 +146,6 @@ public class TheaterController {
             map.put("gradeName", config.getGradeName());
             map.put("price", config.getGradePrice());
             
-            // 주의: 보유석(3)을 제외하고 카운트하려면 countAvailableSeats 메서드 내부 로직을 확인하세요.
-            // 현재 countAvailableSeats가 보유석을 자동으로 제외하고 있다면 그대로 두시면 됩니다.
             int remainCount = seatInventoryRepository.countAvailableSeats(scheduleId, i + 1);
             map.put("remainCount", remainCount);
             gradeData.add(map);
@@ -136,7 +154,7 @@ public class TheaterController {
         // 4. 모델에 담기
         model.addAttribute("performance", performance); 
         model.addAttribute("schedule", schedule);
-        model.addAttribute("seats", allSeats); // [수정] 전체 좌석 리스트 전달
+        model.addAttribute("seats", allSeats);
         model.addAttribute("grades", gradeData);
         model.addAttribute("schedules", schedulesForJS); 
         
@@ -179,8 +197,22 @@ public ResponseEntity<String> cancelSeat(@RequestParam("seatId") Long seatId, Ht
 }
 
 
+//동일회차 매수재한 api 
+@GetMapping("/check-reservation.do")
+@ResponseBody
+public Map<String, Object> checkReservation(@RequestParam("scheduleId") Long scheduleId, HttpSession session) {
+    Users user = (Users) session.getAttribute("user");
+    Map<String, Object> response = new HashMap<>();
+    
+    if (user == null) {
+        response.put("reserved", false); // 로그인이 안 되어 있으면 일단 통과
+        return response;
+    }
 
-
+    boolean isReserved = performanceService.hasAlreadyReserved(user.getUserIdx(), scheduleId);
+    response.put("reserved", isReserved);
+    return response;
+}
 
 
 

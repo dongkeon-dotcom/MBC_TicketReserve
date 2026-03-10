@@ -240,15 +240,30 @@ public class AdminController {
     @ResponseBody
     public String showUpdate(@ModelAttribute PerformanceSaveDto dto) {
         System.out.println("==> 공연 수정 요청 진입: " + dto.getPerformanceId());
+        
+        // 1. 파일 확인 로그 (디버깅용)
+        if(dto.getPosterFile() != null && !dto.getPosterFile().isEmpty()) {
+            System.out.println("포스터 파일 수신: " + dto.getPosterFile().getOriginalFilename());
+        }
+        
         try {
-            // 기존 템플릿/가격을 지우고 새로 저장하는 서비스 로직 호출
+            // 2. 서비스로 DTO 전달 (DTO 안에 파일 정보가 다 들어있음)
             performanceService.processShowUpdate(dto);
+            
             return "<script>alert('공연 수정이 완료되었습니다!'); location.href='/main.do';</script>";
         } catch (Exception e) {
             e.printStackTrace();
             return "<script>alert('수정 실패: " + e.getMessage() + "'); history.back();</script>";
         }
     }
+    
+    
+    
+    
+    
+    
+    
+    
     /**
      * 공연 삭제 처리
      * /admin/delete.do?id=123
