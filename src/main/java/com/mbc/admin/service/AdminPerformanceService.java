@@ -36,6 +36,7 @@ import com.mbc.admin.repositiry.PerformenceDetailImageRepository;
 import com.mbc.admin.repositiry.SeatInventoryRepository;
 import com.mbc.admin.repositiry.VenueSeatMasterRepository;
 import com.mbc.aws.S3UploaderService;
+import com.mbc.reservation.OrderList;
 import com.mbc.reservation.OrderListRepository;
 
 @Service
@@ -537,9 +538,39 @@ public class AdminPerformanceService {
     
     
     
+    // 티켓취소시 다시 좌석 풀리게 하기 위한 매서드 내일의 내가 쓰겟지...
     
-    
-    
+    @Transactional
+    public void cancelReservation(Long orderIdx) {
+        // 1. 주문 내역 조회
+        OrderList order = orderListRepository.findById(orderIdx)
+                .orElseThrow(() -> new IllegalArgumentException("해당 주문 정보를 찾을 수 없습니다."));
+
+        // 2. 이미 취소된 주문인지 확인
+        if ("CANCELED".equals(order.getStatus())) {
+            throw new IllegalStateException("이미 취소된 주문입니다.");
+        }
+
+        // 3. 연결된 좌석 정보 조회 (order의 schedule과 seatNumber로 특정)
+        // ※ 주의: SeatInventory에 해당 정보가 없다면 예외 발생
+        SeatInventory seat = seatInventoryRepository.findByScheduleAndSeatNumber(
+                order.getSchedule(), 
+                order.getSeatNum()
+        ).orElseThrow(() -> new IllegalArgumentException("해당 좌석 정보를 찾을 수 없습니다."));
+
+        // 4. 좌석 상태를 '예매 가능(0)'으로 초기화
+        seat.setIsReserved(0);
+        seat.setReservedAt(null);
+        seat.setReservedBy(null);
+
+        // 5. 주문 상태 변경 및 취소 시간 기록
+        order.setStatus("CANCELED");
+        order.setCancelDate(LocalDateTime.now());
+
+        // 저장 (JPA는 @Transactional이 끝나면 변경사항을 자동으로 DB에 반영합니다)
+        orderListRepository.save(order);
+        seatInventoryRepository.save(seat);
+    }
     
     
     

@@ -76,7 +76,14 @@
 		    </div>
 		</section>
     </div>
-
+	<div id="waitingModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999;">
+	    <div style="background:white; width:400px; margin: 200px auto; padding:30px; text-align:center; border-radius:10px;">
+	        <h2 id="modalTitle">현재 예매 대기 중입니다.</h2>
+	        <p id="rankDisplay" style="font-size: 1.2rem; font-weight: bold; color: #ff5a00;"></p>
+	        <p>순번이 되면 자동으로 입장됩니다.</p>
+	        <button id="enterBtn" style="display:none; padding:10px 20px; background:#ff5a00; color:white; border:none; cursor:pointer;" onclick="closeModalAndOpen()">입장하기</button>
+	    </div>
+	</div>
     <div th:replace="~{include/bottom::footer}"></div>
 
 	<script th:inline="javascript">
@@ -289,33 +296,72 @@
 					        container.appendChild(div);
 					    }); // <--- forEach를 닫는 }); 추가 (기존에 누락됨)
 					} // <--
+					async function goToSeatSelection() {
+					    if (!selectedScheduleId) {
+					        alert("공연 회차를 선택해주세요.");
+					        return;
+					    }
+
+					    try {
+					        // 1. 서버에 대기열 상태 확인 요청
+					        const response = await fetch('/reserve/check-queue');
+					        const data = await response.json();
+
+					        if (data.status === "DIRECT") {
+					            // 바로 입장 가능한 경우 팝업 오픈
+					            openSeatPopup();
+					        } else {
+					            // 대기열에 걸린 경우 모달 출력 및 순번 체크 시작
+					            startWaiting(data.rank);
+					        }
+					    } catch (e) {
+					        console.error("대기열 확인 실패:", e);
+					        alert("서버 통신 중 오류가 발생했습니다.");
+					    }
+					}
+
+					function openSeatPopup() {
+					    const url = "/reserve/seat.do?scheduleId=" + selectedScheduleId;
+					    const width = 1100;
+					    const height = 850;
+					    const left = (window.screen.width / 2) - (width / 2);
+					    const top = (window.screen.height / 2) - (height / 8);
+					    window.open(url, "reservePopup", `width=${width}, height=${height}, left=${left}, top=${top}`);
+					}
+
+					function startWaiting(initialRank) {
+					    const modal = document.getElementById("waitingModal");
+					    const rankDisplay = document.getElementById("rankDisplay");
+					    modal.style.display = "block";
+					    rankDisplay.innerText = `내 순번: ${initialRank}번째`;
+
+					    // 3초마다 폴링
+					    const interval = setInterval(async () => {
+					        const res = await fetch('/reserve/check-rank');
+					        const d = await res.json();
+					        
+					        if (d.rank > 0) {
+					            rankDisplay.innerText = `내 순번: ${d.rank}번째`;
+					            
+					            // 순번이 100등 안으로 들어오면 입장 버튼 활성화 (또는 자동 입장)
+					            if (d.rank <= 100) {
+					                clearInterval(interval);
+					                document.getElementById('modalTitle').innerText = "입장이 가능합니다!";
+					                document.getElementById('enterBtn').style.display = "block";
+					            }
+					        } else {
+					            // 대기열에서 사라졌다면(순번 처리됨)
+					            clearInterval(interval);
+					            modal.style.display = "none";
+					            openSeatPopup();
+					        }
+					    }, 3000);
+					}
 					
-		function goToSeatSelection() {
-		    if (!selectedScheduleId) {
-		        alert("공연 회차를 선택해주세요.");
-		        return;
-		    }
-
-		    // 팝업 창에 표시될 URL (기존 경로 유지)
-		    const url = "/reserve/seat.do?scheduleId=" + selectedScheduleId;
-
-		    // 팝업 창의 옵션 설정 (가로 1100px, 세로 850px 정도가 적당합니다)
-		    // 화면 중앙에 띄우기 위해 좌표 계산을 추가할 수 있습니다.
-		    const width = 1100;
-		    const height = 850;
-		    const left = (window.screen.width / 2) - (width / 2);
-		    const top = (window.screen.height / 2) - (height / 2);
-		    
-		    const windowOptions = `width=${width}, height=${height}, left=${left}, top=${top}, resizable=no, scrollbars=no, status=no, toolbar=no`;
-
-		    // 팝업 띄우기 (창 이름: reservePopup)
-		    const popup = window.open(url, "reservePopup", windowOptions);
-
-		    // 브라우저 설정에 의해 팝업이 차단된 경우 안내
-		    if (!popup || popup.outerHeight === 0 || popup.outerWidth === 0) {
-		        alert("팝업 차단이 설정되어 있습니다. 팝업 차단을 해제해주세요.");
-		    }
-		}
+					function closeModalAndOpen() {
+					        document.getElementById("waitingModal").style.display = "none";
+					        openSeatPopup();
+					    }
 	    /*]]>*/
 	</script>
 </body>

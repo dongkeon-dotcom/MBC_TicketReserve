@@ -107,8 +107,13 @@
 	<dependency>
 	    <groupId>org.springframework.boot</groupId>
 	    <artifactId>spring-boot-starter-mail</artifactId>
-	</dependency>		
-		
+	</dependency>	
+	
+	<!--대기열을 위한 redis 설정-->	
+		<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
 		
 		
 	</dependencies>
