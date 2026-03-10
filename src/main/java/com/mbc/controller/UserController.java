@@ -212,6 +212,14 @@ public class UserController {
 		return "user/reservationList";
 	}
 	
+	@GetMapping("reservationOne.do")
+	public String reservationOne(@RequestParam String reserveNum, Model model) {
+		UserReservationDTO detail = service.getReservationDetail(reserveNum);
+		
+		model.addAttribute("detail",detail);
+		return "user/reservationOne";
+	}
+	
 	
 	
 }

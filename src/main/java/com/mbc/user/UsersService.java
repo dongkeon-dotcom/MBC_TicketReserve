@@ -105,5 +105,10 @@ public class UsersService {
 		return userReservationRepo.findReservationListByUserIdAndStatus(userIdx, status, pageable);
 	}
 	
+	public UserReservationDTO getReservationDetail(String reserveNum) {
+		return userReservationRepo.findByReserveNum(reserveNum)
+				.orElseThrow(()->new RuntimeException("해당 예매 내역을 찾을 수 없습니다."));
+	}
+	
 	
 }

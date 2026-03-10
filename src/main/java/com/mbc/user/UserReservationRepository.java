@@ -1,6 +1,7 @@
 package com.mbc.user;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,4 +30,18 @@ public interface UserReservationRepository extends JpaRepository<OrderList, Long
             @Param("user_idx") Long userIdx, 
             @Param("status") String status, 
             Pageable pageable); // Pageable 추가	
+	
+	@Query(value = "SELECT " +
+            "r.reserve_num AS reserveNum, r.show_idx AS showIdx, r.name, r.seat_num AS seatNum, " +
+            "r.payment_amount AS paymentAmount, r.status, r.reserve_date AS reserveDate, " +
+            "ps.performance_id AS performanceId, ps.start_time AS startTime, " +
+            "p.title, p.poster_image_name AS posterImageName, " +
+            "pgc.grade_order AS gradeOrder, pgc.grade_name AS gradeName " +
+            "FROM reservation r " +
+            "JOIN performance_schedule ps ON r.show_idx = ps.schedule_id " +
+            "JOIN performance p ON ps.performance_id = p.performance_id " +
+            "JOIN performance_grade_config pgc ON pgc.performance_id = p.performance_id AND r.seat_grade = pgc.grade_order " +
+            "WHERE r.reserve_num = :reserveNum", // 예매 번호로 단건 필터링
+            nativeQuery = true)
+    Optional<UserReservationDTO> findByReserveNum(@Param("reserveNum") String reserveNum);
 }

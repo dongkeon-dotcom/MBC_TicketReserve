@@ -1,0 +1,55 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>마이페이지</title>
+    <link rel="stylesheet" th:href="@{/css/user/reservationList.css}">
+</head>
+<body>
+    <div th:replace="~{include/top::top}"></div>
+
+<section class="reservation-wrapper">
+<div style="background: #f4f4f4; padding: 20px; border: 1px solid #ccc; font-family: monospace;">
+    <h3 style="border-bottom: 1px solid #666;">UserReservationDTO 데이터 전체 확인</h3>
+    
+    <p><strong>[reservation 테이블]</strong></p>
+    <ul>
+        <li>예매번호 (reserveNum): <span th:text="${detail.reserveNum}"></span></li>
+        <li>공연고유번호 (showIdx): <span th:text="${detail.showIdx}"></span></li>
+        <li>예매자명 (name): <span th:text="${detail.name}"></span></li>
+        <li>좌석번호 (seatNum): <span th:text="${detail.seatNum}"></span></li>
+        <li>결제금액 (paymentAmount): <span th:text="${detail.paymentAmount}"></span></li>
+        <li>상태 (status): <span th:text="${detail.status}"></span></li>
+        <li>예매일 (reserveDate): <span th:text="${detail.reserveDate}"></span></li>
+    </ul>
+
+    <p><strong>[performance_schedule 테이블]</strong></p>
+    <ul>
+        <li>스케줄ID (performanceId): <span th:text="${detail.performanceId}"></span></li>
+        <li>공연시작시간 (startTime): <span th:text="${detail.startTime}"></span></li>
+    </ul>
+
+    <p><strong>[performance 테이블]</strong></p>
+    <ul>
+        <li>공연제목 (title): <span th:text="${detail.title}"></span></li>
+        <li>포스터파일명 (posterImageName): <span th:text="${detail.posterImageName}"></span></li>
+    </ul>
+
+    <p><strong>[performance_grade_config 테이블]</strong></p>
+    <ul>
+        <li>등급순서 (gradeOrder): <span th:text="${detail.gradeOrder}"></span></li>
+        <li>등급명 (gradeName): <span th:text="${detail.gradeName}"></span></li>
+    </ul>
+</div>
+</section>
+<script th:inline="javascript">
+/*<![CDATA[*/
+const message = /*[[${msg}]]*/ null;
+if (message) {
+    alert(message);
+}
+/*]]>*/
+</script>
+
+    <div th:replace="~{include/bottom::footer}"></div>
+</body>
+</html>
