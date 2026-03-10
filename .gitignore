@@ -36,3 +36,4 @@ application-aws.properties
 application-db.properties
 application-OAuth.properties
 application-MAIL.properties
+application-payment.properties

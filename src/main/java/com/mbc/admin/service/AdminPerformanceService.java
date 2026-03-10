@@ -75,32 +75,27 @@ public class AdminPerformanceService {
     @Transactional
     public void processShowInsert(PerformanceSaveDto dto) throws Exception {
         Performance performance = new Performance();
-        
-        // 1. 기본 정보 매핑 및 이미지 저장
-        updatePerformanceBasicInfo(performance, dto); 
-        saveImages(performance, dto);
-        
-        // 2. [중요] 부모인 Performance를 먼저 DB에 저장합니다.
-        // 이렇게 해야 performance_id(PK)가 생성되어 자식들이 참조할 수 있습니다.
-        performance = performanceRepository.save(performance);
+        performance.setTitle(dto.getTitle());
+        performance.setStartDate(LocalDate.parse(dto.getStartDate()));
+        performance.setEndDate(LocalDate.parse(dto.getEndDate()));
 
-        // 3. 이제 발급된 ID가 있는 상태로 자식 데이터들(스케줄, 템플릿)을 생성합니다.
+        // 1. 이미지 저장 (연관관계 편의 메서드 내부에서 setPerformance 호출됨)
+        saveImages(performance, dto);
+
+        // 2. 공연 저장 (ID 생성)
+        performanceRepository.save(performance);
+
+        // 3. 스케줄 및 좌석 생성
         List<String> startDates = dto.getOpenStartDates();
         if (startDates != null) {
             for (int i = 0; i < startDates.size(); i++) {
                 LocalDate start = LocalDate.parse(startDates.get(i));
                 LocalDate end = LocalDate.parse(dto.getOpenEndDates().get(i));
-                
-                // 이제 에러 없이 자식 테이블들에 데이터가 들어갑니다.
                 generateSchedulesForPeriod(performance, start, end, dto, i);
             }
         }
-
-        // 4. (선택사항) 모든 자식 관계 설정이 끝난 후 한 번 더 저장하거나, 
-        // @Transactional이 있으므로 더티 체킹에 의해 자동으로 최종 반영됩니다.
-        performanceRepository.save(performance);
+        // @Transactional에 의해 메서드 종료 시 자동 커밋됨
     }
-
     /**
      * [2] 공연 수정 처리 (Update)
      * 기존 데이터를 삭제 후 재등록하여 정합성을 유지합니다.
@@ -183,9 +178,9 @@ public class AdminPerformanceService {
     /**
      * [공통] 특정 기간 동안의 회차 및 좌석 인벤토리를 생성하는 핵심 메서드
      */
-    public void generateSchedulesForPeriod(Performance performance, LocalDate openStart, LocalDate openEnd, PerformanceSaveDto dto, int index) throws Exception {
+public void generateSchedulesForPeriod(Performance performance, LocalDate openStart, LocalDate openEnd, PerformanceSaveDto dto, int index) throws Exception {
         
-        // [A] 등급 설정(GradeConfig) 생성 (이미 존재하지 않을 때만 실행)
+        // [A] 등급 설정(GradeConfig) 생성
         if (performance.getGrades().isEmpty()) {
             for (int i = 0; i < dto.getGradeNames().size(); i++) {
                 PerformanceGradeConfig grade = new PerformanceGradeConfig();
@@ -201,7 +196,6 @@ public class AdminPerformanceService {
         Map<String, List<String>> scheduleMap = objectMapper.readValue(
             dto.getWeeklySchedule(), new TypeReference<Map<String, List<String>>>() {});
         
-        // seatGradeMap 파싱 타입을 Map<String, Map<String, Object>>로 변경
         Map<String, Map<String, Object>> seatGradeMap = objectMapper.readValue(
             dto.getSeatGradeMap(), new TypeReference<Map<String, Map<String, Object>>>() {});
         
@@ -212,7 +206,6 @@ public class AdminPerformanceService {
                 template.setPerformance(performance);
                 template.setSeatNumber(entry.getKey());
                 
-                // 중첩 Map에서 "grade" 값 추출
                 Object gradeVal = entry.getValue().get("grade");
                 int gradeOrder = (gradeVal != null) ? Integer.parseInt(String.valueOf(gradeVal)) : 1;
                 
@@ -240,35 +233,44 @@ public class AdminPerformanceService {
                     schedule.setOpeningTime(openingTime);
 
                     for (VenueSeatMaster master : masters) {
-                        SeatInventory seat = new SeatInventory();
                         String seatNo = master.getSeatNumber(); 
-                        seat.setSeatNumber(seatNo); 
                         
-                        // 등급 추출 로직: 중첩 Map에서 grade 꺼내기
+                        // 1. 데이터 파싱
                         Map<String, Object> seatData = seatGradeMap.get(seatNo);
                         int gradeNum = 1;
-                        if (seatData != null && seatData.get("grade") != null) {
-                            gradeNum = Integer.parseInt(String.valueOf(seatData.get("grade")));
+                        boolean isSecret = false; 
+
+                        if (seatData != null) {
+                            if (seatData.get("grade") != null) {
+                                gradeNum = Integer.parseInt(String.valueOf(seatData.get("grade")));
+                            }
+                            if (seatData.get("isSecret") != null) {
+                                isSecret = Boolean.parseBoolean(String.valueOf(seatData.get("isSecret")));
+                            }
                         }
                         
-                        // 등급 인덱스 초과 방지
+                        // 2. 등급 매칭
                         if (gradeNum > performance.getGrades().size()) gradeNum = 1;
-                        
                         PerformanceGradeConfig matchedGrade = performance.getGrades().get(gradeNum - 1);
                         
-                        seat.setSeatType(matchedGrade.getGradeOrder());
-                        seat.setPrice(matchedGrade.getGradePrice());
-                        seat.setIsReserved(0);
+                        // 3. [핵심] 수정된 createSeat 호출 (5개 파라미터 전달)
+                        // 주의: SeatInventory.java의 createSeat 메서드도 파라미터 5개짜리로 수정되어 있어야 합니다.
+                        SeatInventory seat = SeatInventory.createSeat(
+                            schedule, 
+                            seatNo, 
+                            matchedGrade.getGradeOrder(), 
+                            matchedGrade.getGradePrice(),
+                            isSecret // 마지막에 보유석 여부 전달
+                        );
                         
-                        schedule.addSeat(seat);                    }
+                        schedule.addSeat(seat);
+                    }
                     performance.addSchedule(schedule);
                 }
             }
             current = current.plusDays(1);
         }
     }
-    	
-    	
     	
 
     private String getKoreanDayOfWeek(LocalDate date) {

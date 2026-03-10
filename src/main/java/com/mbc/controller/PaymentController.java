@@ -112,19 +112,25 @@ public class PaymentController {
         }
 
         try {
-            // 1. 좌석 상태 최종 업데이트 (이미 선점된 좌석을 확정)
-            // 기존 reserveSeat를 호출하면 isReserved = 1로 바뀝니다.
+            // 1. 좌석 정보 조회 (좌석 번호와 등급 정보를 가져오기 위함)
+            SeatInventory seat = performanceService.findSeatById(seatId);
+
+            // 2. 좌석 상태 최종 업데이트 (isReserved = 1 로 변경)
             performanceService.reserveSeat(seatId);
 
-            // 2. 주문 정보 저장
+            // 3. 주문 정보 저장
+            // [중요] SeatInventory에서 조회한 seatNumber와 seatType을 여기서 담아줍니다.
             OrderList order = OrderList.builder()
                     .reserveNum(paymentId)
                     .showIdx(performanceId)
                     .userIdx(user.getUserIdx())
                     .name(user.getName())
                     .phone(user.getPhone())
+                    .seatNum(seat.getSeatNumber())         // 좌석 번호 저장
+                    .seatGrade(String.valueOf(seat.getSeatType())) // 등급 저장
                     .paymentAmount(totalAmount)
                     .status("CONFIRMED")
+                    .reserveDate(LocalDateTime.now())      // 결제 시간 기록
                     .build();
 
             orderListRepository.save(order);
@@ -133,14 +139,15 @@ public class PaymentController {
             return "reserve/complete";
 
         } catch (ObjectOptimisticLockingFailureException e) {
-            // [중요] 두 명이 동시에 결제 버튼을 눌렀을 때, 
-            // 한 명은 성공하고 다른 한 명은 여기서 예외가 발생하여 중복 예약을 막습니다.
+            // [중요] 동시 결제 시도 시 낙관적 락 예외 발생
             rttr.addFlashAttribute("error", "결제 처리 중 문제가 발생했습니다. 좌석이 이미 점유되었을 수 있습니다.");
-            return "redirect:/"; // 메인이나 에러 페이지로 리다이렉트
+            return "redirect:/"; 
         } catch (Exception e) {
-            rttr.addFlashAttribute("error", "예매 처리 중 오류가 발생했습니다.");
+            e.printStackTrace(); // 어떤 에러인지 콘솔에서 확인 가능하게 함
+            rttr.addFlashAttribute("error", "예매 처리 중 오류가 발생했습니다: " + e.getMessage());
             return "redirect:/";
         }
+    
     }
     
     

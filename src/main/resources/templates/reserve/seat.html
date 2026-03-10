@@ -239,20 +239,17 @@
         };
 		
 		function handleSeatClick(element) {
-		    // 1. data-status 값을 확실하게 가져옵니다.
 		    const status = parseInt(element.getAttribute('data-status'));
 		    
-		    console.log("선택한 좌석 상태값:", status); // F12 콘솔에서 확인용
-
-		    // 2. 예약 가능(0)이 아니면(즉, 1이나 3이면) 바로 종료
+		    // 1. 보유석(3)이나 예매완료(1)일 때 바로 차단 (기존 기능 유지)
 		    if (status !== 0) {
 		        alert('선택할 수 없는 좌석입니다.');
-		        return false; // 클릭 이벤트 중단
+		        return; 
 		    }
 
-		    // 3. 예약 가능한 경우에만 함수 호출
+		    // 2. 0일 때는 기존의 selectSeat 함수를 그대로 호출
 		    const seatId = element.getAttribute('data-id');
-		    selectSeat(seatId);
+		    selectSeat(seatId); 
 		}
 		
 		

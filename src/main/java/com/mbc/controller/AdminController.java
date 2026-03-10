@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -200,22 +201,31 @@ public class AdminController {
      * @ModelAttribute를 사용하면 폼 데이터가 DTO에 자동으로 매핑됩니다.
      */
     
-    @PostMapping("/showsave.do") // HTML 폼의 action 경로와 일치시켜주세요.
+    @PostMapping("/showsave.do")
     @ResponseBody 
-    public String showInsert(@ModelAttribute PerformanceSaveDto dto) {
+    public String showInsert(
+            @ModelAttribute PerformanceSaveDto dto,
+            @RequestParam(value = "posterFile", required = false) MultipartFile posterFile,
+            @RequestParam(value = "detailFiles", required = false) List<MultipartFile> detailFiles) {
+        
         System.out.println("==> 공연 저장 요청 진입: " + dto.getTitle());
         
         try {
-            // 1. 서비스 호출 (이미지 파일 처리 + 날짜별 회차 생성 + 좌석 30개씩 복사)
+            // 1. DTO에 파일 데이터 주입
+            // 파라미터로 받은 파일이 null인지 한번 더 체크하면 안전합니다.
+            dto.setPosterFile(posterFile);
+            dto.setDetailFiles(detailFiles != null ? detailFiles : new ArrayList<>());
+            
+            // 2. 서비스 호출
             performanceService.processShowInsert(dto);
             
-            // 2. 성공 시 알림 및 목록 이동
-            return "<script>alert('공연 등록 및 좌석 생성이 완료되었습니다!');  location.href='/main.do';</script>";
-            
+            // 3. 성공 시 페이지 리다이렉트
+            // 목록 페이지가 /admin/listPage.do 이라면 경로를 확인하세요.
+            return "<script>alert('공연 등록이 완료되었습니다!'); location.href='/admin/listPage.do';</script>";
             
         } catch (Exception e) {
+            // [중요] 상세 에러 로그 출력
             e.printStackTrace();
-            // 에러 발생 시 메시지 출력 후 이전 페이지로
             return "<script>alert('등록 실패: " + e.getMessage() + "'); history.back();</script>";
         }
     }
