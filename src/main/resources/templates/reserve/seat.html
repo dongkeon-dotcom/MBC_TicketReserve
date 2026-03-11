@@ -263,6 +263,40 @@
 		        });
 		}
 		
+		
+		//개발자용 툴 막기! 
+								document.addEventListener('keydown', function(e) {
+								    // 1. F12 막기
+								    if (e.key === "F12") {
+								        e.preventDefault();
+								        return false;
+								    }
+
+								    // 2. Ctrl + Shift + I (개발자 도구) 막기
+								    if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+								        e.preventDefault();
+								        return false;
+								    }
+
+								    // 3. Ctrl + Shift + J (콘솔) 막기
+								    if (e.ctrlKey && e.shiftKey && e.key === 'J') {
+								        e.preventDefault();
+								        return false;
+								    }
+
+								    // 4. Ctrl + U (소스 보기) 막기
+								    if (e.ctrlKey && e.key === 'u') {
+								        e.preventDefault();
+								        return false;
+								    }
+								}, false);
+								//마우스 우클릭 차단 
+								document.addEventListener('contextmenu', function(e) {
+								    e.preventDefault();
+								}, false);		
+		
+		
+		
         /*]]>*/
     </script>
 </body>
