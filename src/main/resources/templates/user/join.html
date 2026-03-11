@@ -110,7 +110,6 @@
             const form = document.joinForm;
             const addrMain = form.address.value;
             const addrExtra = form.extraAddress.value;
-            const fullAddr = form.address;
             
             if(form.userId.value.trim() === ""){
                 alert("아이디(이메일)을 입력해주세요.");
@@ -154,7 +153,7 @@
             
             if(addrExtra.trim() === ""){
                 alert("상세 주소를 입력해주세요.");
-                form.addr_extra.focus();
+                form.extraAddress.focus();
                 return;
             }
             

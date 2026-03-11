@@ -15,33 +15,28 @@
     <nav class="top-nav">
     	<div class="nav-left">
         <a th:href="@{/main.do}">홈으로</a>
-        <!-- 공연 등록은 추후 관리자 영역으로 들어갈것 -->
-		<a th:href="@{/admin/insertPage.do}">공연등록</a>
-		<a th:href="@{/admin/listPage.do}">공연목록</a>
-    	<span th:if="${session.role == 'ROLE_ADMIN'}">
-      		<a th:href="@{/admin/main.do}">관리자영역</a>
-    	</span>
+        <!-- 관리자 영역 -->
+		<div sec:authorize="hasRole('ADMIN')">
+			<a th:href="@{/admin/insertPage.do}">공연등록</a>
+			<a th:href="@{/admin/listPage.do}">공연목록</a>
+    	</div>
     	</div>
     
 		<div class="nav-right">
 		<input type="button" onclick="sendMailTest()" value="이메일 발송 테스트">
 		
         <!-- 로그아웃 상태일 때 -->
-        <!-- <sec:authorize access="isAnonymous()"> -->        
-        <th:block th:if="${session.user == null}">        
+        <div sec:authorize="isAnonymous()">                
     	    <a th:href="@{/user/join.do}">회원가입</a>
 		    <a th:href="@{/user/login.do}">로그인</a>
-		</th:block>
+		</div>
 		
 		<!-- 로그인 했을 때 -->
-        <!-- <sec:authorize access="isAuthenticated()"> -->        
-		<th:block th:if="${session.user != null}">
+        <div sec:authorize="isAuthenticated()">        
 			<a th:href="@{/user/mypage.do}">마이페이지</a>
-			<span class="user-info">
-    		<strong>[[${session.user.name}]]</strong>님
+			<span sec:authentication="principal.user.name"></span>님
     		<a th:href="@{/user/logout.do}" class="logout-link">로그아웃</a>
-    		</span>
-		</th:block>
+		</div>
 		
 		<a href="javascript:void(0)" class="search-trigger" onclick="toggleSearch(true)">
             <i class="fas fa-search"></i>
