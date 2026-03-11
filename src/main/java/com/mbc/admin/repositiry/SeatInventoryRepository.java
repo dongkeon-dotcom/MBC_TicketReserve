@@ -1,5 +1,6 @@
 package com.mbc.admin.repositiry;
 
+import com.mbc.admin.entity.PerformanceSchedule;
 import com.mbc.admin.entity.SeatInventory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface SeatInventoryRepository extends JpaRepository<SeatInventory, Long> {
@@ -46,8 +48,8 @@ public interface SeatInventoryRepository extends JpaRepository<SeatInventory, Lo
     
     
     List<SeatInventory> findByReservedByAndIsReserved(String reservedBy, Integer isReserved);
-    
-    
+    //특정 회차의 좌석번호로 좌석 조회 
+    Optional<SeatInventory> findByScheduleAndSeatNumber(PerformanceSchedule schedule, String seatNumber);
     
 }
 //실제로 판매될 개별 좌석을 저정하고 확인하기 위해 사용 
