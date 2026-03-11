@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.mbc.admin.WaitingQueueService;
+import com.mbc.user.Users;
+
+import jakarta.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/reserve")
@@ -22,33 +25,42 @@ public class WaitingQueueController {
     }
 
     // [신규] 예매 버튼 클릭 시 대기열 상태 확인 및 진입 처리
+ // 스프링 시큐리티 적용전이라 임시로 session으로 처리 후추 변경 필요 
     @GetMapping("/check-queue")
-    public ResponseEntity<Map<String, Object>> checkQueue(Principal principal) {
-        String userId = principal.getName();
+    public ResponseEntity<Map<String, Object>> checkQueue(HttpSession session) {
+        // 1. 세션에서 "user" 객체를 가져옵니다.
+        Users user = (Users) session.getAttribute("user");
+        
+        // 2. 로그인 안 했으면 처리
+        if (user == null) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", "REDIRECT_LOGIN");
+            return ResponseEntity.ok(errorResponse);
+        }
+
+        // 3. User 객체에서 ID를 추출 (getUserId()는 Users 클래스의 getter 메서드 이름에 맞게 수정하세요)
+        String userId = user.getUserId(); 
+        
         Map<String, Object> response = new HashMap<>();
 
-        // 1. 대기열 활성화 여부 확인 (서비스에 이 메서드를 추가해주세요)
-        if (!waitingQueueService.isQueueEnabled()) {
+        // 4. 대기열 로직 실행
+        long LIMIT = 0;
+        if (!waitingQueueService.isQueueEnabled() && waitingQueueService.getQueueSize() < LIMIT) {
             response.put("status", "DIRECT");
             return ResponseEntity.ok(response);
         }
 
-        // 2. 대기열 진입
-        waitingQueueService.enterQueue(userId);
-        
-        // 3. 내 순번 조회
-        Long rank = waitingQueueService.getRank(userId);
-        
-        // 4. 즉시 입장 가능 여부 판단 (예: 100등 안이면 바로 입장)
-        if (rank != null && rank <= 100) {
-            response.put("status", "DIRECT");
-        } else {
-            response.put("status", "WAITING");
-            response.put("rank", rank != null ? rank + 1 : 1); // 0부터 시작하므로 +1
+        if (!waitingQueueService.isInQueue(userId)) {
+            waitingQueueService.enterQueue(userId);
         }
+        
+        Long rank = waitingQueueService.getRank(userId);
+        response.put("status", "WAITING");
+        response.put("rank", rank != null ? rank : 1);
 
         return ResponseEntity.ok(response);
     }
+    
 
     // 기존 내 순번 확인 API
     @GetMapping("/check-rank")

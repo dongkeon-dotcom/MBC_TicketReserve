@@ -303,15 +303,27 @@
 					    }
 
 					    try {
-					        // 1. 서버에 대기열 상태 확인 요청
 					        const response = await fetch('/reserve/check-queue');
 					        const data = await response.json();
+					        
+					        console.log("서버 응답:", data);
 
+					        // 1. 로그인 필요 상황 처리
+					        if (data.status === "REDIRECT_LOGIN") {
+					            if (confirm("로그인이 필요한 서비스입니다. 로그인 페이지로 이동하시겠습니까?")) {
+									window.location.href = /*[[@{/user/login.do}]]*/ '/user/login.do';
+					            }
+					            return;
+					        }
+
+					        // 2. 대기열 없이 바로 입장
 					        if (data.status === "DIRECT") {
-					            // 바로 입장 가능한 경우 팝업 오픈
+					            console.log("대기열 없음: 바로 입장");
 					            openSeatPopup();
-					        } else {
-					            // 대기열에 걸린 경우 모달 출력 및 순번 체크 시작
+					        } 
+					        // 3. 대기열 발생
+					        else {
+					            console.log("대기열 발생: 모달 오픈, 내 순번:", data.rank);
 					            startWaiting(data.rank);
 					        }
 					    } catch (e) {

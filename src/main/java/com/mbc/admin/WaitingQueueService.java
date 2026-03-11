@@ -45,11 +45,33 @@ public class WaitingQueueService {
     // 내 순번 확인 (0부터 시작하므로 +1)
     public Long getRank(String userId) {
         Long rank = redisTemplate.opsForZSet().rank(QUEUE_KEY, userId);
-        return (rank != null) ? rank + 1 : null;
+        return (rank != null) ? rank + 1 : null; // 1등부터 시작
     }
     
     // 대기열에서 나가기 (결제 완료 혹은 취소 시)
     public void leaveQueue(String userId) {
         redisTemplate.opsForZSet().remove(QUEUE_KEY, userId);
     }
+    
+ // WaitingQueueService.java에 추가
+    public Long getQueueSize() {
+        return redisTemplate.opsForZSet().zCard(QUEUE_KEY);
+    }
+    
+    public boolean isInQueue(String userId) {
+        return redisTemplate.opsForZSet().score(QUEUE_KEY, userId) != null;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }
