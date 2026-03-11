@@ -1,98 +1,140 @@
-/* 컨테이너 및 탭 스타일 */
 .reservation-wrapper {
-    max-width: 600px;
-    margin: 0 auto;
+    max-width: 700px;
+    margin: 30px auto;
     padding: 20px;
-    background-color: #f9f9f9;
-}
-
-.list-tabs {
-    text-align: center;
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 20px;
-    padding: 10px 0;
-    border: 2px solid #333;
-    background: white;
-}
-.tab.active { color: #000; }
-.tab-divider { margin: 0 15px; color: #ccc; }
-
-/* 카드 스타일 */
-.reserve-card {
     background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    margin-bottom: 15px;
-    overflow: hidden;
 }
 
-.card-title {
-    background: #f1f1f1;
-    padding: 12px 15px;
-    font-weight: bold;
-    font-size: 16px;
-    border-bottom: 1px solid #ddd;
-}
-
-.card-content {
-    display: flex;
-    padding: 15px;
-    position: relative;
-}
-
-/* 포스터 영역 */
-.poster-section{
-	width: 100px;
-	margin-right: 15px;
-	flex-shrink: 0;
-}
-
-.poster-section img {
-    width: 100%;
-    height: 140px;
-    object-fit: cover;
-    border: 1px solid #eee;
-    display: block;
-}
-
-/* 정보 영역 */
-.info-section {
-    flex: 1;
+/* 상단 페이지 경로 스타일 */
+.page-path {
     font-size: 13px;
-    line-height: 1.8;
-}
-.info-row { display: flex; }
-.label { width: 110px; color: #888; }
-.value { color: #333; }
-.blue-text { color: #0066cc; font-weight: bold; }
-.red-text { color: #ff4d4d; }
-
-.arrow-section {
-    display: flex;
-    align-items: center;
-    font-size: 30px;
-    color: #ccc;
-    padding-left: 10px;
+    color: #999;
+    margin-bottom: 20px;
+    text-align: left;
 }
 
-/* 페이지네이션 스타일 (이미지 1 기준) */
-.pagination-container {
+.page-path .current {
+    color: #333;
+    font-weight: bold;
+}
+
+/* 하단 버튼 영역 스타일 */
+.bottom-actions {
     display: flex;
     justify-content: center;
-    align-items: center;
-    margin-top: 30px;
-    gap: 15px;
+    margin-top: 40px;
+    padding-bottom: 20px;
 }
-.page-nav, .page-num {
+
+.btn-back {
+    display: inline-block;
+    width: 150px;
+    height: 45px;
+    line-height: 45px;
+    background-color: #333; /* 검은색 버튼으로 포인트 */
+    color: #fff !important;
+    text-align: center;
     text-decoration: none;
-    color: #333;
-    font-size: 18px;
     font-weight: bold;
+    border-radius: 4px;
+    transition: background-color 0.2s;
 }
-.page-numbers {
+
+.btn-back:hover {
+    background-color: #555;
+}
+
+/* 헤더: 포스터와 제목 */
+.detail-header {
     display: flex;
-    gap: 20px;
+    align-items: center;
+    padding: 20px;
+    border: 1px solid #e0e0e0;
+    background-color: #f8f8f8;
+    margin-bottom: 20px;
+    border-radius: 4px;
 }
-.page-num { color: #ccc; }
-.page-num.active { color: #000; border-bottom: 2px solid #000; }
+
+.poster-box {
+    width: 120px;
+    height: 160px;
+    margin-right: 20px;
+    box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+}
+
+.poster-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.title-box h2 {
+    font-size: 24px;
+    color: #333;
+    margin: 0;
+}
+
+/* 테이블 스타일 */
+.detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-top: 2px solid #eee;
+    margin-bottom: 30px;
+}
+
+.detail-table th {
+    width: 150px;
+    background-color: #f5f5f5;
+    color: #666;
+    padding: 15px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    font-size: 16px;
+}
+
+.detail-table td {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    color: #333;
+    font-size: 16px;
+}
+
+/* 강조 텍스트 */
+.blue-text {
+    color: #0066cc;
+    font-weight: bold;
+    font-size: 18px;
+    margin-right: 5px;
+}
+
+.status-text {
+    color: #8da6c9;
+    font-size: 15px;
+}
+
+/* 섹션 타이틀 */
+.section-title {
+    font-size: 20px;
+    margin: 40px 0 15px 0;
+    color: #222;
+}
+
+/* 취소 버튼 스타일 */
+.cancel-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn-cancel {
+    padding: 5px 15px;
+    background: white;
+    border: 1px solid #ccc;
+    color: #666;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.btn-cancel:hover {
+    background: #f0f0f0;
+}

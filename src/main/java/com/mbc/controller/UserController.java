@@ -1,6 +1,8 @@
 package com.mbc.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -219,6 +221,23 @@ public class UserController {
 		model.addAttribute("detail",detail);
 		return "user/reservationOne";
 	}
+	
+	@PostMapping("cancelReservation.do")
+	@ResponseBody
+	public ResponseEntity<Map<String, Object>> cancelReservation(@RequestParam String reserveNum) {
+	    Map<String, Object> response = new HashMap<>();
+	    boolean isCancelled = service.processCancellation(reserveNum);
+	    
+	    if (isCancelled) {
+	        response.put("success", true);
+	        response.put("message", "예매 취소가 완료되었습니다.");
+	    } else {
+	        response.put("success", false);
+	        response.put("message", "이미 취소되었거나 취소할 수 없는 상태입니다.");
+	    }
+	    return ResponseEntity.ok(response);
+	}
+	
 	
 	
 	

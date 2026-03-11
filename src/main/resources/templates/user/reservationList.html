@@ -8,6 +8,9 @@
     <div th:replace="~{include/top::top}"></div>
 
 <section class="reservation-wrapper">
+	<div class="page-path">
+        <span>마이페이지</span> &gt; <span class="current">공연 예매 확인/취소</span>
+    </div>
     <div class="list-tabs">
     	<a th:href="@{/user/reservationList.do(status='CONFIRMED')}"
     		class="tab" th:classappend="${currentStatus == 'CONFIRMED' ? 'active' : ''}">예매내역</a>

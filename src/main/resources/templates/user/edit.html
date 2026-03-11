@@ -9,15 +9,18 @@
     <div th:replace="~{include/top::top}"></div>
 
     <section class="member-wrapper">
-        <div class="edit-container" style="text-align: center; padding: 50px 0;">
-            <div style="display: inline-block; text-align: left; width: 100%; max-width: 600px;">
+        <div class="edit-container">
+            <div class="edit-content-box">
+                <div class="page-path">
+	        		<span>마이페이지</span> &gt; <span class="current">회원 정보 수정</span>
+    			</div>
                 <h1>개인 회원 정보 수정</h1>
 
                 <form name="updateForm" th:action="@{/user/editOK.do}" method="POST">
                     <input type="hidden" name="userId" th:value="${user.userId}">
                     <input type="hidden" name="userIdx" th:value="${user.userIdx}">
 
-                    <table class="member-table" border="1" style="width: 100%; border-collapse: collapse;">
+                    <table class="member-table">
                         <tr>
                             <td class="label-cell" style="padding: 10px; font-weight: bold;">이메일(아이디)</td>
                             <td>

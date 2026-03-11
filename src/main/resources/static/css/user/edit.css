@@ -1,29 +1,52 @@
 /* 전체 섹션 레이아웃 */
 .member-wrapper {
     max-width: 800px;
-    margin: 60px auto;
+    margin: 20px auto;
     padding: 0 20px;
-    min-height: 600px;
+    min-height: 500px;
+}
+
+/* 컨테이너 내부 여백 조정 */
+.edit-container {
+    padding: 10px 0; /* 인라인 50px 대신 10px로 조정 */
+    text-align: center;
+}
+
+.edit-content-box {
+    display: inline-block;
+    text-align: left;
+    width: 100%;
+    max-width: 600px;
+}
+
+/* 상단 경로와 제목 간격 줄이기 */
+.page-path {
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 10px; /* 20px -> 10px */
+    text-align: left;
+}
+.page-path .current {
+    color: #333;
+    font-weight: bold;
 }
 
 .member-wrapper h1 {
     font-size: 26px;
     font-weight: 600;
-    margin-bottom: 40px;
+    margin-top: 0; /* 브라우저 기본 마진 제거 */
+    margin-bottom: 25px; /* 40px -> 25px */
     color: #212529;
     text-align: center;
 }
 
-/* 정보 수정 테이블 */
+/* 테이블 상단 선 두께 및 간격 */
 .member-table {
     width: 100%;
-    max-width: 700px;
-    margin: 0 auto;
     border-collapse: collapse;
-    border-top: 2px solid #212529;
+    border-top: 2px solid #333; /* 조금 더 선명하게 */
     background-color: #fff;
 }
-
 .member-table td {
     padding: 20px 15px;
     border-bottom: 1px solid #dee2e6;
@@ -77,11 +100,10 @@
     margin-left: 5px;
 }
 
-/* 하단 버튼 그룹 */
+/* 하단 버튼 그룹 여백도 살짝 조정 */
 .button-group {
-    padding: 50px 0 !important;
+    padding: 30px 0 !important; /* 50px -> 30px */
     text-align: center;
-    border-bottom: none !important;
 }
 
 /* 버튼 공통 스타일 */

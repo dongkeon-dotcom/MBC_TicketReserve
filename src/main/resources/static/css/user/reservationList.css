@@ -6,6 +6,19 @@
     background-color: #f9f9f9;
 }
 
+/* 상단 페이지 경로 스타일 */
+.page-path {
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.page-path .current {
+    color: #333;
+    font-weight: bold;
+}
+
 .list-tabs {
     display: flex;
     justify-content: center;

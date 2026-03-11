@@ -2,44 +2,82 @@
 <head>
     <meta charset="UTF-8">
     <title>마이페이지</title>
-    <link rel="stylesheet" th:href="@{/css/user/reservationList.css}">
+    <link rel="stylesheet" th:href="@{/css/user/reservationOne.css}">
 </head>
 <body>
     <div th:replace="~{include/top::top}"></div>
 
 <section class="reservation-wrapper">
-<div style="background: #f4f4f4; padding: 20px; border: 1px solid #ccc; font-family: monospace;">
-    <h3 style="border-bottom: 1px solid #666;">UserReservationDTO 데이터 전체 확인</h3>
-    
-    <p><strong>[reservation 테이블]</strong></p>
-    <ul>
-        <li>예매번호 (reserveNum): <span th:text="${detail.reserveNum}"></span></li>
-        <li>공연고유번호 (showIdx): <span th:text="${detail.showIdx}"></span></li>
-        <li>예매자명 (name): <span th:text="${detail.name}"></span></li>
-        <li>좌석번호 (seatNum): <span th:text="${detail.seatNum}"></span></li>
-        <li>결제금액 (paymentAmount): <span th:text="${detail.paymentAmount}"></span></li>
-        <li>상태 (status): <span th:text="${detail.status}"></span></li>
-        <li>예매일 (reserveDate): <span th:text="${detail.reserveDate}"></span></li>
-    </ul>
+	<div class="page-path">
+        <span>마이페이지</span> &gt; <span>공연 예매 확인/취소</span> &gt; <span class="current">상세내역</span>
+    </div>
+    <div class="detail-header">
+        <div class="poster-box">
+            <img th:src="@{'https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/' + ${detail.posterImageName}}" alt="포스터">
+        </div>
+        <div class="title-box">
+            <h2 th:text="${detail.title}">뮤지컬 제목</h2>
+        </div>
+    </div>
 
-    <p><strong>[performance_schedule 테이블]</strong></p>
-    <ul>
-        <li>스케줄ID (performanceId): <span th:text="${detail.performanceId}"></span></li>
-        <li>공연시작시간 (startTime): <span th:text="${detail.startTime}"></span></li>
-    </ul>
+    <table class="detail-table">
+        <tr>
+            <th>예매번호</th>
+            <td>
+                <span class="blue-text" th:text="${detail.reserveNum}">Y9365394187</span>
+                <span class="status-text" th:switch="${detail.status}">
+                    <th:block th:case="'CONFIRMED'">(예매-입금완료)</th:block>
+                    <th:block th:case="'CANCELLED'">(예매취소)</th:block>
+                    <th:block th:case="'WATCHED'">(관람완료)</th:block>
+                </span>
+            </td>
+        </tr>
+        <tr>
+            <th>예매자</th>
+            <td th:text="${detail.name}">홍길동</td>
+        </tr>
+        <tr>
+            <th>예매일</th>
+            <td th:text="${#temporals.format(detail.reserveDate, 'yyyy.MM.dd HH:mm')}">2026.03.06 14:00</td>
+        </tr>
+        <tr>
+            <th>관람일시</th>
+            <td th:text="${#temporals.format(detail.startTime, 'yyyy.MM.dd HH:mm')}">2026.04.19 18:00</td>
+        </tr>
+        <tr>
+            <th>좌석</th>
+            <td>
+                <span th:text="${detail.gradeName}">R</span>석 
+                <span th:text="${detail.seatNum}">1층 I열 007</span>번
+            </td>
+        </tr>
+    </table>
 
-    <p><strong>[performance 테이블]</strong></p>
-    <ul>
-        <li>공연제목 (title): <span th:text="${detail.title}"></span></li>
-        <li>포스터파일명 (posterImageName): <span th:text="${detail.posterImageName}"></span></li>
-    </ul>
-
-    <p><strong>[performance_grade_config 테이블]</strong></p>
-    <ul>
-        <li>등급순서 (gradeOrder): <span th:text="${detail.gradeOrder}"></span></li>
-        <li>등급명 (gradeName): <span th:text="${detail.gradeName}"></span></li>
-    </ul>
-</div>
+    <h3 class="section-title">결제내역</h3>
+    <table class="detail-table payment-table">
+        <tr>
+            <th>티켓금액</th>
+            <td th:text="${#numbers.formatInteger(detail.paymentAmount, 3, 'COMMA') + '원'}">70,000원</td>
+        </tr>
+        <tr>
+            <th>예매수수료</th>
+            <td>0원</td>
+        </tr>
+        <tr>
+            <th>배송료</th>
+            <td>0원</td>
+        </tr>
+        <tr>
+            <th>결제 취소</th>
+            <td class="cancel-row">
+                <span th:text="${detail.status == 'CANCELLED' ? '취소완료' : '미신청'}">미신청</span>
+                <button th:if="${detail.status == 'CONFIRMED'}" class="btn-cancel" onclick="cancelReservation()">신청</button>
+            </td>
+        </tr>        
+    </table>
+    <div class="bottom-actions">
+    	<a th:href="@{/user/reservationList.do(status=${detail.status})}" class="btn-back">목록으로</a>
+    </div>
 </section>
 <script th:inline="javascript">
 /*<![CDATA[*/
@@ -48,6 +86,35 @@ if (message) {
     alert(message);
 }
 /*]]>*/
+
+function cancelReservation() {
+    const reserveNum = /*[[${detail.reserveNum}]]*/ '';
+
+    if (!confirm("정말로 예매를 취소하시겠습니까?")) return;
+
+    fetch('/user/cancelReservation.do', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({ 'reserveNum': reserveNum })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload(); // 상태 변경 확인을 위해 페이지 새로고침
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert("취소 처리 중 오류가 발생했습니다.");
+    });
+}
+
+
 </script>
 
     <div th:replace="~{include/bottom::footer}"></div>

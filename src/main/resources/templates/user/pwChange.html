@@ -9,6 +9,9 @@
     <div th:replace="~{include/top::top}"></div>
 
 <section class="pw-change-wrapper">
+	<div class="page-path">
+		<span>마이페이지</span> &gt; <span class="current">비밀번호 변경</span>
+	</div>
     <h1>비밀번호 변경</h1>
     <form id="pwForm" th:action="@{/user/pwChangeOK.do}" method="POST">
         <input type="hidden" name="userId" th:value="${user.userId}">

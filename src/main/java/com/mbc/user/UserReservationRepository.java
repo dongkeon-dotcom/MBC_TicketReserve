@@ -6,8 +6,10 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.mbc.reservation.OrderList;
 
@@ -44,4 +46,12 @@ public interface UserReservationRepository extends JpaRepository<OrderList, Long
             "WHERE r.reserve_num = :reserveNum", // 예매 번호로 단건 필터링
             nativeQuery = true)
     Optional<UserReservationDTO> findByReserveNum(@Param("reserveNum") String reserveNum);
+	
+	@Modifying
+	@Transactional
+	@Query(value = "UPDATE reservation SET status = 'CANCELLED', cancel_date = NOW() " +
+					"WHERE reserve_num = :reserveNum AND status = 'CONFIRMED'",
+					nativeQuery = true)
+	int cancelReservation(@Param("reserveNum") String reserveNum);
+	
 }

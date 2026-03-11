@@ -110,5 +110,12 @@ public class UsersService {
 				.orElseThrow(()->new RuntimeException("해당 예매 내역을 찾을 수 없습니다."));
 	}
 	
+	// 예매 취소 처리
+	@Transactional
+	public boolean processCancellation(String reserveNum) {
+	    int updatedRows = userReservationRepo.cancelReservation(reserveNum);
+	    return updatedRows > 0;
+	}
+	
 	
 }
