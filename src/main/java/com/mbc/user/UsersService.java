@@ -1,15 +1,15 @@
 package com.mbc.user;
 
-import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import jakarta.mail.MessagingException;
@@ -18,14 +18,17 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
-@RequiredArgsConstructor // Repository 자동 주입 (Lombok)
+@RequiredArgsConstructor
 public class UsersService {
 
 	private final UsersRepository usersRepo;
+	
 	private final UserReservationRepository userReservationRepo;
 	
 	/* 이메일 테스트 시작*/
 	private final JavaMailSender mailSender;
+
+	private final PasswordEncoder passwordEncoder;
 	
 	@Value("${spring.mail.username}")
 	private String fromEmail;
@@ -47,7 +50,8 @@ public class UsersService {
 	public void join(Users user) {
 		
 		// 추후 SpringSecurity로 여기서 암호화 한번 해야됨
-		
+		String encPassword = passwordEncoder.encode(user.getPassword());
+		user.setPassword(encPassword);
 		// DB 저장
 		usersRepo.save(user);	
 	}
@@ -87,8 +91,7 @@ public class UsersService {
 	    Users user = usersRepo.findByUserId(userId)
 	            .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 	    
-	    // 암호화를 사용 중이라면 passwordEncoder.matches()를 써야 합니다.
-	    return user.getPassword().equals(currentPw);
+	    return passwordEncoder.matches(currentPw, user.getPassword());
 	}
 
 	// 비밀번호 실제 업데이트
@@ -97,7 +100,7 @@ public class UsersService {
 	    Users user = usersRepo.findByUserId(userId)
 	            .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 	    
-	    user.setPassword(newPw); // 더티 체킹으로 자동 업데이트
+	    user.setPassword(passwordEncoder.encode(newPw)); // 더티 체킹으로 자동 업데이트
 	}
 	
 	// 유저 예매정보 가져오기

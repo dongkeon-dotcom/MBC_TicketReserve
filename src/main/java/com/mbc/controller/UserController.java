@@ -1,15 +1,14 @@
 package com.mbc.controller;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,12 +18,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.mbc.security.SecurityUserDetails;
 import com.mbc.user.UserReservationDTO;
 import com.mbc.user.Users;
 import com.mbc.user.UsersService;
 
 import jakarta.mail.MessagingException;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
 @RequestMapping("/user")
@@ -49,7 +48,6 @@ public class UserController {
 	
 	@GetMapping("join.do")
 	public String join(Model model) {
-		System.out.println("==> main.do");
 		// 나중에 if문으로 isSocial인지 아닌지 구분해야됨
 		model.addAttribute("isSocial", false);
 		return "user/join";
@@ -75,53 +73,17 @@ public class UserController {
 		
 		return "user/login";
 	}
-	
-	@PostMapping("/loginOK.do")
-	public String loginOK(
-			@RequestParam("userId") String userId,
-			@RequestParam("password") String password,
-			HttpSession session,
-			RedirectAttributes rttr) {
-		
-		if(userId == null || password == null) {
-			rttr.addFlashAttribute("msg","입력 정보가 누락되었습니다.");
-			return "redirect:/user/login.do";
-		}
-		Optional<Users> userOpt = service.findOne(userId);
-		
-		
-		if(userOpt.isPresent() && userOpt.get().getPassword().equals(password)) {
-			session.setAttribute("user", userOpt.get());
-			System.out.println("테스트: " + userOpt.get());
-			return "redirect:/"; 
-		} else{
-			rttr.addFlashAttribute("msg", "아이디 또는 비밀번호가 일치하지 않습니다.");
-	        return "redirect:/user/login.do";
-		}
-		
-		//Sprint Security 적용 이후 코드
-		//null 체크 때문에 int 말고 Integer 형으로	
-        //Integer userIdx = (Integer) session.getAttribute("userIdx");
-        //String userName = (String) session.getAttribute("userName");
-        //System.out.println("로그인 성공 유저 PK: " + userIdx);
-        //System.out.println("로그인 성공 유저 이름: " + userName);        
-        //return "redirect:/";
-	}
-	
-	@GetMapping("/logout.do")
-	public String logout(HttpSession session) {
-		session.invalidate(); //세선 삭제
-		return "redirect:/";
-	}
+
 	
 	@GetMapping("/mypage.do")
-	public String mypage(HttpSession session, Model model) {
+	public String mypage(
+			@AuthenticationPrincipal SecurityUserDetails userDetails,
+			Model model) {
 		
-		Users user = (Users)session.getAttribute("user");
-		if(user == null) {
-			return "redirect:/user/login.do";
-		}
-		model.addAttribute("user", user);
+		if (userDetails == null) return "redirect:/user/login.do";
+	    
+	    // 이미 DB 유저 객체를 들고 있으므로 바로 전달 가능!
+	    model.addAttribute("user", userDetails.getUser());
 		
 	    // 1. 소셜/일반 로그인 구분해서 유저 정보를 가져오는 메서드 호출
 	    //UserVO userVO = getLoginUser();
@@ -136,20 +98,24 @@ public class UserController {
 	}
 	
 	@GetMapping("/edit.do")
-	public String edit(HttpSession session, Model model) {
-		Users loginUser = (Users)session.getAttribute("user");
-		Users user = service.getUserById(loginUser.getUserId());
-		model.addAttribute("user",user);
+	public String edit(
+			@AuthenticationPrincipal SecurityUserDetails userDetails,
+			Model model) {
+		
+		model.addAttribute("user", userDetails.getUser());
 		
 		return "user/edit";
 	}
 	
 	@PostMapping("/editOK.do")
-	public String editOK(Users user, HttpSession session, RedirectAttributes rttr) {
+	public String editOK(
+			@AuthenticationPrincipal SecurityUserDetails userDetails,
+			Users user,
+			RedirectAttributes rttr) {
 		
 		try {
 			Users updateUser = service.updateMember(user);
-			session.setAttribute("user", updateUser);
+			userDetails.setUser(updateUser);
 			rttr.addFlashAttribute("msg", "회원 정보가 수정되었습니다.");
 			return "redirect:/user/mypage.do";
 			
@@ -161,16 +127,13 @@ public class UserController {
 	}
 
 	@GetMapping("/pwChange.do")
-	public String pwEdit(HttpSession session, Model model) {
+	public String pwEdit(
+			@AuthenticationPrincipal SecurityUserDetails userDetails,
+			Model model) {
 		
-		Users user = (Users) session.getAttribute("user");
+		if (userDetails == null) return "redirect:/user/login.do";
 	    
-	    if (user == null) {
-	        // 로그인 세션이 없으면 로그인 페이지로
-	        return "redirect:/login"; 
-	    }
-	    
-	    model.addAttribute("user", user);
+	    model.addAttribute("user", userDetails.getUser());
 		
 		return "user/pwChange";
 	}
@@ -180,6 +143,7 @@ public class UserController {
 			@RequestParam String userId,
 	        @RequestParam String currentPw,
 	        @RequestParam String newPw,
+	        @AuthenticationPrincipal SecurityUserDetails userDetails,
 	        RedirectAttributes rttr
 			) {
 		boolean isMatch = service.checkPassword(userId, currentPw);
@@ -191,6 +155,8 @@ public class UserController {
 	    
 	    // 비밀번호 업데이트
 	    service.updatePassword(userId, newPw);
+	    Users updatedUser = service.getUserById(userId);
+	    userDetails.setUser(updatedUser);
 	    
 	    rttr.addFlashAttribute("msg", "비밀번호가 성공적으로 변경되었습니다.");
 		
@@ -202,11 +168,11 @@ public class UserController {
 	public String reservationList(
 			@RequestParam(defaultValue = "CONFIRMED") String status,
 			@RequestParam(defaultValue = "0") int page,
-			Model model, HttpSession session) {
-		Users user = (Users) session.getAttribute("user");
+			@AuthenticationPrincipal SecurityUserDetails userDetails,
+			Model model) {
 		Pageable pageable = PageRequest.of(page, 5);
 		
-		Page<UserReservationDTO> reservePage = service.getMyReservations(user.getUserIdx(), status, pageable);
+		Page<UserReservationDTO> reservePage = service.getMyReservations(userDetails.getUser().getUserIdx(), status, pageable);
 		model.addAttribute("list", reservePage.getContent());
 		model.addAttribute("currentPage", reservePage.getNumber());
 		model.addAttribute("totalPages", reservePage.getTotalPages());
