@@ -1,5 +1,6 @@
 package com.mbc.admin.repositiry;
 
+import com.mbc.admin.Prediction.SalesDataProjection;
 import com.mbc.admin.entity.PerformanceSchedule;
 import com.mbc.admin.entity.SeatInventory;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -50,6 +51,18 @@ public interface SeatInventoryRepository extends JpaRepository<SeatInventory, Lo
     List<SeatInventory> findByReservedByAndIsReserved(String reservedBy, Integer isReserved);
     //특정 회차의 좌석번호로 좌석 조회 
     Optional<SeatInventory> findByScheduleAndSeatNumber(PerformanceSchedule schedule, String seatNumber);
+    
+    //시계열 어쩌구 // 니누군데 
+    @Query(value = "SELECT " +
+            "DATE_FORMAT(si.reserved_at, '%Y-%m-%d %H:00:00') as ds, " +
+            "COUNT(*) as y " +
+            "FROM seat_inventory si " +
+            "WHERE si.is_reserved = 1 " +
+            "AND si.reserved_at IS NOT NULL " +
+            "AND si.schedule_id IN (SELECT ps.schedule_id FROM performance_schedule ps WHERE ps.performance_id = :performanceId) " +
+            "GROUP BY DATE_FORMAT(si.reserved_at, '%Y-%m-%d %H:00:00') " +
+            "ORDER BY ds ASC", nativeQuery = true)
+     List<SalesDataProjection> getSalesStatsByPerformanceId(@Param("performanceId") Long performanceId);
     
 }
 //실제로 판매될 개별 좌석을 저정하고 확인하기 위해 사용 

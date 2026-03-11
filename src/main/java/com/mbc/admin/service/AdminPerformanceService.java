@@ -83,18 +83,18 @@ public class AdminPerformanceService {
      */
     @Transactional
     public void processShowInsert(PerformanceSaveDto dto) throws Exception {
-        Performance performance = new Performance();
+    	Performance performance = new Performance();
         performance.setTitle(dto.getTitle());
         performance.setStartDate(LocalDate.parse(dto.getStartDate()));
         performance.setEndDate(LocalDate.parse(dto.getEndDate()));
 
-        // 1. 이미지 저장 (연관관계 편의 메서드 내부에서 setPerformance 호출됨)
-        saveImages(performance, dto);
-
-        // 2. 공연 저장 (ID 생성)
+        // [수정] 1. 먼저 공연 정보를 저장해서 ID를 생성합니다.
         performanceRepository.save(performance);
 
-        // 3. 스케줄 및 좌석 생성
+        // [수정] 2. 이제 ID가 생긴 performance 객체를 넘겨서 이미지를 저장합니다.
+        saveImages(performance, dto);
+
+        // [수정] 3. 스케줄 및 좌석 생성도 ID가 생성된 performance를 사용합니다.
         List<String> startDates = dto.getOpenStartDates();
         if (startDates != null) {
             for (int i = 0; i < startDates.size(); i++) {
@@ -103,7 +103,6 @@ public class AdminPerformanceService {
                 generateSchedulesForPeriod(performance, start, end, dto, i);
             }
         }
-        // @Transactional에 의해 메서드 종료 시 자동 커밋됨
     }
     /**
      * [2] 공연 수정 처리 (Update)

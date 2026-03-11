@@ -61,7 +61,49 @@ public class WaitingQueueController {
         return ResponseEntity.ok(response);
     }
     
+/**
+ * 
+ * 
+ 시큐리티 적용하면   session 때문에 이걸로 교체 필요 
+  @GetMapping("/check-queue")
+public ResponseEntity<Map<String, Object>> checkQueue(
+        @AuthenticationPrincipal CustomUserDetails userDetails) { // 시큐리티 인증 객체 사용
 
+    // 1. 로그인 안 했으면 처리 (시큐리티는 인증되지 않은 경우 @AuthenticationPrincipal이 null이 됨)
+    if (userDetails == null) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("status", "REDIRECT_LOGIN");
+        return ResponseEntity.ok(errorResponse);
+    }
+
+    // 2. 인증 객체에서 ID 추출
+    String userId = userDetails.getUsername(); 
+    
+    Map<String, Object> response = new HashMap<>();
+
+    // 3. 대기열 로직 (동일)
+    long LIMIT = 0;
+    if (!waitingQueueService.isQueueEnabled() && waitingQueueService.getQueueSize() < LIMIT) {
+        response.put("status", "DIRECT");
+        return ResponseEntity.ok(response);
+    }
+
+    if (!waitingQueueService.isInQueue(userId)) {
+        waitingQueueService.enterQueue(userId);
+    }
+    
+    Long rank = waitingQueueService.getRank(userId);
+    response.put("status", "WAITING");
+    response.put("rank", rank != null ? rank : 1);
+
+    return ResponseEntity.ok(response);
+}
+
+  
+  
+ * 
+ * 
+ * **/
     // 기존 내 순번 확인 API
     @GetMapping("/check-rank")
     public ResponseEntity<Map<String, Object>> checkRank(Principal principal) {
