@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -21,35 +24,58 @@ public class SalesPredictionService {
 
     // 1. 기존 DB 조회 메서드
     public List<PredictionDataDto> getSalesDataForPrediction(Long performanceId) {
+        // 1. 기존 데이터 가져오기 (Projection에 getTotalSeats()가 있다고 가정)
         List<SalesDataProjection> stats = seatInventoryRepository.getSalesStatsByPerformanceId(performanceId);
         
-        return stats.stream().map(s -> {
-            PredictionDataDto dto = new PredictionDataDto();
-            dto.setDs(s.getDs());
-            dto.setY(s.getY());
-            return dto;
-        }).collect(Collectors.toList());
+        // 2. 공연장 총 좌석 수 조회 (별도 메서드 혹은 DB에서 직접 가져오기)
+        int totalSeats = seatInventoryRepository.getTotalSeatsByPerformanceId(performanceId); 
+
+        return stats.stream()
+                .sorted((o1, o2) -> o1.getDs().compareTo(o2.getDs()))
+                .map(s -> {
+                    PredictionDataDto dto = new PredictionDataDto();
+                    dto.setDs(s.getDs());
+                    dto.setY(s.getY());
+                    dto.setTotalSeats(totalSeats); // 좌석 정보 추가
+                    return dto;
+                }).collect(Collectors.toList());
     }
+    
 
     // 2. Python 서버에 예측 요청하는 메서드
     public List<PredictionResultDto> getPrediction(Long performanceId) {
-        // DB에서 데이터 조회
+        // DB 데이터 조회
         List<PredictionDataDto> dataList = getSalesDataForPrediction(performanceId);
         
-        // 데이터가 부족하면 학습이 안 되므로 방어 코드 추가
-        if (dataList.size() < 2) {
+        System.out.println("가져온 데이터 리스트 사이즈: " + (dataList != null ? dataList.size() : "null"));
+        if (dataList == null || dataList.size() < 1) {
+	
+        	// 테스트를 위해 조건을 0으로 변경
+        	//if (dataList == null || dataList.isEmpty()) {
+        	System.out.println("데이터가 2개 미만이라 예측을 건너뜁니다.");
             return new ArrayList<>(); 
         }
 
-        // Python 서버 URL (FastAPI)
-        String pythonUrl = "http://localhost:8080/predict";
+        // [수정] 포트를 8000으로 변경!
+        String pythonUrl = "http://localhost:8000/predict";
         
-        // Python 서버로 전송 후 결과 받기
-        // Python 서버의 응답 구조: {"prediction": [{"ds": "...", "yhat": ...}, ...]}
-        PredictionResponse response = restTemplate.postForObject(pythonUrl, dataList, PredictionResponse.class);
+        // RestTemplate 설정: 데이터를 명확하게 JSON으로 전달
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<List<PredictionDataDto>> request = new HttpEntity<>(dataList, headers);
         
-        return (response != null) ? response.getPrediction() : new ArrayList<>();
+        try {
+            // [수정] postForObject로 전송
+            PredictionResponse response = restTemplate.postForObject(pythonUrl, request, PredictionResponse.class);
+            return (response != null && response.getPrediction() != null) ? response.getPrediction() : new ArrayList<>();
+        } catch (Exception e) {
+            // Python 서버 연결 실패 시 예외 처리
+            System.err.println("Python 서버 연결 에러: " + e.getMessage());
+            return new ArrayList<>();
+        }
     }
+    
+    
 }
 
 

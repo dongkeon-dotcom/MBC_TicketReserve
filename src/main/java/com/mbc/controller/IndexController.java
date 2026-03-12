@@ -27,7 +27,10 @@ public class IndexController {
     
     
     
-    
+    @GetMapping({"/", "/index.do"})
+    public String index(Model model) {
+        return main(model); // 위에서 만드신 main 메서드를 그대로 호출
+    }
     
     
 

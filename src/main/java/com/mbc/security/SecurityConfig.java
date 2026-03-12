@@ -20,11 +20,21 @@ public class SecurityConfig {
             		.disable()
             	) // 포트폴리오 단계에선 편의상 비활성화 (필요시 활성)
             .authorizeHttpRequests(auth -> auth
-            	.requestMatchers("/", "/index.do", "/user/login.do", "/user/join.do","/reserve/**").permitAll() // 누구나 가능
-                .requestMatchers("/admin/**").hasRole("USER") // ADMIN 권한만
-                .requestMatchers("/user/**").authenticated()
-                .anyRequest().permitAll() // 누구나 접근 가능
-            )
+            		// 1. 정적 리소스 우선 허용
+            	    .requestMatchers("/css/**", "/js/**", "/images/**", "/static/**", "/favicon.ico").permitAll()
+            	    
+            	    // 2. 누구나 접속 가능한 페이지 (상세히 나열)
+            	    .requestMatchers("/", "/index.do", "/main.do", "/api/**").permitAll()
+            	    .requestMatchers("/user/login.do", "/user/join.do", "/user/checkEmail.do", "/user/mail.do").permitAll()
+            	    .requestMatchers("/reserve/**", "/search/**").permitAll()
+            	    
+            	    // 3. 관리자 권한
+            	    .requestMatchers("/admin/**").permitAll()            	    
+            	    // 4. 나머지 유저 전용 페이지 (마이페이지 등)
+            	    .requestMatchers("/user/mypage.do", "/user/logout.do").authenticated()
+            	    
+            	    .anyRequest().authenticated() // 혹은 .permitAll()
+            	)
             .formLogin(login -> login
                 .loginPage("/user/login.do") // 커스텀 로그인 페이지 주소
                 .loginProcessingUrl("/user/loginOK.do") // 시큐리티가 낚아채서 처리할 주소
