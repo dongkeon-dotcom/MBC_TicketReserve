@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>메인 페이지</title>
-    <link rel="stylesheet" th:href="@{/css/main.css}">
+	<link rel="stylesheet" th:href="@{/css/main.css}">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 </head>
 <body>
@@ -14,7 +14,7 @@
     <div class="banner-item active" id="current-banner" 
          th:style="'background-image: url(https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/' + ${randomProducts[0].posterImageName} + ');'">
         <div class="banner-content">
-            <a th:href="@{/performance/detail.do(id=${randomProducts[0].performanceId})}">
+            <a th:href="@{/reserve/ticket.do(id=${randomProducts[0].performanceId})}">
                 <h2 th:text="${randomProducts[0].title}">공연 제목</h2>
             </a>
             <p th:text="${randomProducts[0].startDate} + ' ~ ' + ${randomProducts[0].endDate}">날짜</p>

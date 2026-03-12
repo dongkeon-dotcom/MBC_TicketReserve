@@ -6,6 +6,10 @@
     <meta charset="UTF-8">
     <title>좌석 선택 - [[${performance.title}]]</title>
 </head>
+<head>
+    <meta th:if="${_csrf}" name="_csrf" th:content="${_csrf.token}"/>
+    <meta th:if="${_csrf}" name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
 <body>
 
     <div class="step-bar-container">
@@ -109,6 +113,26 @@
 
     <script th:inline="javascript">
         /*<![CDATA[*/
+		
+		// 토큰 읽기
+		const csrfMeta = document.querySelector('meta[name="_csrf"]');
+		const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+		const csrfHeader = document.querySelector('meta[name="_csrf_header"]') ? 
+		                   document.querySelector('meta[name="_csrf_header"]').getAttribute('content') : '';
+		
+		
+		
+						   // 공통 헤더 생성 함수
+						   function getHeaders() {
+						       const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+						       if (csrfHeader && csrfToken) {
+						           headers[csrfHeader] = csrfToken;
+						       }
+						       return headers;
+						   }
+		
+		
+		
         window.allSchedules = /*[[${schedules}]]*/ [];
         window.currentSelectedId = null; 
         let currentYear = new Date().getFullYear();
@@ -141,7 +165,7 @@
 
             fetch('/reserve/selectSeat.do', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				headers: getHeaders(), // 수정됨
                 body: 'seatId=' + seatId
             })
             .then(response => {
@@ -158,13 +182,13 @@
         };
 
         function cancelSeatRequest(seatId) {
-            if (!seatId) return;
-            fetch('/reserve/cancelSeat.do', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'seatId=' + seatId
-            });
-        }
+			if (!seatId) return;
+			    fetch('/reserve/cancelSeat.do', {
+			        method: 'POST',
+			        headers: getHeaders(), // 수정됨
+			        body: 'seatId=' + seatId
+			    });
+			}
 
         window.addEventListener('beforeunload', function () {
             if (window.currentSelectedId) {

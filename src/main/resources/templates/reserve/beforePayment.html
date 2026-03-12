@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>결제 전 확인</title>
+	<meta th:if="${_csrf}" name="_csrf" th:content="${_csrf.token}"/>
+	    <meta th:if="${_csrf}" name="_csrf_header" th:content="${_csrf.headerName}"/>
 </head>
 <body>
 	<link rel="stylesheet" th:href="@{/css/reserve/beforePayment.css}">
@@ -38,11 +40,16 @@
 
 
 <form id="orderForm" action="/payment/complete.do" method="POST" style="display:none;">
+    <input type="hidden" 
+           th:if="${_csrf}" 
+           th:name="${_csrf.parameterName}" 
+           th:value="${_csrf.token}"/>
+    
     <input type="hidden" name="paymentId" id="paymentId" value="">
     <input type="hidden" name="totalAmount" th:value="${seat.price}">
     <input type="hidden" name="seatId" th:value="${seat.seatId}">
-	<input type="hidden" name="scheduleId" th:value="${schedule.scheduleId}">
-	<input type="hidden" name="performanceId" th:value="${performance.performanceId}">
+    <input type="hidden" name="scheduleId" th:value="${schedule.scheduleId}">
+    <input type="hidden" name="performanceId" th:value="${performance.performanceId}">
 </form>
 
 <script src="https://cdn.portone.io/v2/browser-sdk.js"></script>

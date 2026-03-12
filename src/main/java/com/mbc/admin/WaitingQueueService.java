@@ -65,7 +65,11 @@ public class WaitingQueueService {
     
     
     
-    
+ // WaitingQueueService.java에 추가
+    public void popFirstFromQueue() {
+        // 0번(가장 오래된 사람)을 제거
+        redisTemplate.opsForZSet().removeRange(QUEUE_KEY, 0, 0);
+    }
     
     
     

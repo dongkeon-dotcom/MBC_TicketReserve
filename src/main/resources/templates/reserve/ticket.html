@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
+
+	    <meta th:if="${_csrf}" name="_csrf" th:content="${_csrf.token}"/>
+	    <meta th:if="${_csrf}" name="_csrf_header" th:content="${_csrf.headerName}"/>
+
     <meta charset="UTF-8">
     <title>예매 - [[${performance.title}]]</title>
     <link rel="stylesheet" th:href="@{/css/reserve/ticket.css}">
@@ -97,9 +101,15 @@
 
 	<script th:inline="javascript">
 	    /*<![CDATA[*/
+		// 메타 태그가 없을 경우를 대비해 null 체크
+		const csrfMeta = document.querySelector('meta[name="_csrf"]');
+		const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+		const csrfHeader = document.querySelector('meta[name="_csrf_header"]') ? 
+		                   document.querySelector('meta[name="_csrf_header"]').getAttribute('content') : '';
+		
+		
 	    const allSchedules = /*[[${schedules}]]*/ [];    
 	    let selectedScheduleId = null;
-	    
 	    let viewYear, viewMonth;
 
 	    // 티켓 오픈 시간 설정
@@ -269,7 +279,9 @@
 								div.onclick = function() {
 								    const clickedElement = this;
 
-								    fetch('/reserve/check-reservation.do?scheduleId=' + s.scheduleId)
+								    fetch('/reserve/check-reservation.do?scheduleId=' + s.scheduleId									, {
+									    headers: getHeaders() // 깔끔하게 통일
+									})
 								        .then(response => response.json())
 								        .then(data => {
 								            if (data.reserved) {
@@ -312,7 +324,10 @@
 					    }
 
 					    try {
-					        const response = await fetch('/reserve/check-queue');
+					        const response = await fetch('/reserve/check-queue'							, {
+							            method: 'GET', // POST 요청인지 확인하세요
+							            headers: getHeaders() // 추가됨
+							        });
 					        const data = await response.json();
 					        
 					        console.log("서버 응답:", data);
@@ -354,27 +369,30 @@
 					    const modal = document.getElementById("waitingModal");
 					    const rankDisplay = document.getElementById("rankDisplay");
 					    modal.style.display = "block";
-					    rankDisplay.innerText = `내 순번: ${initialRank}번째`;
+					    
+					    // 상태 표시
+					    rankDisplay.innerText = initialRank === 0 ? "입장 준비 중..." : `내 순번: ${initialRank}번째`;
 
-					    // 3초마다 폴링
+					    // 3초마다 순번 체크
 					    const interval = setInterval(async () => {
-					        const res = await fetch('/reserve/check-rank');
-					        const d = await res.json();
-					        
-					        if (d.rank > 0) {
-					            rankDisplay.innerText = `내 순번: ${d.rank}번째`;
+					        try {
+					            const res = await fetch('/reserve/check-rank', {
+					                method: 'GET',
+					                headers: getHeaders()
+					            });
+					            const d = await res.json();
 					            
-					            // 순번이 100등 안으로 들어오면 입장 버튼 활성화 (또는 자동 입장)
-					            if (d.rank <= 100) {
-					                clearInterval(interval);
-					                document.getElementById('modalTitle').innerText = "입장이 가능합니다!";
-					                document.getElementById('enterBtn').style.display = "block";
+					            // 서버에서 d.rank가 0이면 입장이 가능하다는 신호라고 가정합니다.
+					            // 만약 서버 로직상 다른 신호를 보낸다면 그에 맞게 수정하세요.
+					            if (d.rank <= 0) { 
+					                clearInterval(interval); // 폴링 중단
+					                modal.style.display = "none";
+					                openSeatPopup(); // <--- 여기서 자동으로 좌석 선택창을 엽니다.
+					            } else {
+					                rankDisplay.innerText = `내 순번: ${d.rank}번째`;
 					            }
-					        } else {
-					            // 대기열에서 사라졌다면(순번 처리됨)
-					            clearInterval(interval);
-					            modal.style.display = "none";
-					            openSeatPopup();
+					        } catch (error) {
+					            console.error("순번 확인 중 에러:", error);
 					        }
 					    }, 3000);
 					}
@@ -384,8 +402,7 @@
 					        openSeatPopup();
 					    }
 						
-						
-						//개발자용 툴 막기! 
+								//개발자용 툴 막기! 
 						document.addEventListener('keydown', function(e) {
 						    // 1. F12 막기
 						    if (e.key === "F12") {
@@ -415,6 +432,18 @@
 						document.addEventListener('contextmenu', function(e) {
 						    e.preventDefault();
 						}, false);		
+						
+			
+						
+						
+						// fetch 사용 시 헤더에 토큰이 있을 때만 추가
+						function getHeaders() {
+						    const headers = { 'Content-Type': 'application/json' };
+						    if (csrfHeader && csrfToken) {
+						        headers[csrfHeader] = csrfToken;
+						    }
+						    return headers;
+						}
 	    /*]]>*/
 	</script>
 </body>

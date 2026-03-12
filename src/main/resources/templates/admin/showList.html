@@ -65,6 +65,11 @@
 		                        </td>
 		                        <td>
 		                            <div class="action-group">
+										<a th:href="@{'http://localhost:5173?id=' + ${p.performanceId}}" 
+										       class="btn-predict" 
+										       style="background-color: #6c5ce7; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; margin-right: 5px;">
+										       예상 확인하기
+										    </a>
 		                                <a th:href="@{/admin/editPage.do(id=${p.performanceId})}">정보수정</a>
 		                                <a th:href="@{/reserve/ticket.do(performanceId=${p.performanceId})}">예매페이지</a>
 		                                <button type="button" th:onclick="|deleteConfirm(${p.performanceId})|">삭제</button>
