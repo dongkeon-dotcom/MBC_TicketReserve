@@ -22,23 +22,33 @@ public class SalesPredictionService {
 	private final SeatInventoryRepository seatInventoryRepository;
     private final RestTemplate restTemplate = new RestTemplate(); // 필요 시 @Bean으로 등록하여 주입받으세요.
 
+    
+    
+    
+    
+    
+    
     // 1. 기존 DB 조회 메서드
     public List<PredictionDataDto> getSalesDataForPrediction(Long performanceId) {
-        // 1. 기존 데이터 가져오기 (Projection에 getTotalSeats()가 있다고 가정)
-        List<SalesDataProjection> stats = seatInventoryRepository.getSalesStatsByPerformanceId(performanceId);
+    	List<SalesDataProjection> projections = seatInventoryRepository.getSalesStatsByPerformanceId(performanceId);
+        int totalSeats = seatInventoryRepository.getTotalSeatsByPerformanceId(performanceId);
         
-        // 2. 공연장 총 좌석 수 조회 (별도 메서드 혹은 DB에서 직접 가져오기)
-        int totalSeats = seatInventoryRepository.getTotalSeatsByPerformanceId(performanceId); 
-
-        return stats.stream()
-                .sorted((o1, o2) -> o1.getDs().compareTo(o2.getDs()))
-                .map(s -> {
-                    PredictionDataDto dto = new PredictionDataDto();
-                    dto.setDs(s.getDs());
-                    dto.setY(s.getY());
-                    dto.setTotalSeats(totalSeats); // 좌석 정보 추가
-                    return dto;
-                }).collect(Collectors.toList());
+        // 여기서 직접 데이터를 확인하며 매핑하세요
+        System.out.println("조회된 프로젝션 개수: " + projections.size());
+        
+        List<PredictionDataDto> dtoList = new ArrayList<>();
+        for (SalesDataProjection p : projections) {
+            // null 체크 및 데이터 확인
+            if (p.getDs() != null) {
+                PredictionDataDto dto = new PredictionDataDto();
+                dto.setDs(p.getDs().toString()); // LocalDateTime을 String으로
+                dto.setY(p.getY());
+                dto.setTotalSeats(totalSeats);
+                dtoList.add(dto);
+            }
+        }
+        System.out.println("최종 변환된 DTO 리스트 사이즈: " + dtoList.size());
+        return dtoList;
     }
     
 

@@ -53,16 +53,16 @@ public interface SeatInventoryRepository extends JpaRepository<SeatInventory, Lo
     Optional<SeatInventory> findByScheduleAndSeatNumber(PerformanceSchedule schedule, String seatNumber);
     
     //시계열 어쩌구 // 니누군데 
-    @Query(value = "SELECT ds, SUM(y) OVER (ORDER BY ds) as y FROM (" +
-    	       "  SELECT DATE_FORMAT(si.reserved_at, '%Y-%m-%d %H:00:00') as ds, " +
-    	       "  COUNT(*) as y " +
-    	       "  FROM seat_inventory si " +
-    	       "  WHERE si.is_reserved = 1 " +
-    	       "  AND si.reserved_at IS NOT NULL " +
-    	       "  AND si.schedule_id IN (SELECT ps.schedule_id FROM performance_schedule ps WHERE ps.performance_id = :performanceId) " +
-    	       "  GROUP BY DATE_FORMAT(si.reserved_at, '%Y-%m-%d %H:00:00') " +
-    	       ") as sub_table ORDER BY ds ASC", nativeQuery = true)
-    	List<SalesDataProjection> getSalesStatsByPerformanceId(@Param("performanceId") Long performanceId);
+    @Query(value = "SELECT reserved_at as ds, " +
+            "  SUM(1) OVER (ORDER BY reserved_at) as y " +
+            "  FROM seat_inventory " +
+            "  WHERE is_reserved = 1 " +
+            "  AND reserved_at IS NOT NULL " +
+            "  AND schedule_id IN (SELECT schedule_id FROM performance_schedule WHERE performance_id = :performanceId) " +
+            "  ORDER BY reserved_at ASC", nativeQuery = true)
+ List<SalesDataProjection> getSalesStatsByPerformanceId(@Param("performanceId") Long performanceId);
+    
+    
  // 특정 공연의 전체 좌석 수 조회
     @Query(value = "SELECT COUNT(*) FROM seat_inventory WHERE schedule_id IN " +
            "(SELECT schedule_id FROM performance_schedule WHERE performance_id = :performanceId)", 

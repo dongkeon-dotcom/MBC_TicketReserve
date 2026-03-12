@@ -532,8 +532,14 @@ public class AdminPerformanceService {
     public boolean hasAlreadyReserved(Long userIdx, Long scheduleId) {
     // 1. 해당 사용자가 특정 회차에 예매한 내역이 있는지 확인
     // OrderListRepository에 메서드가 없다면 생성해야 합니다.
-    return orderListRepository.existsByUserIdxAndSchedule_ScheduleId(userIdx, scheduleId);
+ // "CANCELLED" 상태가 아닌 데이터가 존재하는지 확인
+    return orderListRepository.existsByUserIdxAndSchedule_ScheduleIdAndStatusNot(
+        userIdx, 
+        scheduleId, 
+        "CANCELLED"
+    );
 }
+
     
     
     

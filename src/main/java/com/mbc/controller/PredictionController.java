@@ -11,6 +11,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api") // 이 경로가 프론트엔드 fetch 주소의 기본이 됩니다.
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:5173") // Vite의 주소
 public class PredictionController {
     
     // 서비스 객체 주입

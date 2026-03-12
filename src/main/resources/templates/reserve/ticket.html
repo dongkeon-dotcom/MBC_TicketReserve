@@ -279,8 +279,8 @@
 								div.onclick = function() {
 								    const clickedElement = this;
 
-								    fetch('/reserve/check-reservation.do?scheduleId=' + s.scheduleId									, {
-									    headers: getHeaders() // 깔끔하게 통일
+									fetch(`/reserve/check-reservation.do?scheduleId=${s.scheduleId}&t=${new Date().getTime()}`, {
+									    headers: getHeaders()
 									})
 								        .then(response => response.json())
 								        .then(data => {
