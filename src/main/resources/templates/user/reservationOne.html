@@ -88,7 +88,7 @@ if (message) {
 /*]]>*/
 
 function cancelReservation() {
-    const reserveNum = /*[[${detail.reserveNum}]]*/ '';
+	const reserveIdx = /*[[${detail.reserveIdx}]]*/ '';
 
     if (!confirm("정말로 예매를 취소하시겠습니까?")) return;
 
@@ -97,7 +97,9 @@ function cancelReservation() {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({ 'reserveNum': reserveNum })
+        body: new URLSearchParams({
+        	'reserveIdx': reserveIdx
+        })
     })
     .then(response => response.json())
     .then(data => {

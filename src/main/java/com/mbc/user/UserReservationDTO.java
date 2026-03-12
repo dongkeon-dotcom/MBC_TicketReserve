@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 //Spring Data JPA가 제공하는 기능으로, 인터페이스만 선언하면 구현체는 JPA가 알아서 만들어주고 읽기전용에 적합하대서 interface로 DTO 만들어봄 
 public interface UserReservationDTO {
 	// reservation 테이블
+	Long getReserveIdx();
     String getReserveNum();
     Long getShowIdx();
     String getName();

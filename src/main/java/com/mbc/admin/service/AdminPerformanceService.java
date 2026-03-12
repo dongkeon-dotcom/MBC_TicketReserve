@@ -563,7 +563,7 @@ public class AdminPerformanceService {
         seat.setReservedBy(null);
 
         // 5. 주문 상태 변경 및 취소 시간 기록
-        order.setStatus("CANCELED");
+        order.setStatus("CANCELLED");
         order.setCancelDate(LocalDateTime.now());
 
         // 저장 (JPA는 @Transactional이 끝나면 변경사항을 자동으로 DB에 반영합니다)

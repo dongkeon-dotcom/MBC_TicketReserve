@@ -211,17 +211,27 @@ public class UserController {
 	
 	@PostMapping("cancelReservation.do")
 	@ResponseBody
-	public ResponseEntity<Map<String, Object>> cancelReservation(@RequestParam String reserveNum) {
+	public ResponseEntity<Map<String, Object>> cancelReservation(
+			@RequestParam long reserveIdx) {
 	    Map<String, Object> response = new HashMap<>();
-	    boolean isCancelled = service.processCancellation(reserveNum);
-	    
-	    if (isCancelled) {
-	        response.put("success", true);
-	        response.put("message", "예매 취소가 완료되었습니다.");
-	    } else {
+	    try {
+	    	boolean isCancelled = service.processCancellation(reserveIdx);	    
+		    if (isCancelled) {
+		        response.put("success", true);
+		        response.put("message", "예매 취소가 완료되었습니다.");
+		    } else {
+		        response.put("success", false);
+		        response.put("message", "이미 취소되었거나 취소할 수 없는 상태입니다.");
+		    }	
+	    }catch (IllegalArgumentException | IllegalStateException e) {
+	        // 서비스에서 던진 구체적인 에러 메시지를 사용자에게 전달
 	        response.put("success", false);
-	        response.put("message", "이미 취소되었거나 취소할 수 없는 상태입니다.");
+	        response.put("message", e.getMessage());
+	    } catch (Exception e) {
+	        response.put("success", false);
+	        response.put("message", "서버 오류로 인해 취소에 실패했습니다.");
 	    }
+	    
 	    return ResponseEntity.ok(response);
 	}
 	

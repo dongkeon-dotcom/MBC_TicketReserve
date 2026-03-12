@@ -12,6 +12,8 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.mbc.admin.service.AdminPerformanceService;
+
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.transaction.Transactional;
@@ -24,6 +26,8 @@ public class UsersService {
 	private final UsersRepository usersRepo;
 	
 	private final UserReservationRepository userReservationRepo;
+	
+	private final AdminPerformanceService adminPerformanceService;
 	
 	/* 이메일 테스트 시작*/
 	private final JavaMailSender mailSender;
@@ -119,9 +123,19 @@ public class UsersService {
 	
 	// 예매 취소 처리
 	@Transactional
-	public boolean processCancellation(String reserveNum) {
-	    int updatedRows = userReservationRepo.cancelReservation(reserveNum);
-	    return updatedRows > 0;
+	public boolean processCancellation(long reserveIdx) {
+//	    int updatedRows = userReservationRepo.cancelReservation(reserveNum);
+//	    if(updatedRows > 0) {
+//	    	adminPerformanceService.cancelReservation(reserveIdx);
+//	    	return true;
+//	    }
+//	    return false;
+		try {
+			adminPerformanceService.cancelReservation(reserveIdx);
+			return true;
+		} catch(Exception e) {
+			return false;
+		}
 	}
 	
 	@Transactional

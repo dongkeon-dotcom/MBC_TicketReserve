@@ -16,7 +16,7 @@ import com.mbc.reservation.OrderList;
 public interface UserReservationRepository extends JpaRepository<OrderList, Long> {
 
 	@Query(value = "SELECT " +
-            "r.reserve_num AS reserveNum, r.show_idx AS showIdx, r.name, r.seat_num AS seatNum, " +
+            "r.reserve_idx AS reserveIdx, r.reserve_num AS reserveNum, r.show_idx AS showIdx, r.name, r.seat_num AS seatNum, " +
             "r.payment_amount AS paymentAmount, r.status, r.reserve_date AS reserveDate, " +
             "ps.performance_id AS performanceId, ps.start_time AS startTime, " +
             "p.title, p.poster_image_name AS posterImageName, " +
@@ -34,7 +34,7 @@ public interface UserReservationRepository extends JpaRepository<OrderList, Long
             Pageable pageable); // Pageable 추가	
 	
 	@Query(value = "SELECT " +
-            "r.reserve_num AS reserveNum, r.show_idx AS showIdx, r.name, r.seat_num AS seatNum, " +
+            "r.reserve_idx AS reserveIdx, r.reserve_num AS reserveNum, r.show_idx AS showIdx, r.name, r.seat_num AS seatNum, " +
             "r.payment_amount AS paymentAmount, r.status, r.reserve_date AS reserveDate, " +
             "ps.performance_id AS performanceId, ps.start_time AS startTime, " +
             "p.title, p.poster_image_name AS posterImageName, " +
