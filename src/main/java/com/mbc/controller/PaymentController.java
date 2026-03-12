@@ -5,6 +5,7 @@ package com.mbc.controller;
 import com.mbc.admin.service.AdminPerformanceService;
 import com.mbc.reservation.OrderList;
 import com.mbc.reservation.OrderListRepository;
+import com.mbc.security.SecurityUserDetails;
 import com.mbc.user.Users;
 
 import jakarta.servlet.http.HttpSession;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,50 +45,43 @@ public class PaymentController {
     
 
     @GetMapping("/payment.do")
-    public String beforePaymentPage(@RequestParam("seatId") Long seatId, Model model, HttpSession session) {
+    public String beforePaymentPage(@RequestParam("seatId") Long seatId, 
+                                    Model model, 
+                                    @AuthenticationPrincipal SecurityUserDetails userDetails) {
         
-        // 1. 좌석 정보 가져오기
-        SeatInventory seat = performanceService.findSeatById(seatId); 
-        
-        // [중요] 5분 선점 시간 검증 로직
-        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
-        
-        // 조건 1: 선점 중(2)인데, 선점 시간이 5분이 지났다면?
-        // -> 좌석 상태를 미예약(0)으로 초기화 후 좌석 선택 페이지로 리다이렉트
-        if (seat.getIsReserved() == 2 && 
-            (seat.getReservedAt() == null || seat.getReservedAt().isBefore(fiveMinutesAgo))) {
-            
-            seat.setIsReserved(0);
-            seat.setReservedAt(null);
-            seat.setReservedBy(null);
-            performanceService.save(seat); // 서비스 클래스에 구현해둔 save 메서드 활용
-            
-            return "redirect:/reserve/seat.do?scheduleId=" + seat.getSchedule().getScheduleId();
-        }
-        
-        // 조건 2: 선점 중(2)인데, 선점한 사람이 내가 아니라면? (다른 사람의 결제 진입 방지)
-        // 세션 ID가 일치하지 않으면 좌석 선택 페이지로 돌려보냄
-        if (seat.getIsReserved() == 2 && !session.getId().equals(seat.getReservedBy())) {
-            return "redirect:/reserve/seat.do?scheduleId=" + seat.getSchedule().getScheduleId();
-        }
-
-        // 2. 나머지 정보 가져오기
-        PerformanceSchedule schedule = performanceService.findScheduleById(seat.getSchedule().getScheduleId());
-        Performance performance = performanceService.findById(schedule.getPerformance().getPerformanceId());
-
-        // 3. 사용자 인증 체크
-        Users loginUser = (Users) session.getAttribute("user");
-        if (loginUser == null) {
+        // 1. 로그인 체크 (시큐리티)
+        if (userDetails == null) {
             return "redirect:/user/login.do";
         }
+        Users loginUser = userDetails.getUser();
 
-        // 4. 모델 데이터 전달
+        // 2. 좌석 정보 가져오기
+        SeatInventory seat = performanceService.findSeatById(seatId); 
+        
+        // [중요] 5분 선점 시간 검증 (사용자 PK 비교로 수정)
+        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+        
+        if (seat.getIsReserved() == 2 && 
+            (seat.getReservedAt() == null || seat.getReservedAt().isBefore(fiveMinutesAgo))) {
+            seat.setIsReserved(0);
+            seat.setReservedAt(null);
+            seat.setReservedBy(null); // 서비스에서 String->Long으로 변경되었다면 null
+            performanceService.save(seat);
+            return "redirect:/reserve/seat.do?scheduleId=" + seat.getSchedule().getScheduleId();
+        }
+        
+        // ★ 중요: session.getId()를 userDetails.getUserIdx().toString()으로 대체
+        if (seat.getIsReserved() == 2 && !String.valueOf(userDetails.getUserIdx()).equals(seat.getReservedBy())) {
+            return "redirect:/reserve/seat.do?scheduleId=" + seat.getSchedule().getScheduleId();
+        }
+
+        // 3. 모델 데이터 전달
         model.addAttribute("userName", loginUser.getName());
         model.addAttribute("userPhone", loginUser.getPhone());
         model.addAttribute("userEmail", loginUser.getUserId());
         model.addAttribute("seat", seat);
-        model.addAttribute("schedule", schedule);
-        model.addAttribute("performance", performance);
+        model.addAttribute("schedule", performanceService.findScheduleById(seat.getSchedule().getScheduleId()));
+        model.addAttribute("performance", performanceService.findById(seat.getSchedule().getPerformance().getPerformanceId()));
         model.addAttribute("storeId", storeId);
         model.addAttribute("channelKey", channelKey);
         
@@ -102,22 +97,20 @@ public class PaymentController {
     public String completeOrder(@RequestParam("paymentId") String paymentId,
                                 @RequestParam("totalAmount") Integer totalAmount,
                                 @RequestParam("seatId") Long seatId,
-                                @RequestParam("scheduleId") Long scheduleId, // 회차 ID
-                                HttpSession session,
+                                @RequestParam("scheduleId") Long scheduleId,
+                                @AuthenticationPrincipal SecurityUserDetails userDetails,
                                 RedirectAttributes rttr) {
         
-        Users user = (Users) session.getAttribute("user");
-        if (user == null) return "redirect:/user/login.do";
+        if (userDetails == null) return "redirect:/user/login.do";
+        Users user = userDetails.getUser();
 
         try {
-            // 1. 좌석 정보 및 회차 정보 조회
             SeatInventory seat = performanceService.findSeatById(seatId);
-            PerformanceSchedule schedule = performanceService.findScheduleById(scheduleId); // [추가]
+            PerformanceSchedule schedule = performanceService.findScheduleById(scheduleId);
 
-            // 2. 주문 정보 저장 (이제 빌더에서 .schedule()을 사용합니다)
             OrderList order = OrderList.builder()
                     .reserveNum(paymentId)
-                    .schedule(schedule) // [수정] showIdx 대신 schedule 객체 전달
+                    .schedule(schedule)
                     .userIdx(user.getUserIdx())
                     .name(user.getName())
                     .phone(user.getPhone())
@@ -129,20 +122,17 @@ public class PaymentController {
                     .build();
 
             orderListRepository.save(order);
-
-            // 3. 좌석 상태 확정 (userIdx를 넘겨 예약자 기록)
             performanceService.reserveSeat(seatId, user.getUserIdx());
 
             rttr.addFlashAttribute("msg", "예매가 성공적으로 완료되었습니다!");
             return "reserve/complete";
-
         } catch (Exception e) {
             e.printStackTrace(); 
             rttr.addFlashAttribute("error", "예매 처리 중 오류가 발생했습니다.");
             return "redirect:/";
         }
     }
-    
+
     
     
     

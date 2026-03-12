@@ -15,10 +15,11 @@
     <nav class="top-nav">
     	<div class="nav-left">
         <a th:href="@{/main.do}">홈으로</a>
+		<a th:href="@{/admin/insertPage.do}">공연등록</a>
+					<a th:href="@{/admin/listPage.do}">공연목록</a>
         <!-- 관리자 영역 -->
 		<div sec:authorize="hasRole('ADMIN')">
-			<a th:href="@{/admin/insertPage.do}">공연등록</a>
-			<a th:href="@{/admin/listPage.do}">공연목록</a>
+			
     	</div>
     	</div>
     

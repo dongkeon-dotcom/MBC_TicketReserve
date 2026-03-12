@@ -1,6 +1,7 @@
 package com.mbc.controller;
 import com.mbc.admin.entity.Performance;
 import com.mbc.admin.service.AdminPerformanceService; // 기존 서비스 재사용 가능
+import com.mbc.security.SecurityUserDetails;
 import com.mbc.user.Users;
 
 import jakarta.servlet.http.HttpSession;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -101,25 +103,29 @@ public class TheaterController {
      */
     @GetMapping("/seat.do")
     public String seatPage(@RequestParam("scheduleId") Long scheduleId, 
-                           HttpSession session, 
+    		@AuthenticationPrincipal SecurityUserDetails userDetails,
                            Model model, 
                            RedirectAttributes rttr) {
         
-        // 0. 로그인 체크 및 사용자 정보 가져오기
-        Users user = (Users) session.getAttribute("user");
-        if (user == null) {
+    	// 0. 로그인 체크
+        if (userDetails == null) {
             return "redirect:/user/login.do";
         }
 
-        // [추가] 1. 이미 예매했는지 체크 (1인 1매 제한)
-        boolean alreadyReserved = performanceService.hasAlreadyReserved(user.getUserIdx(), scheduleId);
+        // 1. 여기서 이제 userDetails.getUserIdx()를 호출할 수 있습니다!
+        Long userIdx = userDetails.getUserIdx(); 
+        
+        // 2. 예매 내역 체크
+        boolean alreadyReserved = performanceService.hasAlreadyReserved(userIdx, scheduleId);
         
         if (alreadyReserved) {
-            // 경고 메시지 전달
             rttr.addFlashAttribute("error", "이미 해당 회차에 대한 예매 내역이 존재합니다. (1인 1매 제한)");
-            // 공연 목록 페이지나 메인으로 리다이렉트
             return "redirect:/"; 
         }
+    	
+   
+    	
+    
 
         // 1. 데이터 조회
         PerformanceSchedule schedule = performanceService.findScheduleById(scheduleId);
@@ -162,28 +168,34 @@ public class TheaterController {
     }
 
 
-@PostMapping("/selectSeat.do")
-@ResponseBody
-public ResponseEntity<String> selectSeat(@RequestParam Long seatId, HttpSession session) {
-    // 세션에서 현재 사용자 정보를 가져오거나 생성
-    String userId = session.getId(); 
-    
-    try {
-        // 서비스의 선점 로직 호출
-        boolean success = performanceService.selectSeat(seatId, userId);
+
+    @PostMapping("/selectSeat.do")
+    @ResponseBody
+    public ResponseEntity<String> selectSeat(@RequestParam Long seatId, 
+                                             @AuthenticationPrincipal SecurityUserDetails userDetails) {
         
-        if (success) {
-            return ResponseEntity.ok("좌석 선점 성공");
-        } else {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 다른 사용자가 선택한 좌석입니다.");
+        // 0. 로그인 체크
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인이 필요한 서비스입니다.");
         }
-    } catch (ObjectOptimisticLockingFailureException e) {
-        // 동시에 여러 명이 클릭해서 버전 충돌이 발생한 경우
-        return ResponseEntity.status(HttpStatus.CONFLICT).body("잠시 후 다시 시도해주세요.");
-    } catch (Exception e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("오류가 발생했습니다.");
+        
+        // 1. 세션 ID 대신 DB상의 고유 식별자(userIdx) 사용
+        Long userIdx = userDetails.getUserIdx();
+        
+        try {
+            // 2. 서비스 호출 시 userIdx 전달 (서비스 로직도 이 인자를 받도록 수정되어 있어야 합니다)
+        	boolean success = performanceService.selectSeat(seatId, String.valueOf(userIdx));            
+            if (success) {
+                return ResponseEntity.ok("좌석 선점 성공");
+            } else {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 다른 사용자가 선택한 좌석입니다.");
+            }
+        } catch (ObjectOptimisticLockingFailureException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("잠시 후 다시 시도해주세요.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("오류가 발생했습니다.");
+        }
     }
-}
 
 
 

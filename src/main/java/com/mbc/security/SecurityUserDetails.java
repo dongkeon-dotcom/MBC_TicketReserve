@@ -61,4 +61,8 @@ public class SecurityUserDetails implements UserDetails {
     public void setUser(Users user) {
         this.user = user;
     }
+ // SecurityUserDetails.java 파일 안에 아래 코드를 넣으세요
+    public Long getUserIdx() {
+        return this.user.getUserIdx(); // 유저의 숫자 고유값(PK)을 반환
+    }
 }
