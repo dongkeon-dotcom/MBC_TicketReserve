@@ -8,7 +8,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +26,7 @@ import com.mbc.user.Users;
 import com.mbc.user.UsersService;
 
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
 @RequestMapping("/user")
@@ -47,16 +50,34 @@ public class UserController {
 	}
 	
 	@GetMapping("join.do")
-	public String join(Model model) {
-		// 나중에 if문으로 isSocial인지 아닌지 구분해야됨
-		model.addAttribute("isSocial", false);
+	public String join(
+			@RequestParam(value="social", required = false) String social,
+			HttpSession session,
+			Model model) {
+
+		Users tempUser = (Users) session.getAttribute("tempUser");
+		//System.out.println("유저컨트롤러 join 진입");
+		//System.out.println("USER: " + tempUser);
+		
+		if(social != null && tempUser != null) {
+			model.addAttribute("user", tempUser);
+			model.addAttribute("isSocial", true);
+		} else {
+			model.addAttribute("user", new Users());
+			model.addAttribute("isSocial", false);
+		}
+
 		return "user/join";
 	}
 	
 	@PostMapping("joinOK.do")
-	public String joinOK(Users user) {
+	public String joinOK(Users user, HttpSession session) {
 		
-		service.join(user);		
+		//System.out.println("유저컨트롤러 join OK 진입");
+		//System.out.println("USER: " + user);
+		service.join(user);
+		
+		session.removeAttribute("tempUser");
 		
 		return "redirect:/user/login.do";
 	}
@@ -202,6 +223,35 @@ public class UserController {
 	        response.put("message", "이미 취소되었거나 취소할 수 없는 상태입니다.");
 	    }
 	    return ResponseEntity.ok(response);
+	}
+	
+	@PostMapping("/cancelUser.do")
+	public String cancelUser(HttpSession session, Authentication authentication, RedirectAttributes rttr) {
+		if (authentication == null || !authentication.isAuthenticated()) {
+	        return "redirect:/user/login.do";
+	    }
+
+	    // 1. 현재 로그인한 유저 아이디 가져오기
+	    String userId = authentication.getName();
+	    
+	    try {
+	        // 2. DB 상태 변경 서비스 호출
+	        service.cancelUser(userId);
+	        
+	        // 3. 스프링 시큐리티 세션 및 HTTP 세션 무효화 (강제 로그아웃)
+	        SecurityContextHolder.clearContext(); // 시큐리티 권한 정보 삭제
+	        if (session != null) {
+	            session.invalidate(); // 세션 무효화
+	        }
+	        
+	        // 4. 탈퇴 성공 메시지 전달
+	        rttr.addAttribute("status", "withdrawn");
+	        return "redirect:/user/login.do";
+	        
+	    } catch (Exception e) {
+	        rttr.addFlashAttribute("msg", "탈퇴 처리 중 오류가 발생했습니다.");
+	        return "redirect:/user/mypage.do";
+	    }
 	}
 	
 	

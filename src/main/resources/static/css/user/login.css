@@ -64,6 +64,7 @@
 .divider-container {
     text-align: center;
     margin: 30px 0;
+    position: relative;
 }
 .divider {
     border: none;
@@ -73,6 +74,7 @@
     top: 50%;
     left: 0;
     z-index: 1;
+    margin: 0;
 }
 .divider-container span {
     position: relative;

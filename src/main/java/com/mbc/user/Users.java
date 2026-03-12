@@ -8,10 +8,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name="users")
 public class Users {
 	
@@ -42,7 +48,7 @@ public class Users {
     private String zipcode;
 
     @Column(name = "role", length = 20)
-    private String role = "USER"; // 기본값 설정
+    private String role = "ROLE_USER"; // 기본값 설정
 
     @Column(name = "join_date", updatable = false)
     @org.hibernate.annotations.CreationTimestamp // 생성 시 자동으로 현재 시간 입력

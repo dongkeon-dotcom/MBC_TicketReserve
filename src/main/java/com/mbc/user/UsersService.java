@@ -34,6 +34,7 @@ public class UsersService {
 	private String fromEmail;
 	
 	public void sendEmail() throws MessagingException{
+		System.out.println("메일 발송 로직 시작! From: " + fromEmail); // 콘솔 확인용
 		MimeMessage message = mailSender.createMimeMessage();
 		MimeMessageHelper helper = new MimeMessageHelper(message, true);
 		
@@ -43,16 +44,19 @@ public class UsersService {
 		helper.setText("이메일 발송 테스트 입니다. (내용) ");
 		
 		mailSender.send(message);		
+		System.out.println("메일 발송 완료");
 	}	
 	/* 이메일 테스트 끝*/
 	
 	@Transactional
 	public void join(Users user) {
 		
-		// 추후 SpringSecurity로 여기서 암호화 한번 해야됨
 		String encPassword = passwordEncoder.encode(user.getPassword());
 		user.setPassword(encPassword);
 		// DB 저장
+		//System.out.println("***************************************** USER 회원가입 **********************");
+		//System.out.println("USER: " + user);
+		
 		usersRepo.save(user);	
 	}
 	
@@ -118,6 +122,16 @@ public class UsersService {
 	public boolean processCancellation(String reserveNum) {
 	    int updatedRows = userReservationRepo.cancelReservation(reserveNum);
 	    return updatedRows > 0;
+	}
+	
+	@Transactional
+	public void cancelUser(String userId) {
+		Users user = usersRepo.findByUserId(userId)
+				.orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+		
+		user.setDelYn(true);
+		
+		usersRepo.save(user);
 	}
 	
 	

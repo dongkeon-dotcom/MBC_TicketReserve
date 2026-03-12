@@ -16,25 +16,25 @@
     	<div class="nav-left">
         <a th:href="@{/main.do}">홈으로</a>
         <!-- 관리자 영역 -->
-		<div sec:authorize="hasRole('ADMIN')">
-			<a th:href="@{/admin/insertPage.do}">공연등록</a>
-			<a th:href="@{/admin/listPage.do}">공연목록</a>
+		<div sec:authorize="hasRole('ROLE_ADMIN')">
+			<a th:href="@{/admin/insertPage.do}">공연등록</a>			
     	</div>
+    	<a th:href="@{/admin/listPage.do}">공연목록</a>
     	</div>
     
 		<div class="nav-right">
 		<input type="button" onclick="sendMailTest()" value="이메일 발송 테스트">
 		
         <!-- 로그아웃 상태일 때 -->
-        <div sec:authorize="isAnonymous()">                
+        <div sec:authorize="isAnonymous() or hasRole('ROLE_GUEST')">              
     	    <a th:href="@{/user/join.do}">회원가입</a>
 		    <a th:href="@{/user/login.do}">로그인</a>
 		</div>
 		
 		<!-- 로그인 했을 때 -->
-        <div sec:authorize="isAuthenticated()">        
+        <div sec:authorize="hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')">
 			<a th:href="@{/user/mypage.do}">마이페이지</a>
-			<span sec:authentication="principal.user.name"></span>님
+		    <span th:text="${#authentication.principal?.user?.name ?: #authentication.name} + '님'">이름</span>
     		<a th:href="@{/user/logout.do}" class="logout-link">로그아웃</a>
 		</div>
 		

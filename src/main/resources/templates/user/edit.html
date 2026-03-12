@@ -82,8 +82,23 @@ if (message) {
 /*]]>*/
 
 function userDel(){
-	if(confirm("정말로 탈퇴하시겠습니까?")){
-		location.href = "";
+	if(confirm("정말로 탈퇴하시겠습니까? 재가입이 제한될 수 있습니다.")){
+		const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/user/cancelUser.do';
+        
+        // CSRF 토큰이 필요하다면 여기에 추가 (중요!)
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+        if (csrfToken) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = '_csrf';
+            input.value = csrfToken;
+            form.appendChild(input);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
 	}
 }
 

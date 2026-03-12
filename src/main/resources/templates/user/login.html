@@ -79,9 +79,10 @@ if (message) {
 
 window.onload = function() {
     const urlParams = new URLSearchParams(window.location.search);
-    
+    console.log("URL Params:", urlParams.toString()); // 주소창 파라미터 출력
     // 1. 로그인 실패 시
     let errorMsg = urlParams.get('exception');
+    console.log("Extracted errorMsg:", errorMsg); // 추출된 메시지 출력
     if (errorMsg) {
         alert(decodeURIComponent(errorMsg.replace(/\+/g, ' ')));
         window.history.replaceState({}, document.title, window.location.pathname);

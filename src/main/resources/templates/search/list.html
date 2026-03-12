@@ -28,7 +28,7 @@
         <div class="performance-grid">
         
             <div th:each="p : ${list}" class="performance-item">
-                <button type="button" class="perf-button" th:onclick="|location.href='/performance/detail.do?id=${p.performanceId}'|">
+                <button type="button" class="perf-button" th:onclick="|location.href='/reserve/ticket.do?performanceId=${p.performanceId}'|">
                     <div class="perf-content">
                         <div class="perf-img-box">
                             <img th:src="@{'https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/' + ${p.posterImageName}}" alt="포스터">

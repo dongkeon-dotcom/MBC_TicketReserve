@@ -13,9 +13,11 @@
             <br>
             <div style="display: inline-block; text-align: left; width: 100%; max-width: 500px;">
                 <h1 style="text-align: center;" 
-                    th:text="${isSocial ? '소셜 계정 회원가입' : '일반 회원가입'}">회원가입</h1>
+                    th:text="${isSocial ? '소셜 계정 추가정보 입력' : '일반 회원가입'}">회원가입</h1>
 
                 <form name="joinForm" th:action="@{/user/joinOK.do}" method="post">
+                    <input type="hidden" name="EasyLogin" th:value="${isSocial}">
+                    <input type="hidden" name="loginType" th:value="${user.loginType}">
 
                     <table cellpadding="5" style="width: 100%;">
                         <tr>
@@ -29,7 +31,7 @@
                         <tr>
                             <td colspan="2">
                                 <input type="text" name="userId" id="userId" autocomplete="username" 
-                                       th:value="${userId}" th:readonly="${isSocial}"
+                                       th:value="${user.userId}" th:readonly="${isSocial}"
                                        th:classappend="${isSocial} ? 'readonly-box' : ''"
                                        placeholder="이메일을 입력하세요" />
                                 <span id="emailMsg" class="msg-text"></span>
@@ -60,7 +62,10 @@
                         </tr>
                         <tr>
                             <td colspan="2">
-                                <input type="text" name="name" id="name" th:value="${name}" placeholder="이름을 입력하세요" />
+                                <input type="text" name="name" id="name" 
+                                       th:value="${user.name}" th:readonly="${isSocial}"
+                                       th:classappend="${isSocial} ? 'readonly-box' : ''"
+                                       placeholder="이름을 입력하세요" />
                             </td>
                         </tr>
 
@@ -92,7 +97,7 @@
                         <tr>
                             <td colspan="2" align="center">
                                 <br>
-                                <button type="button" onclick="joinCheck()" class="join-submit-btn">회원가입 완료</button>
+                                <button type="button" onclick="joinCheck()" class="join-submit-btn">가입 완료</button>
                             </td>
                         </tr>
                     </table>
@@ -103,8 +108,9 @@
 
     <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
     <script th:inline="javascript">
-        const _isSocial = /*[[${isSocial}]]*/ false;
-        let emailChecked = _isSocial;
+    const _isSocial = /*[[${isSocial}]]*/ false;
+    console.log("현재 소셜 여부: ", _isSocial)
+    let emailChecked = _isSocial; 
 
         function joinCheck(){
             const form = document.joinForm;
@@ -117,6 +123,7 @@
                 return;
             }
             
+            // 소셜 가입이 아닐 때만 이메일 중복 및 비밀번호 체크
             if(!_isSocial){
                 if(!emailChecked){
                     alert("아이디(이메일) 중복체크를 진행해주세요.");
@@ -157,7 +164,7 @@
                 return;
             }
             
-            if(confirm("입력하신 정보로 회원가입을 진행할까요?")){
+            if(confirm("입력하신 정보로 회원가입을 완료할까요?")){
                 form.submit();	
             }	
         }
