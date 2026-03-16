@@ -28,15 +28,17 @@
 		            <p class="guide-text">* 현재 시스템에 등록된 모든 공연 리스트입니다. 수정 버튼을 통해 상세 정보와 좌석 배치를 변경할 수 있습니다.</p>
 
 		            <table class="admin-table">
-		                <thead>
-		                    <tr>
-		                        <th style="width: 80px;">번호</th>
-		                        <th style="width: 100px;">포스터</th>
-		                        <th>공연 제목</th>
-		                        <th style="width: 250px;">공연 운영 기간</th>
-		                        <th style="width: 200px;">관리 액션</th>
-		                    </tr>
-		                </thead>
+						<colgroup>
+						        <col style="width: 6%;">  <col style="width: 8%;">  <col style="width: 30%;"> <col style="width: 28%;"> <col style="width: 28%;"> </colgroup>
+						    <thead>
+						        <tr>
+						            <th>번호</th>
+						            <th>포스터</th>
+						            <th>공연 제목</th>
+						            <th>공연 운영 기간</th>
+						            <th>관리 액션</th>
+						        </tr>
+						    </thead>
 		                <tbody>
 		                    <tr th:if="${#lists.isEmpty(performanceList)}">
 		                        <td colspan="5" style="padding: 100px 0; color: #bbb; font-size: 1.1em;">
