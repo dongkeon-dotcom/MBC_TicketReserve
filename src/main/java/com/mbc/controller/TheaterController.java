@@ -103,37 +103,58 @@ public class TheaterController {
      */
     @GetMapping("/seat.do")
     public String seatPage(@RequestParam("scheduleId") Long scheduleId, 
-    		@AuthenticationPrincipal SecurityUserDetails userDetails,
+                           @AuthenticationPrincipal SecurityUserDetails userDetails,
                            Model model, 
                            RedirectAttributes rttr) {
         
-    	// 0. 로그인 체크
+        // 0. 로그인 체크
         if (userDetails == null) {
             return "redirect:/user/login.do";
         }
 
-        // 1. 여기서 이제 userDetails.getUserIdx()를 호출할 수 있습니다!
         Long userIdx = userDetails.getUserIdx(); 
         
-        // 2. 예매 내역 체크
+        // 1. 예매 내역 체크
         boolean alreadyReserved = performanceService.hasAlreadyReserved(userIdx, scheduleId);
-        
         if (alreadyReserved) {
             rttr.addFlashAttribute("error", "이미 해당 회차에 대한 예매 내역이 존재합니다. (1인 1매 제한)");
             return "redirect:/"; 
         }
-    	
-   
-    	
-    
 
-        // 1. 데이터 조회
+        // 2. [추가] 진입 시 만료된 좌석(5분 초과) 자동 해제 로직
+        List<SeatInventory> allSeats = seatInventoryRepository.findByScheduleScheduleId(scheduleId);
+        LocalDateTime limit = LocalDateTime.now().minusMinutes(5);
+        boolean isChanged = false;
+
+        for (SeatInventory s : allSeats) {
+            if (s.getIsReserved() == 2 && s.getReservedAt() != null && s.getReservedAt().isBefore(limit)) {
+                s.setIsReserved(0);
+                s.setReservedAt(null);
+                s.setReservedBy(null);
+                isChanged = true;
+            }
+        }
+        if (isChanged) {
+            seatInventoryRepository.saveAll(allSeats);
+        }
+
+        // 3. [추가] 새로고침/재진입 시 내가 선점 중인 좌석이 있다면 상태 유지(선택됨 표시)
+        // SeatInventoryRepository에 아래 메서드가 정의되어 있어야 합니다:
+        // List<SeatInventory> findByReservedByAndIsReservedAndSchedule_ScheduleId(String reservedBy, Integer isReserved, Long scheduleId);
+        List<SeatInventory> mySeats = seatInventoryRepository.findByReservedByAndIsReservedAndSchedule_ScheduleId(
+            String.valueOf(userIdx), 2, scheduleId);
+        
+        if (!mySeats.isEmpty()) {
+            model.addAttribute("mySelectedSeatId", mySeats.get(0).getSeatId());
+        }
+
+        // 4. 데이터 조회 (기존 로직)
         PerformanceSchedule schedule = performanceService.findScheduleById(scheduleId);
         Performance performance = schedule.getPerformance();
         
-        List<SeatInventory> allSeats = schedule.getSeats();
+        // 리포지토리에서 다시 조회 (위에서 변경된 상태가 반영된 최신 좌석 리스트)
+        List<SeatInventory> updatedSeats = seatInventoryRepository.findByScheduleScheduleId(scheduleId);
         
-        // 2. 스케줄 정보 가공
         List<PerformanceSchedule> schedulesFromEntity = (performance.getSchedules() != null) ? performance.getSchedules() : new ArrayList<>();
         List<Map<String, Object>> schedulesForJS = new ArrayList<>();
         for (PerformanceSchedule s : schedulesFromEntity) {
@@ -143,7 +164,6 @@ public class TheaterController {
             schedulesForJS.add(map);
         }
         
-        // 3. 등급별 정보 및 잔여 좌석 계산
         List<PerformanceGradeConfig> gradeConfigs = performance.getGrades();
         List<Map<String, Object>> gradeData = new ArrayList<>();
         for (int i = 0; i < gradeConfigs.size(); i++) {
@@ -151,21 +171,22 @@ public class TheaterController {
             Map<String, Object> map = new HashMap<>();
             map.put("gradeName", config.getGradeName());
             map.put("price", config.getGradePrice());
-            
             int remainCount = seatInventoryRepository.countAvailableSeats(scheduleId, i + 1);
             map.put("remainCount", remainCount);
             gradeData.add(map);
         }
         
-        // 4. 모델에 담기
+        // 5. 모델에 담기
         model.addAttribute("performance", performance); 
         model.addAttribute("schedule", schedule);
-        model.addAttribute("seats", allSeats);
+        model.addAttribute("seats", updatedSeats);
         model.addAttribute("grades", gradeData);
         model.addAttribute("schedules", schedulesForJS); 
         
         return "reserve/seat";
     }
+    
+    
 
 
 

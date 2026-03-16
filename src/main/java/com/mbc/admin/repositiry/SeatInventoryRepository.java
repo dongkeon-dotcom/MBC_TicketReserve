@@ -1,6 +1,5 @@
 package com.mbc.admin.repositiry;
 
-import com.mbc.admin.Prediction.SalesDataProjection;
 import com.mbc.admin.entity.PerformanceSchedule;
 import com.mbc.admin.entity.SeatInventory;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -52,24 +51,8 @@ public interface SeatInventoryRepository extends JpaRepository<SeatInventory, Lo
     //특정 회차의 좌석번호로 좌석 조회 
     Optional<SeatInventory> findByScheduleAndSeatNumber(PerformanceSchedule schedule, String seatNumber);
     
-    //시계열 어쩌구 // 니누군데 
-    @Query(value = "SELECT reserved_at as ds, " +
-            "  SUM(1) OVER (ORDER BY reserved_at) as y " +
-            "  FROM seat_inventory " +
-            "  WHERE is_reserved = 1 " +
-            "  AND reserved_at IS NOT NULL " +
-            "  AND schedule_id IN (SELECT schedule_id FROM performance_schedule WHERE performance_id = :performanceId) " +
-            "  ORDER BY reserved_at ASC", nativeQuery = true)
- List<SalesDataProjection> getSalesStatsByPerformanceId(@Param("performanceId") Long performanceId);
-    
-    
- // 특정 공연의 전체 좌석 수 조회
-    @Query(value = "SELECT COUNT(*) FROM seat_inventory WHERE schedule_id IN " +
-           "(SELECT schedule_id FROM performance_schedule WHERE performance_id = :performanceId)", 
-           nativeQuery = true)
-    int getTotalSeatsByPerformanceId(@Param("performanceId") Long performanceId);
-
-
+  
+    List<SeatInventory> findByReservedByAndIsReservedAndSchedule_ScheduleId(String reservedBy, Integer isReserved, Long scheduleId);
 
 }
 //실제로 판매될 개별 좌석을 저정하고 확인하기 위해 사용 

@@ -447,30 +447,41 @@ public class AdminPerformanceService {
      */
     @Transactional
     public boolean selectSeat(Long seatId, String userId) {
-        // 1. 좌석 조회 (Optimistic Lock을 위해 버전 체크가 포함됨)
         SeatInventory seat = seatInventoryRepository.findById(seatId)
-            .orElseThrow(() -> new IllegalArgumentException("좌석을 찾을 수 없습니다. ID: " + seatId));
+            .orElseThrow(() -> new IllegalArgumentException("좌석을 찾을 수 없습니다."));
 
-        // 2. 이미 예약(1)된 좌석인지 확인
-        if (seat.getIsReserved() == 1) {
-            return false;
-        }
+        // 1. 이미 예약(1)된 좌석이면 절대 불가
+        if (seat.getIsReserved() == 1) return false;
 
-        // 3. 선점 중(2)인데 5분이 지나지 않았는지 확인 // 여기서 시간 조절 가능 
+        // 2. 만료 체크 (5분)
         LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
-        if (seat.getIsReserved() == 2 && seat.getReservedAt() != null 
-            && seat.getReservedAt().isAfter(fiveMinutesAgo)) {
-            return false; // 아직 5분이 안 지남 -> 선점 불가
+        
+        // [중요 수정] 내가 선점했던 좌석이라면, 5분이 지나지 않았어도 
+        // "재선점"을 허용해주거나, 5분이 지났다면 당연히 해제 후 다시 선점
+        if (seat.getIsReserved() == 2) {
+            if (seat.getReservedBy().equals(userId)) {
+                // 내가 점유 중인 좌석 -> 그냥 계속 점유(시간 갱신)
+                seat.setReservedAt(LocalDateTime.now());
+                seatInventoryRepository.save(seat);
+                return true;
+            } else if (seat.getReservedAt().isBefore(fiveMinutesAgo)) {
+                // 다른 사람이 잡았는데 5분 지남 -> 해제 후 내가 잡음
+                seat.setIsReserved(0);
+            } else {
+                // 다른 사람이 잡았고 5분 안 지남 -> 실패
+                return false;
+            }
         }
 
-        // 4. 좌석 선점 처리 (isReserved = 2)
-        seat.setIsReserved(2);
-        seat.setReservedAt(LocalDateTime.now());
-        seat.setReservedBy(userId);
-        
-        // 데이터 저장 (이 시점에 @Version이 자동 체크됨)
-        seatInventoryRepository.save(seat); 
-        return true;
+        // 3. 선점 로직
+        if (seat.getIsReserved() == 0) {
+            seat.setIsReserved(2);
+            seat.setReservedAt(LocalDateTime.now());
+            seat.setReservedBy(userId);
+            seatInventoryRepository.save(seat);
+            return true;
+        }
+        return false;
     }
     
     

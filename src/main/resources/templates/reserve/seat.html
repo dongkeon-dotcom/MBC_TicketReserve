@@ -248,15 +248,22 @@
                 container.appendChild(btn);
             });
         }
-
-        window.resetSelection = function() {
-            if (window.currentSelectedId) cancelSeatRequest(window.currentSelectedId);
-            document.querySelectorAll('.seat.selected').forEach(s => s.classList.remove('selected'));
-            window.currentSelectedId = null;
-            document.getElementById('selected-seat-tag').innerText = "좌석을 선택하세요";
-            document.getElementById('payment-btn').disabled = true;
-        };
-
+		window.resetSelection = function() {
+		    if (window.currentSelectedId) {
+		        // 서버에 취소 요청
+		        fetch('/reserve/cancelSeat.do', {
+		            method: 'POST',
+		            headers: getHeaders(),
+		            body: 'seatId=' + window.currentSelectedId
+		        }).then(() => {
+		            // UI 초기화
+		            document.querySelectorAll('.seat.selected').forEach(s => s.classList.remove('selected'));
+		            window.currentSelectedId = null;
+		            document.getElementById('selected-seat-tag').innerText = "좌석을 선택하세요";
+		            document.getElementById('payment-btn').disabled = true;
+		        });
+		    }
+		};
         window.goToPayment = function() {
             if (!window.currentSelectedId) { alert("좌석을 선택해 주세요."); return; }
             location.href = "/payment/payment.do?seatId=" + window.currentSelectedId;
@@ -264,27 +271,41 @@
 		
 		function handleSeatClick(element) {
 		    const status = parseInt(element.getAttribute('data-status'));
-		    
-		    // 1. 보유석(3)이나 예매완료(1)일 때 바로 차단 (기존 기능 유지)
-		    if (status !== 0) {
-		        alert('선택할 수 없는 좌석입니다.');
-		        return; 
+		    const seatId = element.getAttribute('data-id');
+
+		    // 1. 이미 예약(1)된 좌석이거나 보유석(3)일 때 차단
+		    if (status === 1 || status === 3) {
+		        alert('이미 선택된 좌석입니다.');
+		        return;
 		    }
 
-		    // 2. 0일 때는 기존의 selectSeat 함수를 그대로 호출
-		    const seatId = element.getAttribute('data-id');
-		    selectSeat(seatId); 
-		}
-		
-		
-		function selectSeat(seatId) {
-		    // 기존 AJAX 예매 로직
-		    fetch('/reserve/selectSeat.do?seatId=' + seatId, { method: 'POST' })
-		        .then(response => response.text())
-		        .then(data => {
-		            alert(data);
-		            location.reload(); // 성공 시 화면 갱신
-		        });
+		    // 2. 서버에 선점 요청
+		    fetch('/reserve/selectSeat.do', {
+		        method: 'POST',
+		        headers: getHeaders(), 
+		        body: 'seatId=' + seatId
+		    })
+		    .then(response => {
+		        if (response.ok) {
+		            // 성공: 페이지 새로고침 안 함!
+		            // 기존에 선택된 좌석이 있다면 해제(선택취소) 처리
+		            document.querySelectorAll('.seat.selected').forEach(s => s.classList.remove('selected'));
+		            
+		            // 현재 좌석을 '선택됨' 상태로 UI만 변경
+		            element.classList.add('selected');
+		            window.currentSelectedId = seatId;
+		            
+		            // 하단 정보창 업데이트
+		            document.getElementById('selected-seat-tag').innerText = element.querySelector('span').innerText + "번 좌석";
+		            document.getElementById('payment-btn').disabled = false; // [결제하기] 버튼 활성화
+		            
+		        } else if (response.status === 409) {
+		            alert("이미 다른 사용자가 선점한 좌석입니다.");
+		            location.reload(); // 다른 사람이 잡았으므로 상태 동기화를 위해 새로고침
+		        } else {
+		            response.text().then(msg => alert(msg));
+		        }
+		    });
 		}
 		
 		
@@ -319,7 +340,23 @@
 								    e.preventDefault();
 								}, false);		
 		
-		
+								// 서버에서 전달받은 값
+								    const mySelectedSeatId = /*[[${mySelectedSeatId}]]*/ null;
+
+								    // 페이지 로드 시 내 좌석이 있다면 UI 적용
+								    window.addEventListener('DOMContentLoaded', () => {
+								        if (mySelectedSeatId) {
+								            const seatElement = document.querySelector(`.seat[data-id='${mySelectedSeatId}']`);
+								            if (seatElement) {
+								                seatElement.classList.add('selected');
+								                window.currentSelectedId = mySelectedSeatId;
+								                
+								                // 정보 사이드바 업데이트
+								                document.getElementById('selected-seat-tag').innerText = seatElement.querySelector('span').innerText + "번 좌석";
+								                document.getElementById('payment-btn').disabled = false;
+								            }
+								        }
+								    });	
 		
         /*]]>*/
     </script>
