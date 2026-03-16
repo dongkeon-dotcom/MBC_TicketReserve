@@ -25,7 +25,7 @@
                                 <span th:if="${isSocial}" class="social-badge">소셜인증 완료</span>
                             </td>
                             <td align="right">
-                                <button th:if="${!isSocial}" type="button" onclick="checkEmail()" class="btn-outline-secondary">중복체크</button>
+                                <button th:if="${!isSocial}" type="button" onclick="checkEmail()" class="btn-outline-secondary">중복체크</button>                                
                             </td>
                         </tr>
                         <tr>
@@ -37,6 +37,17 @@
                                 <span id="emailMsg" class="msg-text"></span>
                             </td>
                         </tr>
+                        <tr>
+                        <td colspan="2">
+						<div id="verificationSection" style="display: none; margin-top: 10px;">
+						    <div style="display: flex; gap: 5px;">
+						        <input type="text" id="authCode" placeholder="인증번호 6자리 입력" maxlength="6">
+						        <button type="button" onclick="verifyAuthCode()" class="btn-outline-secondary"> 인증확인 </button>
+						    </div>
+						    <span id="authMsg" class="msg-text"></span>
+						</div>
+						</td>
+						</tr>                        
 
                         <th:block th:if="${!isSocial}">
                             <tr>
@@ -110,7 +121,8 @@
     <script th:inline="javascript">
     const _isSocial = /*[[${isSocial}]]*/ false;
     console.log("현재 소셜 여부: ", _isSocial)
-    let emailChecked = _isSocial; 
+    let emailChecked = _isSocial;
+    let isEmailVerified = false;
 
         function joinCheck(){
             const form = document.joinForm;
@@ -138,7 +150,12 @@
                     alert("비밀번호가 일치하지 않습니다.");
                     form.userPWck.focus();
                     return;
-                }		
+                }
+                
+                if(!isEmailVerified) {
+                	alert("이메일 인증이 완료되지 않았습니다.");
+                	return;
+                }
             }
 
             if(form.name.value.trim() === ""){
@@ -172,6 +189,7 @@
         function checkEmail(){
             const userId = document.getElementById("userId").value;
             const msgSpan = document.getElementById("emailMsg");
+            const vSection = document.getElementById("verificationSection");
             
             if(userId === ""){
                 msgSpan.innerHTML = "아이디(이메일)을 입력하세요";
@@ -192,9 +210,11 @@
                     msgSpan.style.color = "red";
                     emailChecked = false;
                 } else {
-                    msgSpan.innerText = "사용 가능한 아이디(이메일) 입니다.";
+                    msgSpan.innerText = "사용 가능한 아이디(이메일) 입니다. 인증 메일 발송 중...";
                     msgSpan.style.color = "green";
                     emailChecked = true;
+                    
+                    sendVerificationMail(userId);
                 }
             })
             .catch(error => console.error('Error:', error));
@@ -209,6 +229,79 @@
                     document.getElementById("extraAddress").focus();
                 }
             }).open();
+        }
+        
+        function sendVerificationMail(email){
+        	fetch("/user/sendAuthMail.do", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: "email=" + encodeURIComponent(email)
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert("인증 메일이 발송되었습니다. 5분 이내에 입력해주세요.");
+                    document.getElementById("verificationSection").style.display = "block";
+                } else if (response.status === 429) { // Too Many Requests (또는 설정한 에러코드)
+                    alert("메일 발송은 1분에 한 번만 가능합니다. 잠시 후 다시 시도해주세요.");
+                } else {
+                    alert("메일 발송에 실패했습니다.");
+                }
+            });
+        }
+        
+        function verifyAuthCode() {
+            const userIdInput = document.getElementById("userId");
+            const authCodeInput = document.getElementById("authCode");
+            const authMsg = document.getElementById("authMsg");
+            
+            // 버튼 선택자를 더 안전하게 id가 아닌 속성값으로 찾기
+            const verifyBtn = document.querySelector("#verificationSection button");
+            const checkEmailBtn = document.querySelector("button[onclick='checkEmail()']");
+
+            const email = userIdInput.value;
+            const code = authCodeInput.value; // 값은 fetch 보낼 때만 사용
+
+            fetch("/user/verify.do", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: `email=${encodeURIComponent(email)}&code=${encodeURIComponent(code)}`
+            })
+            .then(response => response.json())
+            .then(success => {
+                if (success) {
+                    authMsg.innerText = "인증 성공!";
+                    authMsg.style.color = "blue";
+                    isEmailVerified = true;
+
+                    // 1. 아이디(이메일) 입력창 고정 및 회색 처리
+                    userIdInput.readOnly = true;
+                    userIdInput.style.backgroundColor = "#e9ecef";
+                    userIdInput.style.color = "#6c757d";
+
+                    // 2. 중복체크 버튼 비활성화
+                    if(checkEmailBtn) checkEmailBtn.disabled = true;
+
+                    // 3. 인증번호 입력창 고정 및 회색 처리
+                    authCodeInput.readOnly = true;
+                    authCodeInput.style.backgroundColor = "#e9ecef";
+                    authCodeInput.style.color = "#6c757d";
+
+                    // 4. 인증 확인 버튼 비활성화 및 시각 효과
+                    if(verifyBtn) {
+                        verifyBtn.disabled = true;
+                        verifyBtn.style.backgroundColor = "#e9ecef";
+                        verifyBtn.style.color = "#6c757d";
+                        verifyBtn.style.opacity = "0.6";
+                        verifyBtn.style.cursor = "not-allowed";
+                    }
+                    
+                } else {
+                    authMsg.innerText = "인증번호가 틀렸거나 만료되었습니다.";
+                    authMsg.style.color = "red";
+                    isEmailVerified = false;
+                }
+            })
+            .catch(error => console.error('Error:', error));
         }
     </script>
 

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.mbc.security.SecurityUserDetails;
+import com.mbc.user.MailVerificationService;
 import com.mbc.user.UserReservationDTO;
 import com.mbc.user.Users;
 import com.mbc.user.UsersService;
@@ -36,11 +37,21 @@ public class UserController {
 	
 	private final UsersService service;
 	
+	private final MailVerificationService mailService;
+	
 	@ResponseBody
-	@PostMapping("/mail.do")
-	public ResponseEntity<String> EmailSendTest() {
+	@PostMapping("/sendAuthMail.do")
+	public ResponseEntity<String> sendEmail(@RequestParam("email") String email) {
 		try {
-			service.sendEmail();
+			
+			boolean isLimit = mailService.isLimit(email);
+			
+			if (isLimit) {
+	            // 1분 이내 재요청 시 429 Too Many Requests 반환
+	            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("잠시 후 다시 시도해주세요.");
+	        }
+			
+			service.sendAuthEmail(email);
 			return ResponseEntity.ok("success");
 		} catch (MessagingException e) {
 			// TODO Auto-generated catch block
@@ -48,6 +59,23 @@ public class UserController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("fail");
 		}
 	}
+	
+	@ResponseBody
+	@PostMapping("/verify.do")
+	public ResponseEntity<Boolean> verifyEmail(@RequestParam String email, @RequestParam String code) {
+        // 1. Redis에서 해당 이메일의 인증번호 조회
+        String savedCode = mailService.getData(email);
+
+        if (savedCode != null && savedCode.equals(code)) {
+            // 인증 성공 시 Redis 데이터 삭제 (재사용 방지)
+        	mailService.deleteData(email);
+            return ResponseEntity.ok(true);
+        } else {
+            return ResponseEntity.ok(false);
+        }
+    }
+	
+	
 	
 	@GetMapping("join.do")
 	public String join(

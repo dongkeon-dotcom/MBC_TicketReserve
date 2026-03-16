@@ -22,8 +22,7 @@
     	<a th:href="@{/admin/listPage.do}">공연목록</a>
     	</div>
     
-		<div class="nav-right">
-		<input type="button" onclick="sendMailTest()" value="이메일 발송 테스트">
+		<div class="nav-right">		
 		
         <!-- 로그아웃 상태일 때 -->
         <div sec:authorize="isAnonymous() or hasRole('ROLE_GUEST')">              
@@ -62,16 +61,6 @@
     </div>
 
 <script th:inline="javascript">
-
-function sendMailTest(){
-	const url = /*[[@{/user/mail.do}]]*/ '/user/mail.do'; // 안전한 문법
-	
-	fetch(url, {method: 'POST'})
-		.then(response => {
-			if(response.ok) alert("메일 발송 완료");
-			else alert("메일 발송 실패");
-		});
-}
 
 document.querySelector('.search-form-container form').onsubmit = function() {
     const val = document.getElementById('keyword').value.trim();

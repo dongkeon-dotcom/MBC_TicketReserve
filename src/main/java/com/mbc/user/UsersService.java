@@ -1,10 +1,10 @@
 package com.mbc.user;
 
+import java.security.SecureRandom;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -31,25 +31,44 @@ public class UsersService {
 	
 	/* 이메일 테스트 시작*/
 	private final JavaMailSender mailSender;
+	private final MailVerificationService mailService;
+	private final SecureRandom random = new SecureRandom();
+
+    public String generateCode() {
+        // 000000 ~ 999999 사이의 숫자를 생성
+        int code = random.nextInt(1000000); 
+        return String.format("%06d", code); // 6자리 숫자로 포맷팅 (앞자리 0 포함)
+    }	
 
 	private final PasswordEncoder passwordEncoder;
 	
 	@Value("${spring.mail.username}")
 	private String fromEmail;
 	
-	public void sendEmail() throws MessagingException{
+	public void sendAuthEmail(String email) throws MessagingException{
 		System.out.println("메일 발송 로직 시작! From: " + fromEmail); // 콘솔 확인용
+		
+		String code = generateCode();
+		
+		mailService.saveAuthCode(email, code);
+		
+		
 		MimeMessage message = mailSender.createMimeMessage();
 		MimeMessageHelper helper = new MimeMessageHelper(message, true);
 		
-		helper.setTo("suntan1234@naver.com");
+		helper.setTo(email);
 		helper.setFrom(fromEmail);
-		helper.setSubject("이메일 발송 테스트 입니다. (제목) ");
-		helper.setText("이메일 발송 테스트 입니다. (내용) ");
+		helper.setSubject("[인증번호] 티켓팅 회원가입");
+		helper.setText("서비스 이용을 위한 인증번호 입니다.\n"
+				+ "[인증번호]: " + code);
 		
 		mailSender.send(message);		
 		System.out.println("메일 발송 완료");
 	}	
+	
+	
+
+	
 	/* 이메일 테스트 끝*/
 	
 	@Transactional
