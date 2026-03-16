@@ -16,21 +16,21 @@
         <ul class="step-bar">
             <li><span>01</span> 날짜/회차선택</li>
             <li class="active"><span>02</span> 등급/좌석선택</li>
-            <li><span>03</span> 권종/할인/매수선택</li>
-            <li><span>04</span> 배송선택/예매확인</li>
-            <li><span>05</span> 결제</li>
+
+            <li><span>03</span> 예매확인</li>
+            <li><span>04</span> 결제</li>
         </ul>
     </div>
 
     <div class="seat-selection-wrapper">
         <div class="seat-map-section">
-            <div class="performance-mini-info">
-                <div class="info-text">
-                    <h3 th:text="${performance.title}">공연 제목</h3>
-                    <p>[[${#temporals.format(schedule.startTime, 'yyyy.MM.dd(E) HH:mm')}]]</p>
-                </div>
-                <button class="btn-change-date" onclick="openModal()">회차변경</button>
-            </div>
+			<div class="performance-mini-info">
+			    <div class="info-text">
+			        <h3 th:text="${performance.title}">공연 제목</h3>
+			        <p>[[${#temporals.format(schedule.startTime, 'yyyy.MM.dd(E) HH:mm')}]]</p>
+			    </div>
+			    <button class="btn-change-date" onclick="openModal()">회차변경</button>
+			</div>
 
             <div class="map-viewport">
                 <div class="floating-controls">
@@ -57,12 +57,10 @@
 								</div>
                 </div>
             </div>
-        </div>
+   
 
         <div class="info-sidebar">
-            <div class="minimap-area">
-                <div class="minimap-placeholder">MINI MAP</div>
-            </div>
+          
 
             <div class="grade-status-area">
                 <div class="selected-bottom-bar">
@@ -84,11 +82,12 @@
                     </div>
                 </div>
             </div>
-
+		
             <div class="sidebar-buttons">
                 <button class="btn-prev" onclick="history.back()">이전단계</button>
                 <button id="payment-btn" class="btn-next" disabled onclick="goToPayment()">다음단계</button>
             </div>
+			</div>
         </div>
     </div>
 
