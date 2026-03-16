@@ -17,11 +17,10 @@
 		            <div class="list-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
 		                <h2>등록된 공연 현황</h2>
 		                
-		                <form th:action="@{/admin/listPage.do}" method="get" style="display: flex; gap: 5px;">
-		                    <input type="text" name="keyword" th:value="${keyword}" placeholder="공연 제목 검색" 
-		                           style="padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-		                    <button type="submit" style="padding: 8px 15px; cursor: pointer;">검색</button>
-		                </form>
+						<form th:action="@{/admin/listPage.do}" method="get" class="search-box">
+						    <input type="text" name="keyword" th:value="${keyword}" placeholder="공연 제목 검색" class="search-input">
+						    <button type="submit" class="search-btn-admin">검색</button>
+						</form>
 
 		                <a th:href="@{/admin/insertPage.do}" class="btn-add-main">+ 새 공연 등록하기</a>
 		            </div>

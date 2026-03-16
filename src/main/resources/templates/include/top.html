@@ -5,7 +5,7 @@
     
     <!-- CSS -->
     <link th:href="@{/css/top.css}" rel="stylesheet" />
-
+	
     <!-- Header -->
     <header class="top-header">
         <h1>티켓팅 사이트 ver 1.0</h1>
@@ -34,7 +34,7 @@
 		<!-- 로그인 했을 때 -->
         <div sec:authorize="hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')">
 			<a th:href="@{/user/mypage.do}">마이페이지</a>
-		    <span th:text="${#authentication.principal?.user?.name ?: #authentication.name} + '님'">이름</span>
+		    <span class="user-info-text" th:text="${#authentication.principal?.user?.name ?: #authentication.name} + '님'">이름</span>
     		<a th:href="@{/user/logout.do}" class="logout-link">로그아웃</a>
 		</div>
 		

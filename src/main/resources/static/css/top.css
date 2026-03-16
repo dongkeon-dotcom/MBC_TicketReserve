@@ -1,80 +1,87 @@
+
 @charset "UTF-8";
 
+/* 1. 기본 초기화 및 폰트 설정 */
+@import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Nanum+Gothic&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Nanum Gothic", sans-serif !important;
+    background-color: #F9F7F2; /* 배경: 소프트 크림 (눈이 아주 편안함) */
+    color: #2C3E50;           /* 기본 글자색: 딥 네이비 톤의 다크 그레이 */
+    margin: 0;
+    padding: 0;
+}
+
+/* 2. Header (딥 네이비 적용) */
 header {
-    background-color: blue;
+    background-color: #2C3E50; /* 딥 네이비 */
     height: 70px;
-    line-height: 70px;
-    text-align: center;
-    vertical-align: middle;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: #ffffff;
+    margin: 0;
+    padding: 0;
 }
 
-/* --- Navigation 영역 --- */
+header h1 {
+    margin: 0;
+    padding: 0;
+    font-size: 24px;
+}
+
+/* 3. Navigation 영역 (헤더보다 살짝 밝은 네이비) */
 .top-nav {
-    background-color: #6699ff;
+    background-color: #34495E; /* 조금 더 밝은 네이비 */
     height: 40px;
-    display: flex; /* Flexbox 활성화 */
-    justify-content: space-between; /* 좌우 양 끝 정렬 */
-    align-items: center; /* 세로 중앙 정렬 */
-    padding: 0 30px; /* 좌우 끝에 너무 붙지 않게 여백 추가 */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 30px;
 }
 
-/* 왼쪽 메뉴 그룹 */
-.nav-left {
+.nav-left, .nav-right {
     display: flex;
-    gap: 20px; /* 메뉴 사이 간격 */
-}
-
-/* 오른쪽 메뉴 그룹 */
-.nav-right {
-    display: flex;
-    gap: 20px; /* 메뉴 사이 간격 */
+    gap: 20px;
     align-items: center;
 }
 
-/* 링크 공통 스타일 */
 nav a {
     text-decoration: none;
-    color: #000; /* 기존 파란색 링크 대신 검정색 추천 */
+    color: #ECF0F1; /* 네비게이션 글자색은 밝게 */
     font-size: 14px;
 }
 
 nav a:hover {
+    color: #E67E22; /* 호버 시 강조색: 차분한 오렌지 */
     text-decoration: underline;
-}
-
-.user-info {
-    font-size: 14px;
-    color: #333;
 }
 
 .logout-link {
     font-size: 12px;
     margin-left: 5px;
-    color: #444 !important;
+    color: #E67E22 !important;
 }
 
-/* ---  기존 섹션 및 푸터 스타일 --- */
-section {
-    /* background-color: #CCCCCC;  <- 지우거나 필요한 색상으로 변경 */
-    /* min-height: 450px;        <- 이 줄을 지우거나 대폭 줄이세요 */
-    min-height: auto;           /* 콘텐츠 크기에 맞게 자동으로 조절 */
-    padding: 0;                 /* 위아래 패딩도 0으로 */
-    margin: 0;                  /* 마진도 0으로 */
-}
-
+/* 4. Footer */
 footer {
-    background-color: #0077FF;
+    background-color: #2C3E50;
     height: 35px;
     line-height: 35px;
     text-align: center;
-    vertical-align: middle;
+    color: #ffffff;
 }
 
-/* ---  검색 기능 관련 스타일 --- */
+/* 5. 검색 기능 관련 스타일 */
 .search-trigger {
     font-size: 1.2rem;
-    color: #333;
+    color: #ECF0F1;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -83,31 +90,23 @@ footer {
 .search-overlay {
     position: fixed;
     top: 0;
-    right: -100%; /* 여전히 우측 밖에 숨겨둠 */
-    
-    /* [수정] 너비를 가로의 약 1/3인 33%로 설정 */
-    width: 33%; 
-    /* 화면 너비가 너무 좁을 때를 대비해 최소 너비를 주면 좋습니다 */
-    min-width: 350px; 
-    
-    height: 100%; /* 세로는 전체를 다 씁니다 */
+    right: -100%;
+    width: 33%;
+    min-width: 350px;
+    height: 100%;
     background-color: #ffffff;
     z-index: 9999;
     transition: right 0.4s ease-in-out;
-    
-    /* 그림자를 왼쪽으로 줘서 메인 화면과 분리된 느낌을 줍니다 */
     box-shadow: -5px 0 15px rgba(0,0,0,0.1);
-    
     display: flex;
     flex-direction: column;
-    padding: 100px 30px; /* 내부 여백 조절 */
+    padding: 20px 30px;
 }
 
 .search-overlay.active {
-    right: 0; /* 우측 끝에 딱 붙어서 멈춤 */
+    right: 0;
 }
 
-/* 닫기 버튼 (X) 위치 조정 */
 .search-close-btn {
     position: absolute;
     top: 30px;
@@ -116,18 +115,13 @@ footer {
     background: none;
     border: none;
     cursor: pointer;
-    color: #000;
-}
-
-/* 검색 입력창 컨테이너 (가로 너비에 맞게 조정) */
-.search-form-container {
-    width: 100%; /* 부모(33%) 안에서 꽉 차게 */
+    color: #2C3E50;
 }
 
 .search-input-wrapper {
     display: flex;
     align-items: center;
-    border-bottom: 2px solid #000;
+    border-bottom: 2px solid #E67E22; /* 강조색: 차분한 오렌지 */
     padding-bottom: 5px;
 }
 
@@ -136,8 +130,17 @@ footer {
     border: none;
     outline: none;
     background: none;
-    font-size: 20px; /* 좁은 폭에 맞춰 폰트 크기 살짝 줄임 */
+    font-size: 20px;
     font-weight: bold;
+    color: #2C3E50;
+}
+
+.search-btn {
+    background: none;
+    border: none;
+    font-size: 30px;
+    cursor: pointer;
+    color: #E67E22;
 }
 
 .search-dim {
@@ -146,17 +149,31 @@ footer {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.5); /* 검정 반투명 */
-    z-index: 9998; /* 오버레이(9999)보다 낮게 */
-    display: none; /* 평소엔 숨김 */
+    background: rgba(0,0,0,0.4);
+    z-index: 9998;
+    display: none;
 }
 .search-dim.active {
     display: block;
 }
 
-.search-btn {
-    background: none;
-    border: none;
-    font-size: 30px;
-    cursor: pointer;
+
+/* 로그인 상태의 사용자 이름 스타일 */
+.user-info-text {
+    font-size: 14px;
+    font-weight: bold;       /* 굵게 해서 눈에 띄게 */
+    color: #E67E22;          /* 포인트 오렌지색 적용 */
+    margin-right: 10px;
+}
+
+/* 로그아웃 링크와의 간격 조정 */
+.logout-link {
+    font-size: 12px;
+    margin-left: 5px;
+    color: #BDC3C7 !important; /* 로그아웃은 약간 연하게 (대비 효과) */
+    text-decoration: none;
+}
+
+.logout-link:hover {
+     color: #E67E22 !important; /* 마우스 올리면 흰색으로 */
 }
