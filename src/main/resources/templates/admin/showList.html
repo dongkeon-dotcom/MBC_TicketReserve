@@ -17,12 +17,13 @@
 		            <div class="list-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
 		                <h2>등록된 공연 현황</h2>
 		                
-						<form th:action="@{/admin/listPage.do}" method="get" class="search-box">
-						    <input type="text" name="keyword" th:value="${keyword}" placeholder="공연 제목 검색" class="search-input">
-						    <button type="submit" class="search-btn-admin">검색</button>
-						</form>
-
-		                <a th:href="@{/admin/insertPage.do}" class="btn-add-main">+ 새 공연 등록하기</a>
+						<div class="header-right-group">
+						        <form th:action="@{/admin/listPage.do}" method="get" class="search-box">
+						            <input type="text" name="keyword" th:value="${keyword}" placeholder="공연 제목 검색" class="search-input">
+						            <button type="submit" class="search-btn-admin">검색</button>
+						        </form>
+						        <a th:href="@{/admin/insertPage.do}" class="btn-add-main">+ 새 공연 등록하기</a>
+						    </div>
 		            </div>
 
 		            <p class="guide-text">* 현재 시스템에 등록된 모든 공연 리스트입니다. 수정 버튼을 통해 상세 정보와 좌석 배치를 변경할 수 있습니다.</p>

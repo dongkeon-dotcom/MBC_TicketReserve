@@ -13,18 +13,19 @@
 
 .list-header {
     display: flex;
-    justify-content: space-between;
+justify-content: flex-start; /* 왼쪽 정렬로 변경 */
     align-items: center;
     margin-bottom: 25px;
     padding-bottom: 15px;
     border-bottom: 2px solid #E5E0D8; /* 부드러운 라인 */
 }
-
-.list-header h2 {
-    margin: 0;
-    color: #2C3E50;
-    font-size: 1.5em;
+.header-right-group {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* 검색창과 등록버튼 사이 간격 */
+    margin-left: auto; /* 핵심: 이 속성이 있으면 검색창 그룹만 오른쪽 끝으로 밀려남 */
 }
+
 
 /* --- [2] 공연 목록 테이블 스타일 --- */
 .admin-table {
@@ -85,12 +86,7 @@
     font-family: 'Consolas', monospace;
 }
 
-/* --- [5] 관리 버튼 스타일 (테마 색상 적용) --- */
-.action-group {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-}
+
 
 /* 범용 버튼 스타일 */
 .action-group a, .action-group button {
@@ -153,12 +149,7 @@
     margin: 0 5px;
 }
 
-/* 검색 폼 컨테이너 */
-.search-box {
-    display: flex;
-    gap: 5px;
-    align-items: center;
-}
+
 
 /* 검색 입력창 */
 .search-input {
@@ -244,6 +235,36 @@
     min-width: 160px;           /* 사파리에서 공간이 찌그러지는 것 방지 */
 }
 
+
+/* 공연 운영 기간 스타일 */
+.period-column {
+    white-space: nowrap;    /* 날짜가 꺾이지 않고 한 줄로 출력 */
+    font-size: 13px;
+    font-family: monospace; /* 날짜 형태를 깔끔하게 유지 */
+}
+
+
+.list-header h2 {
+    margin: 0;
+    color: #2C3E50;
+    font-size: 1.5em;
+}
+
+
+/* 검색 폼 컨테이너 */
+.search-box {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+/* --- [5] 관리 버튼 스타일 (테마 색상 적용) --- */
+.action-group {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
 /* 버튼과 링크 스타일 */
 .action-group a, 
 .action-group button {
@@ -253,22 +274,6 @@
     white-space: nowrap;        /* 글자 줄바꿈 방지 */
     flex-shrink: 0;             /* 버튼이 찌그러지지 않게 고정 */
 }
-/* 공연 운영 기간 스타일 */
-.period-column {
-    white-space: nowrap;    /* 날짜가 꺾이지 않고 한 줄로 출력 */
-    font-size: 13px;
-    font-family: monospace; /* 날짜 형태를 깔끔하게 유지 */
-}
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -170,7 +170,14 @@ body { background-color: #f4f4f4; margin: 0; padding: 0; font-family: 'Pretendar
 .date-picker-table td.disabled { color: #ccc !important; cursor: default; }
 
 /* 회차 및 잔여석 스타일 */
-.time-slot { background: #fff; border: 1px solid #ddd; padding: 10px; margin-bottom: 8px; border-radius: 4px; font-size: 13px; cursor: pointer; }
+.time-slot { background: #fff; 
+    border: 1px solid #ddd; 
+    padding: 10px; 
+    margin-bottom: 15px; /* 8px에서 15px로 변경하여 항목 간 간격 확보 */
+    border-radius: 4px; 
+    font-size: 13px; 
+    cursor: pointer; 
+}
 .time-slot.selected { border: 2px solid #333; font-weight: bold; }
 .time-slot.disabled { background: #f9f9f9; color: #bbb; cursor: not-allowed; }
 .grade-info { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #eee; font-size: 13px; }
