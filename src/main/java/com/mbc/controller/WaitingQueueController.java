@@ -81,7 +81,7 @@ public ResponseEntity<Map<String, Object>> checkQueue(
     Map<String, Object> response = new HashMap<>();
 
     // 3. 대기열 로직 (동일)
-    long LIMIT = 1;
+    long LIMIT = 0;
     if (!waitingQueueService.isQueueEnabled() && waitingQueueService.getQueueSize() < LIMIT) {
         response.put("status", "DIRECT");
         return ResponseEntity.ok(response);

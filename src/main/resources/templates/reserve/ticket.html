@@ -25,7 +25,7 @@
 								        <span class="price-info-title">좌석 등급별 가격</span>
 								        <ul class="price-list">
 								            <li th:each="config : ${performance.grades}" class="price-item">
-								                <span class="grade-label" th:text="${config.gradeName}+">VIP석</span>
+								                <span class="grade-label" th:text="${config.gradeName}">VIP석</span>
 								                <span class="grade-price" th:text="${#numbers.formatInteger(config.gradePrice, 3, 'COMMA')}">150,000</span>
 								            </li>
 								        </ul>

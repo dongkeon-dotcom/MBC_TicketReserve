@@ -1,14 +1,29 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+	
+
 <head>
+	<link rel="stylesheet" th:href="@{/css/reserve/beforePayment.css}">
+
     <meta charset="UTF-8">
     <title>결제 전 확인</title>
 	<meta th:if="${_csrf}" name="_csrf" th:content="${_csrf.token}"/>
 	    <meta th:if="${_csrf}" name="_csrf_header" th:content="${_csrf.headerName}"/>
 </head>
 <body>
-	<link rel="stylesheet" th:href="@{/css/reserve/beforePayment.css}">
 
+	<div class="step-bar-container">
+		        <ul class="step-bar">
+		            <li><span>01</span> 날짜/회차선택</li>
+		            <li ><span>02</span> 등급/좌석선택</li>
+
+		            <li class="active"><span>03</span> 예매확인</li>
+		            <li><span>04</span> 결제</li>
+		        </ul>
+		    </div>
+	
+	
+	
     <h2>예매 내역 확인</h2>
     
     <div class="reservation-summary">
