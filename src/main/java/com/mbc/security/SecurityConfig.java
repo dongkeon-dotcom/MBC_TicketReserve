@@ -31,7 +31,7 @@ public class SecurityConfig {
             	) // 포트폴리오 단계에선 편의상 비활성화 (필요시 활성)
             .authorizeHttpRequests(auth -> auth
             	.requestMatchers("/", "/index.do", "/user/login.do", "/user/join.do","/user/mail.do", "/user/checkEmail.do", "/user/joinOK.do").permitAll() // 누구나 가능
-                .requestMatchers("/admin/**").hasRole("USER") // ADMIN 권한만
+                .requestMatchers("/admin/**").hasRole("ADMIN") // ADMIN 권한만
                 .requestMatchers("/user/**").authenticated()
                 .anyRequest().permitAll() // 누구나 접근 가능
             )
