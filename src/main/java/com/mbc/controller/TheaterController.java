@@ -224,9 +224,20 @@ public class TheaterController {
 //새고하면 좌석풀
 @PostMapping("/cancelSeat.do")
 @ResponseBody
-public ResponseEntity<String> cancelSeat(@RequestParam("seatId") Long seatId, HttpSession session) {
-    performanceService.cancelSeat(seatId, session.getId());
-    return ResponseEntity.ok("선점 취소 완료");
+public ResponseEntity<String> cancelSeat(@RequestParam("seatId") Long seatId, 
+        @AuthenticationPrincipal SecurityUserDetails userDetails) {
+
+if (userDetails == null) {
+return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("로그인 정보가 없습니다.");
+}
+
+// selectSeat.do와 동일하게 userIdx를 문자열로 변환하여 전달
+String userIdStr = String.valueOf(userDetails.getUserIdx());
+
+// 서비스의 cancelSeat 로직이 (seatId, userId)를 받는지 확인 필요
+performanceService.cancelSeat(seatId, userIdStr);
+
+return ResponseEntity.ok("선점 취소 완료");
 }
 
 
