@@ -41,7 +41,10 @@ public class UserController {
 	
 	@ResponseBody
 	@PostMapping("/sendAuthMail.do")
-	public ResponseEntity<String> sendEmail(@RequestParam("email") String email) {
+	public ResponseEntity<String> sendEmail(
+			@RequestParam("email") String email,
+			@RequestParam("status") String status
+			) {
 		try {
 			
 			boolean isLimit = mailService.isLimit(email);
@@ -51,7 +54,7 @@ public class UserController {
 	            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("잠시 후 다시 시도해주세요.");
 	        }
 			
-			service.sendAuthEmail(email);
+			service.sendAuthEmail(email, status);
 			return ResponseEntity.ok("success");
 		} catch (MessagingException e) {
 			// TODO Auto-generated catch block
@@ -109,6 +112,39 @@ public class UserController {
 		
 		return "redirect:/user/login.do";
 	}
+	
+	@GetMapping("pwFind.do")
+	public String pwFind() {
+		
+		return "user/pwFind";
+	}
+	
+	@PostMapping("/pwFindOK.do")
+	public String pwFindOK(
+			@RequestParam String userId,
+	        @RequestParam String newPw,
+	        @AuthenticationPrincipal SecurityUserDetails userDetails,
+	        RedirectAttributes rttr
+			) {	    
+	    // 비밀번호 업데이트
+	    service.updatePassword(userId, newPw);
+	    
+	    rttr.addFlashAttribute("msg", "비밀번호가 성공적으로 변경되었습니다.");
+		
+		
+		return "redirect:/user/login.do";
+	}
+	
+	@PostMapping("/checkInfoEmail.do")
+	@ResponseBody
+	public String checkInfoEmail(
+			@RequestParam("userId") String userId,
+			@RequestParam("name") String name
+			) {
+		return service.getLoginType(userId, name);
+	}
+	
+	
 
 	@PostMapping("/checkEmail.do")
 	@ResponseBody

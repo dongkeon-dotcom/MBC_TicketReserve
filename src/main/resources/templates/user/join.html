@@ -235,7 +235,10 @@
         	fetch("/user/sendAuthMail.do", {
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: "email=" + encodeURIComponent(email)
+                body:  new URLSearchParams({
+                	'email': email,
+                	'status': 'join'
+                })
             })
             .then(response => {
                 if (response.ok) {
