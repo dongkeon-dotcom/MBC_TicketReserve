@@ -97,7 +97,10 @@
 					        
 					        <td>
 					            <div class="action-group">
+									<a th:href="@{'http://localhost:5173?id=' + ${p.performanceId}}" 
+									           class="btn-predict" style="background-color: #6c5ce7; color: white;">예상 확인</a>
 					                <a th:href="@{/admin/editPage.do(id=${p.performanceId})}" class="btn-edit">정보수정</a>
+									<a th:href="@{/reserve/ticket.do(performanceId=${p.performanceId})}" class="btn-view" >예매페이지</a>
 					                <button type="button" class="btn-delete" th:onclick="|deleteConfirm(${p.performanceId})|">삭제</button>
 					            </div>
 					        </td>
@@ -106,7 +109,30 @@
 		        </table>
 		    </div>
 		    </div>
-		
+			<div class="pagination" style="text-align: center; margin-top: 40px; margin-bottom: 40px;">
+			    
+			    <a th:href="@{/admin/listPage.do(page=0, keyword=${keyword})}" class="pg-btn">[맨처음]</a>
+
+			    <a th:href="@{/admin/listPage.do(page=${(page.number / 10 - 1) * 10 + 9}, keyword=${keyword})}" 
+			       th:if="${page.number >= 10}" class="pg-btn">[이전]</a>
+
+			    <span th:each="i : ${#numbers.sequence(
+			        (page.number / 10) * 10, 
+			        T(java.lang.Math).min((page.number / 10) * 10 + 9, page.totalPages > 0 ? page.totalPages - 1 : 0)
+			    )}">
+			        <a th:if="${page.totalPages > 0}"
+			           th:href="@{/admin/listPage.do(page=${i}, keyword=${keyword})}" 
+			           th:text="${i + 1}" 
+			           th:classappend="${i == page.number} ? 'active' : ''"
+			           class="pg-num">1</a>
+			    </span>
+
+			    <a th:href="@{/admin/listPage.do(page=${(page.number / 10 + 1) * 10}, keyword=${keyword})}" 
+			       th:if="${(page.number / 10 + 1) * 10 < page.totalPages}" class="pg-btn">[다음]</a>
+
+			    <a th:if="${page.totalPages > 0}" 
+			       th:href="@{/admin/listPage.do(page=${page.totalPages - 1}, keyword=${keyword})}" class="pg-btn">[맨끝]</a>
+			</div>
 		
 		<div th:replace="~{include/bottom::footer}"></div>
 		

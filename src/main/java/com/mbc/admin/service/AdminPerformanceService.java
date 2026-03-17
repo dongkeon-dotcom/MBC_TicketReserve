@@ -711,7 +711,18 @@ public class AdminPerformanceService {
     }
     
     
-    
+ // 메인 페이지 배너용: 추천 공연(isFeatured=1)을 시작일 순으로 8개 가져오기
+    public List<Performance> findFeaturedPerformances() {
+        // Repository에 findByIsFeaturedAndIsVisibleOrderByStartDateAsc (혹은 유사한 이름)가 필요합니다.
+        // 만약 Repository 수정이 번거롭다면 아래처럼 전체를 가져와서 스트림으로 처리할 수 있습니다.
+        
+        return performanceRepository.findAll().stream()
+                .filter(p -> p.getIsFeatured() != null && p.getIsFeatured() == 1) // 추천 공연만
+                .filter(p -> p.getIsVisible() != null && p.getIsVisible() == 1)  // 노출 가능만
+                .sorted(Comparator.comparing(Performance::getStartDate))         // 날짜순 정렬
+                .limit(8)                                                       // 8개 제한
+                .collect(Collectors.toList());
+    } 
     
     
 }
