@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>비밀번호 변경</title>
+    <link th:href="@{/css/user/pwFind.css}" rel="stylesheet" />
+</head>
+<body>
+    <div th:replace="~{include/top::top}"></div>
+
+<section class="pw-change-wrapper">
+    <h1>비밀번호 찾기</h1>
+    <form id="pwForm" th:action="@{/user/pwFindOK.do}" method="POST">
+        
+        <table class="info-table">
+        	<tr>
+        		<td>아이디(이메일)</td>
+        		<td><input type="email" id="userId" name="userId" required></td>
+        	</tr>
+        	<tr>
+        		<td>이름</td>
+        		<td><input type="text" id="name" name="name" required></td>
+        	</tr>
+        	<tr>
+        		<td><button type="button" id="btnInfoSubmit" class="btn-info-submit" onclick="validateInfo()"> 확인</button></td>
+        	</tr>
+        	
+        	<tr>
+        	<td colspan="2">
+        	<div id="verificationSection" style="display: none; margin-top: 10px;">
+			    <div style="display: flex; gap: 5px;">
+			        <input type="text" id="authCode" placeholder="인증번호 6자리 입력" maxlength="6">
+			        <button type="button" onclick="verifyAuthCode()" class="btn-outline-secondary"> 인증확인 </button>
+			    </div>
+			    <span id="authMsg" class="msg-text"></span>
+			</div>
+        	</td>
+        	</tr>
+        	
+        </table>
+        
+        
+        <table class="pw-table" id="pwTable" style="display: none;">
+            <tr>
+                <td class="label-cell">새 비밀번호</td>
+                <td><input type="password" id="newPw" name="newPw" required></td>
+            </tr>
+            <tr>
+                <td class="label-cell">새 비밀번호 확인</td>
+                <td>
+                    <input type="password" id="newPwConfirm" name="newPwConfirm" required>
+                    <span id="pwMatchMsg" class="msg-area"></span>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" class="button-group">
+                    <button type="button" class="btn-submit" onclick="validatePassword()">비밀번호 변경</button>
+                    <button type="button" class="btn-cancel" onclick="history.back()">취소하기</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+</section>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+const message = /*[[${msg}]]*/ null;
+if (message) {
+    alert(message);
+}
+/*]]>*/
+	let isEmailVerified = false;
+    
+    function validateInfo(){
+    	const userId = document.getElementById('userId').value;
+    	const name = document.getElementById('name').value;
+    	
+    	if(!userId || !name){
+    		alert("아이디(이메일), 이름을 입력해주세요.");
+    		return;
+    	}
+    	
+    	fetch("/user/checkInfoEmail.do",{
+    		method: "POST",
+    		headers: { "Content-Type": "application/x-www-form-urlencoded"},
+    		body: new URLSearchParams({
+    			'userId': userId,
+    			'name': name
+    		})
+    	})
+    	.then(response => response.text())
+    	.then(result => {
+    		if(result === "NOT_FOUND"){
+    			alert("일치하는 회원 정보가 없습니다.")
+    		} else if(result !== "LOCAL" && result !== "" && result !== "null"){
+    			alert("해당 계쩡은 " + result + "(으)로 가입된 계정입니다.\n"+
+    					"해당 간편로그인을 이용해 주세요.");
+    		} else{
+    			if(confirm("확인되었습니다. 인증 메일을 발송할까요?")){
+    				sendVerificationMail(userId);
+    			}
+    		}
+    	})
+    	.catch(error => console.error('Error:', error));
+    }
+    
+    function sendVerificationMail(email){
+    	fetch("/user/sendAuthMail.do", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+            	'email': email,
+            	'status': 'find'
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                alert("인증 메일이 발송되었습니다. 5분 이내에 입력해주세요.");
+                document.getElementById("verificationSection").style.display = "block";
+                document.getElementById('userId').readOnly = true;
+                document.getElementById('name').readOnly = true;
+                document.getElementById('btnInfoSubmit').disabled = true;
+            } else if (response.status === 429) { // Too Many Requests (또는 설정한 에러코드)
+                alert("메일 발송은 1분에 한 번만 가능합니다. 잠시 후 다시 시도해주세요.");
+            } else {
+                alert("메일 발송에 실패했습니다.");
+            }
+        });
+    }
+
+    function verifyAuthCode() {
+        const email = document.getElementById("userId").value;
+        const authCodeInput = document.getElementById("authCode");
+        const authMsg = document.getElementById("authMsg");
+        const verifyBtn = document.querySelector("#verificationSection button");
+
+        fetch("/user/verify.do", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                'email': email,
+                'code': authCodeInput.value
+            })
+        })
+        .then(response => response.json())
+        .then(success => {
+            if (success) {
+                alert("인증에 성공했습니다. 새 비밀번호를 설정해주세요.");
+                isEmailVerified = true;
+                
+                // 인증 섹션 잠그기
+                authCodeInput.readOnly = true;
+                authCodeInput.style.backgroundColor = "#e9ecef";
+                verifyBtn.disabled = true;
+                
+                // ★ 비밀번호 입력 테이블 보여주기 ★
+                document.getElementById("pwTable").style.display = "table"; 
+                document.getElementById("newPw").focus();
+            } else {
+                authMsg.innerText = "인증번호가 틀렸거나 만료되었습니다.";
+                authMsg.style.color = "red";
+            }
+        });
+    }
+    
+    
+    // 1. 실시간 체크 기능 (사용자가 입력하는 동안 작동)
+    document.getElementById('newPwConfirm').addEventListener('keyup', function() {
+        const pw = document.getElementById('newPw').value;
+        const confirmPw = this.value;
+        const msgArea = document.getElementById('pwMatchMsg');
+
+        if (confirmPw === "") {
+            msgArea.textContent = "";
+        } else if (pw === confirmPw) {
+            msgArea.textContent = "비밀번호가 일치합니다.";
+            msgArea.style.color = "green"; // 클래스 대신 직접 스타일을 줘도 됩니다.
+        } else {
+            msgArea.textContent = "비밀번호가 일치하지 않습니다.";
+            msgArea.style.color = "red";
+        }
+    });
+    
+
+    // 2. 최종 전송 기능 (버튼 클릭 시 작동)
+    function validatePassword() {
+    	if(!isEmailVerified){
+    		alert("이메일 인증을 먼저 완료해주세요.");
+    		return;
+    	}
+    	
+        const newPw = document.getElementById('newPw').value;
+        const newPwConfirm = document.getElementById('newPwConfirm').value;
+        
+        if(newPw.length < 4){
+        	alert("비밀번호를 4자 이상 입력해주세요.");
+        	return;
+        }
+
+        // 최종 일치 확인
+        if (newPw !== newPwConfirm) {
+            alert("새 비밀번호가 일치하지 않습니다.");
+            return;
+        }
+
+        // 서버로 전송
+        if (confirm("비밀번호를 변경하시겠습니까?")) {
+            document.getElementById('pwForm').submit();
+        }
+    }
+</script>
+</body>
+</html>

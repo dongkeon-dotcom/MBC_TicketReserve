@@ -59,11 +59,17 @@
                 카카오 계정으로 로그인
             </a>
         </div>
-
         <div class="join-guide">
+        	<div class="guide-item">
+        	<span>비밀번호가 생각나지 않으신가요?</span>
+            <button type="button" class="btn-join" 
+                    th:onclick="|location.href='@{/user/pwFind.do}'|">비밀번호 찾기</button>
+        	</div>
+        	<div class="guide-item">
             <span>아직 회원이 아니신가요?</span>
             <button type="button" class="btn-join" 
                     th:onclick="|location.href='@{/user/join.do}'|">회원가입</button>
+        	</div>
         </div>
     </div>
 </div>

@@ -93,6 +93,9 @@
     padding: 20px 0;
     border-top: 1px solid #f5f5f5; /* 구분선 살짝 추가 (선택사항) */
 }
+.guide-item{
+	margin-top: 20px;
+}
 
 /* 회원가입 링크 버튼 */
 .btn-join {

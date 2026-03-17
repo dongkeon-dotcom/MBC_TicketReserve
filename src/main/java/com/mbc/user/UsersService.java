@@ -29,7 +29,7 @@ public class UsersService {
 	
 	private final AdminPerformanceService adminPerformanceService;
 	
-	/* 이메일 테스트 시작*/
+	/* 이메일 전송 관련*/
 	private final JavaMailSender mailSender;
 	private final MailVerificationService mailService;
 	private final SecureRandom random = new SecureRandom();
@@ -45,20 +45,26 @@ public class UsersService {
 	@Value("${spring.mail.username}")
 	private String fromEmail;
 	
-	public void sendAuthEmail(String email) throws MessagingException{
+	public void sendAuthEmail(String email, String status) throws MessagingException{
 		System.out.println("메일 발송 로직 시작! From: " + fromEmail); // 콘솔 확인용
 		
 		String code = generateCode();
 		
 		mailService.saveAuthCode(email, code);
-		
+		mailService.saveSendLimit(email);
 		
 		MimeMessage message = mailSender.createMimeMessage();
 		MimeMessageHelper helper = new MimeMessageHelper(message, true);
 		
 		helper.setTo(email);
 		helper.setFrom(fromEmail);
-		helper.setSubject("[인증번호] 티켓팅 회원가입");
+		
+		if(status.contains("join")) {
+			helper.setSubject("[인증번호] 티켓팅 회원가입");	
+		}else {
+			helper.setSubject("[인증번호] 티켓팅 비밀번호찾기");
+		}
+		
 		helper.setText("서비스 이용을 위한 인증번호 입니다.\n"
 				+ "[인증번호]: " + code);
 		
@@ -66,10 +72,6 @@ public class UsersService {
 		System.out.println("메일 발송 완료");
 	}	
 	
-	
-
-	
-	/* 이메일 테스트 끝*/
 	
 	@Transactional
 	public void join(Users user) {
@@ -85,6 +87,11 @@ public class UsersService {
 	
 	public boolean checkIdExists(String userId) {
 		return usersRepo.existsByUserId(userId);
+	}
+	
+	public String getLoginType(String userId, String name) {
+		return usersRepo.findLoginTypeByUserIdAndName(userId, name)
+				.orElse("NOT_FOUND");
 	}
 	
 	@Transactional
