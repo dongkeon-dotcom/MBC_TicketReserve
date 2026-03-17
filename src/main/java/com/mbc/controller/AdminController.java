@@ -82,8 +82,8 @@ public class AdminController {
         // 1. 검색어 여부에 따라 서비스 메서드 호출
         Page<Performance> performancePage;
         if (keyword != null && !keyword.trim().isEmpty()) {
-            performancePage = performanceService.searchByTitle(keyword, pageable);
-        } else {
+        	performancePage = performanceService.searchByTitleForAdmin(keyword, pageable);
+        	} else {
             performancePage = performanceService.findAll(pageable);
         }
         
@@ -100,6 +100,34 @@ public class AdminController {
       
     
 
+    
+    
+ // 일괄 상태 변경 API
+    @PostMapping("/updateBatchStatus.do") // 경로가 /admin/updateBatchStatus.do 인지 확인!
+    @ResponseBody
+    public String updateBatchStatus(
+            @RequestParam(value = "ids") List<Long> ids, // ids[] 에서 [] 제거
+            @RequestParam("status") String status) {
+        
+        try {
+            System.out.println("수정할 ID 리스트: " + ids); // 데이터 들어오는지 로그 확인
+            System.out.println("변경할 상태: " + status);
+            
+            performanceService.updateBatchStatus(ids, status);
+            return "success";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "error";
+        }
+    }
+    
+    
+    
+    
+    
+    
+    
+    
     
     @GetMapping("/editPage.do")
     public String editPage(@RequestParam("id") Long performanceId, Model model) {

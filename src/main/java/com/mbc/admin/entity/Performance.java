@@ -27,6 +27,13 @@ public class Performance {
     private Integer isDeleted = 0;
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "is_visible", columnDefinition = "TINYINT(1) DEFAULT 1")
+    private Integer isVisible = 1; // 기본값 1 (노출)
+
+    @Column(name = "is_featured", columnDefinition = "TINYINT(1) DEFAULT 0")
+    private Integer isFeatured = 0; // 기본값 0 (일반)
+    
+    
     // 상세 이미지와 1:N 관계
     @JsonIgnore // 상세 이미지와의 관계 무시
     @OneToMany(mappedBy = "performance", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -57,4 +64,7 @@ public class Performance {
         schedules.add(schedule);
         schedule.setPerformance(this);
     }
+    
+    
+    
 }

@@ -12,7 +12,9 @@ public class PerformanceListDto {
     private String posterImageName;
     private String startDate;
     private String endDate;
-
+ // 추가된 필드
+    private Integer isVisible;
+    private Integer isFeatured;
     // 엔티티를 받아서 DTO로 변환하는 생성자
     public PerformanceListDto(Performance p) {
         this.performanceId = p.getPerformanceId();
@@ -21,5 +23,8 @@ public class PerformanceListDto {
         // 날짜를 String으로 변환해서 저장 (화면 출력용)
         this.startDate = p.getStartDate() != null ? p.getStartDate().toString() : "";
         this.endDate = p.getEndDate() != null ? p.getEndDate().toString() : "";
+     // 추가된 필드 매핑
+        this.isVisible = p.getIsVisible();
+        this.isFeatured = p.getIsFeatured();
     }
 }

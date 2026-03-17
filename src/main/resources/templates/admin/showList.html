@@ -11,106 +11,106 @@
 	</head>
 	<body>
 		<div class="admin-container">
-		        <h1 class="page-title">공연 통합 관리 시스템</h1>
+		    <h1 class="page-title">공연 통합 관리 시스템</h1>
 
-		        <div class="section">
-		            <div class="list-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-		                <h2>등록된 공연 현황</h2>
-		                
-						<div class="header-right-group">
-						        <form th:action="@{/admin/listPage.do}" method="get" class="search-box">
-						            <input type="text" name="keyword" th:value="${keyword}" placeholder="공연 제목 검색" class="search-input">
-						            <button type="submit" class="search-btn-admin">검색</button>
-						        </form>
-						        <a th:href="@{/admin/insertPage.do}" class="btn-add-main">+ 새 공연 등록하기</a>
-						    </div>
+		    <div class="section">
+		        <div class="list-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+		            <h2>등록된 공연 현황</h2>
+		            
+		            <div class="header-right-group">
+		                <form th:action="@{/admin/listPage.do}" method="get" class="search-box">
+		                    <input type="text" name="keyword" th:value="${keyword}" placeholder="공연 제목 검색" class="search-input">
+		                    <button type="submit" class="search-btn-admin">검색</button>
+		                </form>
+		                <a th:href="@{/admin/insertPage.do}" class="btn-add-main">+ 새 공연 등록하기</a>
 		            </div>
-
-		            <p class="guide-text">* 현재 시스템에 등록된 모든 공연 리스트입니다. 수정 버튼을 통해 상세 정보와 좌석 배치를 변경할 수 있습니다.</p>
-
-		            <table class="admin-table">
-						<colgroup>
-						        <col style="width: 6%;">  <col style="width: 8%;">  <col style="width: 30%;"> <col style="width: 28%;"> <col style="width: 28%;"> </colgroup>
-						    <thead>
-						        <tr>
-						            <th>번호</th>
-						            <th>포스터</th>
-						            <th>공연 제목</th>
-						            <th>공연 운영 기간</th>
-						            <th>관리 액션</th>
-						        </tr>
-						    </thead>
-		                <tbody>
-		                    <tr th:if="${#lists.isEmpty(performanceList)}">
-		                        <td colspan="5" style="padding: 100px 0; color: #bbb; font-size: 1.1em;">
-		                            등록된 공연 데이터가 존재하지 않습니다.
-		                        </td>
-		                    </tr>
-		                    
-		                    <tr th:each="p : ${performanceList}" 
-		                        th:classappend="${T(java.time.LocalDate).now().isAfter(T(java.time.LocalDate).parse(p.endDate))} ? 'expired' : ''">
-		                        
-		                        <td th:text="${p.performanceId}">1</td>
-		                        <td>
-		                            <img th:if="${p.posterImageName != null}" 
-		                                 th:src="@{https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/{name}(name=${p.posterImageName})}" 
-		                                 class="poster-thumb" alt="포스터" style="width: 50px; height: auto;">
-		                            <span th:unless="${p.posterImageName != null}" style="color: #ccc;">No Image</span>
-		                        </td>
-		                        <td class="perf-title">
-		                            <span th:text="${p.title}">공연 제목</span>
-		                        </td>
-		                        <td class="perf-date">
-		                            <span th:text="${p.startDate}">2026-03-01</span> 
-		                            <span>~</span> 
-		                            <span th:text="${p.endDate}">2026-04-02</span>
-		                        </td>
-		                        <td>
-		                            <div class="action-group">
-										<a th:href="@{'http://localhost:5173?id=' + ${p.performanceId}}" 
-										       class="btn-predict" 
-										       style="background-color: #6c5ce7; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; margin-right: 5px;">
-										       예상 확인하기
-										    </a>
-		                                <a th:href="@{/admin/editPage.do(id=${p.performanceId})}">정보수정</a>
-		                                <a th:href="@{/reserve/ticket.do(performanceId=${p.performanceId})}">예매페이지</a>
-		                                <button type="button" th:onclick="|deleteConfirm(${p.performanceId})|">삭제</button>
-		                            </div>
-		                        </td>
-		                    </tr>
-		                </tbody>
-		            </table>
 		        </div>
-		        
-		        <div class="pagination" style="text-align: center; margin-top: 40px; margin-bottom: 20px;">
-		            <a th:href="@{/admin/listPage.do(page=0, keyword=${keyword})}">[맨처음]</a>
 
-		            <a th:href="@{/admin/listPage.do(page=${(page.number / 10 - 1) * 10 + 9}, keyword=${keyword})}" 
-		               th:if="${page.number >= 10}">[이전]</a>
-
-		            <span th:each="i : ${#numbers.sequence(
-		                (page.number / 10) * 10, 
-		                T(java.lang.Math).min((page.number / 10) * 10 + 9, page.totalPages - 1)
-		            )}">
-		                <a th:href="@{/admin/listPage.do(page=${i}, keyword=${keyword})}" 
-		                   th:text="${i + 1}" 
-		                   th:style="${i == page.number} ? 'font-weight:bold; color:blue;' : ''">1</a>
-		            </span>
-
-		            <a th:href="@{/admin/listPage.do(page=${(page.number / 10 + 1) * 10}, keyword=${keyword})}" 
-		               th:if="${(page.number / 10 + 1) * 10 < page.totalPages}">[다음]</a>
-
-		            <a th:if="${page.totalPages > 0}" th:href="@{/admin/listPage.do(page=${page.totalPages - 1}, keyword=${keyword})}">[맨끝]</a>
+		        <div class="batch-control-bar" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+		            <span style="font-weight: bold; font-size: 0.9em; color: #555;">선택한 공연을:</span>
+		            <select id="batchStatusSelect" class="admin-select">
+		                <option value="VISIBLE">일반 노출(검색 허용)</option>
+		                <option value="FEATURED">메인 추천(홈 화면 노출)</option>
+		                <option value="HIDDEN">숨김(검색/홈 비노출)</option>
+		            </select>
+		            <button type="button" onclick="applyBatchStatus()" class="btn-apply">상태 변경 적용</button>
 		        </div>
-		        
-		     
-		
-		
+
+		        <p class="guide-text">* 체크박스로 공연을 선택한 뒤 상단에서 노출 상태를 일괄 변경할 수 있습니다.</p>
+
+		        <table class="admin-table">
+		            <colgroup>
+		                <col style="width: 4%;"> <col style="width: 6%;">  
+		                <col style="width: 8%;">  
+		                <col style="width: 30%;"> 
+		                <col style="width: 22%;"> 
+		                <col style="width: 30%;"> 
+		            </colgroup>
+		            <thead>
+		                <tr>
+		                    <th><input type="checkbox" id="selectAll" onclick="toggleAll(this)"></th>
+		                    <th>번호</th>
+		                    <th>포스터</th>
+							<th>공연 제목</th>
+							<th>공연 상태</th>
+		                    <th>공연 운영 기간</th>
+		                    <th>관리 액션</th>
+		                </tr>
+		            </thead>
+					<tbody>
+					    <tr th:if="${#lists.isEmpty(performanceList)}">
+					        <td colspan="6" style="padding: 100px 0; color: #bbb; text-align: center;">
+					            등록된 공연 데이터가 존재하지 않습니다.
+					        </td>
+					    </tr>
+					    
+					    <tr th:each="p : ${performanceList}" 
+					        th:classappend="${p.endDate != null && T(java.time.LocalDate).now().isAfter(T(java.time.LocalDate).parse(p.endDate))} ? 'expired' : ''">
+					        
+					        <td><input type="checkbox" class="perf-check" th:value="${p.performanceId}"></td>
+					        
+					        <td th:text="${p.performanceId}">1</td>
+					        
+					        <td>
+					            <img th:if="${p.posterImageName != null}" 
+					                 th:src="@{https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/{name}(name=${p.posterImageName})}" 
+					                 class="poster-thumb" style="width: 50px; height: auto;">
+					        </td>
+					        
+					        <td class="perf-title">
+					            <span th:text="${p.title}">공연 제목</span>
+					            <span th:if="${p.isFeatured == 1}" class="badge-featured">메인추천</span>
+					            <span th:if="${p.isVisible == 0}" class="badge-hidden">숨김</span>
+					        </td>
+					        
+							<td class="perf-status">
+							            <span th:if="${p.isFeatured == 1}" class="badge-featured">메인 표시 중</span>
+							            
+							            <span th:if="${p.isVisible == 1 && p.isFeatured == 0}" class="badge-visible">일반 노출</span>
+							            
+							            <span th:if="${p.isVisible == 0}" class="badge-hidden">비공개(숨김)</span>
+							        </td>
+									
+					        <td class="perf-date">
+					            <span th:text="${p.startDate}">날짜</span> ~ <span th:text="${p.endDate}">날짜</span>
+					        </td>
+					        
+					        <td>
+					            <div class="action-group">
+					                <a th:href="@{/admin/editPage.do(id=${p.performanceId})}" class="btn-edit">정보수정</a>
+					                <button type="button" class="btn-delete" th:onclick="|deleteConfirm(${p.performanceId})|">삭제</button>
+					            </div>
+					        </td>
+					    </tr>
+					</tbody>
+		        </table>
+		    </div>
+		    </div>
 		
 		
 		<div th:replace="~{include/bottom::footer}"></div>
 		
-		
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 		<script>
 		        /**
 		         * 공연 삭제 확인 컨펌 창
@@ -121,6 +121,58 @@
 		                location.href = '/admin/delete.do?id=' + id;
 		            }
 		        }
+				
+				// 전체 선택/해제 로직
+				    function toggleAll(selectAll) {
+				        const checkboxes = document.querySelectorAll('.perf-check');
+				        checkboxes.forEach(checkbox => {
+				            checkbox.checked = selectAll.checked;
+				        });
+				    }
+
+				    // 일괄 변경 적용 함수
+					function applyBatchStatus() {
+					    // 선택된 체크박스의 value들을 가져옴
+					    const selectedIds = Array.from(document.querySelectorAll('.perf-check:checked'))
+					                             .map(cb => cb.value);
+					    
+					    if (selectedIds.length === 0) {
+					        alert('변경할 공연을 선택해주세요.');
+					        return;
+					    }
+
+					    const status = document.getElementById('batchStatusSelect').value;
+					    
+					    if (confirm(`선택한 ${selectedIds.length}개의 공연 상태를 변경하시겠습니까?`)) {
+					        $.ajax({
+					            url: '/admin/updateBatchStatus.do',
+					            type: 'POST',
+								traditional: true, // [중요] 배열 데이터를 'ids'라는 이름으로 깔끔하게 보냄
+					            data: { 
+					                // ids: selectedIds 대신 아래처럼 명시적으로 전달하거나
+					                // 기본적으로 jQuery는 ids[] 로 보냅니다.
+					                "ids": selectedIds, 
+					                "status": status 
+					            },
+					            // 배열 데이터 전송을 위해 traditional: true 옵션을 추가하면 에러가 해결될 때가 많습니다.
+					            traditional: true, 
+					            success: function(res) {
+					                alert('상태가 변경되었습니다.');
+					                location.reload();
+					            },
+					            error: function(xhr) {
+					                console.error(xhr);
+					                alert('처리 중 오류가 발생했습니다. 상태 코드: ' + xhr.status);
+					            }
+					        });
+					    }
+					}
+
+				    function deleteConfirm(id) {
+				        if (confirm('해당 공연을 삭제하시겠습니까?\n삭제 시 생성된 모든 회차와 좌석 정보가 함께 삭제됩니다.')) {
+				            location.href = '/admin/delete.do?id=' + id;
+				        }
+				    }
 		    </script>
    
 
