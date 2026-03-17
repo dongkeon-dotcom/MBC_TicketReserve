@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:replace="~{include/top::top}"></div>
+<head>
+    <meta charset="UTF-8">
+    <title> 공연 예매율 통계 </title>
+    <link rel="stylesheet" th:href="@{/css/admin/showEdit.css}">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <style>
+        .stats-container { padding: 30px; max-width: 1200px; margin: 0 auto; }
+        .search-box { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd; }
+        .btn-search { background: #333; color: #fff; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; }
+        
+        /* 공연 정보 카드 스타일 */
+        .performance-info-card {
+            background: #ffffff;
+            border-left: 5px solid #3498db;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-radius: 4px;
+        }
+        .performance-info-card h3 { margin: 0 0 10px 0; color: #2c3e50; font-size: 1.5rem; }
+        .performance-info-card p { margin: 5px 0; font-size: 1rem; color: #555; }
+        .rate-text { color: #e74c3c; font-weight: bold; font-size: 1.1rem; }
+
+        /* 달력 스타일 */
+        #calendar { background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; min-height: 600px; }
+        .fc-event { cursor: pointer; padding: 2px 5px; }
+    </style>
+</head>
+<body>
+
+    <div class="stats-container">
+        <h2>📊 공연별 예매율 통계</h2>
+
+        <div class="search-box">
+            <form th:action="@{/admin/stats.do}" method="get">
+                <table style="width: 100%;">
+                    <tr>
+                        <td style="width: 80px;"><strong>공연 이름</strong></td>
+                        <td>
+                            <input type="text" name="showTitle" th:value="${showTitle}" 
+                                   placeholder="공연 제목을 입력하세요 (예: B 공연)" style="width: 100%; max-width: 400px;">
+                        </td>
+                        <td style="text-align: right;">
+                            <button type="submit" class="btn-search">통계 조회하기</button>
+                        </td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+
+        <div th:if="${stats != null}" class="performance-info-card">
+            <div class="info-content">
+                <h3 th:text="${stats.performanceTitle}">공연 제목</h3>
+                <p>📅 <strong>공연 운영 기간:</strong> <span th:text="${stats.period}">2026-03-01 ~ 2026-04-02</span></p>
+                <p>📈 <strong>전체 평균 예매율:</strong> <span class="rate-text" th:text="|${stats.totalRate}%|">0%</span> (전체 회차 대비)</p>
+            </div>
+        </div>
+
+        <div id="calendar"></div>
+    </div>
+
+    <div th:replace="~{include/bottom::footer}"></div>
+
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendarEl = document.getElementById('calendar');
+            const eventData = /*[[${stats?.scheduleStats}]]*/ [];
+
+            // 데이터를 FullCalendar 이벤트 형식으로 매핑
+            const events = eventData.map(item => {
+                let color = '#3498db'; // 기본 (낮은 예매율)
+                if(item.rate >= 70) color = '#f39c12'; // 주의 (70% 이상)
+                if(item.rate >= 90) color = '#e74c3c'; // 마감임박 (90% 이상)
+                if(item.rate >= 100) color = '#2c3e50'; // 매진
+
+                return {
+                    title: '[' + item.startTime.substring(11, 16) + '] ' + item.rate + '%',
+                    start: item.startTime,
+                    backgroundColor: color,
+                    borderColor: color,
+                    extendedProps: {
+                        rate: item.rate,
+                        id: item.scheduleId
+                    }
+                };
+            });
+
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'ko',
+                height: 'auto',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek'
+                },
+                // 공연 기간이 있다면 해당 월로 자동 이동 (선택 사항)
+                initialDate: eventData.length > 0 ? eventData[0].startTime.substring(0, 10) : new Date(),
+                events: events,
+                eventClick: function(info) {
+                    const rate = info.event.extendedProps.rate;
+                    alert('회차 ID: ' + info.event.extendedProps.id + '\n현재 예매율: ' + rate + '% (30석 중 ' + Math.round(30 * rate / 100) + '석)');
+                }
+            });
+
+            calendar.render();
+        });
+    </script>
+</body>
+</html>

@@ -59,35 +59,55 @@ body { background-color: #f8f9fa; margin: 0; font-family: 'Pretendard', sans-ser
     margin: 0 auto; 
     gap: 20px; 
     align-items: flex-start;
+	flex-wrap: nowrap;      /* 핵심: 사이드바가 아래로 밀리지 않게 강제 고정 */
 }
 
 /* 4. 좌측 맵 */
 .seat-map-section {
-    flex: 3; 
-    background: #fff; 
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 20px;
-}
+	flex: 0 0 850px;       /* 맵 섹션 너비를 850px로 고정 (또는 flex: 3) */
+	    background: #fff; 
+	    border: 1px solid #ddd;
+	    border-radius: 8px;
+	    padding: 20px;
+	    box-sizing: border-box;
+	    overflow: hidden;      /* 맵이 삐져나오면 잘라냄 */
+	}
 
 /* 5. 우측 사이드바 */
 .info-sidebar { 
-    flex: 1; 
-    display: flex; 
-    flex-direction: column; 
-    gap: 15px;
-    min-width: 300px;
-}
+	flex: 0 0 330px;       /* 사이드바 너비를 330px로 완전히 고정 */
+	    display: flex; 
+	    flex-direction: column; 
+	    gap: 15px;
+	    min-width: 300px;      /* 최소 너비 유지 */
+	    box-sizing: border-box;
+	}
 
 /* --- 나머지 스타일은 동일하게 유지 --- */
-.map-viewport { display: flex; flex-direction: column; align-items: center; }
+.map-viewport {
+	position: relative;
+	    width: 100%;           /* 부모 너비에 맞춤 */
+	    min-height: 500px;     /* 최소 높이 확보 */
+	    overflow: auto;        /* 줌으로 커지면 스크롤 발생 */
+	    display: flex; 
+	    flex-direction: column; 
+	    align-items: center; 
+	    padding-top: 40px;
+	    border: 1px solid #eee; /* 영역 확인용 */
+	}
 .stage { width: 350px; background: #444; color: #fff; text-align: center; padding: 10px; margin-bottom: 50px; font-weight: bold; border-radius: 4px; }
 .seat-grid { display: grid; grid-template-columns: repeat(6, 35px); grid-template-rows: repeat(5, 35px); gap: 10px; justify-content: center; }
 .seat { width: 35px; height: 35px; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #fff; border: 1px solid #ccc; }
 .seat.grade-1 { background-color: #FF3E3E; }
 .seat.grade-2 { background-color: #1AABFF; }
 .seat.grade-3 { background-color: #28D094; }
-.seat.is-paid { background-color: #ccc; cursor: not-allowed; }
+.seat.is-paid {
+	background-color: #e0e0e0 !important; /* 회색 처리 */
+	    border: none !important;
+	    cursor: default !important; /* 포인터 커서 제거 */
+	    pointer-events: none; /* 마우스 클릭/호버 이벤트 완전 차단 */
+ 
+ }
 .seat.is-secret { background-color: #333; cursor: not-allowed; }
 .seat.selected { background-color: #fff; border: 3px solid #ff5a00; color: #000; font-weight: bold; }
 .grade-status-area { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 20px; }
@@ -256,4 +276,13 @@ body { background-color: #f8f9fa; margin: 0; font-family: 'Pretendard', sans-ser
 }
 
 
+/* 마우스 올렸을 때 반응 없애기 */
+.seat.is-paid:hover {
+    filter: none !important;
+    transform: none !important;
+}
 
+/* (선택 사항) 번호가 들어가는 span 스타일 정리 */
+.seat span {
+    user-select: none;
+}

@@ -11,15 +11,15 @@
 <div th:replace="~{include/top::top}"></div>
 
 <section class="full-banner-container" id="banner-container">
-    <div class="banner-item active" id="current-banner" 
-         th:style="'background-image: url(https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/' + ${randomProducts[0].posterImageName} + ');'">
-        <div class="banner-content">
-            <a th:href="@{/reserve/ticket.do(id=${randomProducts[0].performanceId})}">
+    <a th:href="@{/reserve/ticket.do(performanceId=${randomProducts[0].performanceId})}" class="banner-wrapper">
+        <div class="banner-item active" id="current-banner" 
+             th:style="'background-image: url(https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/' + ${randomProducts[0].posterImageName} + ');'">
+            <div class="banner-content">
                 <h2 th:text="${randomProducts[0].title}">공연 제목</h2>
-            </a>
-            <p th:text="${randomProducts[0].startDate} + ' ~ ' + ${randomProducts[0].endDate}">날짜</p>
+                <p th:text="${randomProducts[0].startDate} + ' ~ ' + ${randomProducts[0].endDate}">날짜</p>
+            </div>
         </div>
-    </div>
+    </a>
 </section>
 
 <section class="content-section">
@@ -44,37 +44,41 @@
     let currentIndex = 0;
     const products = /*[[${randomProducts}]]*/ []; 
 
-	setInterval(() => {
-	    currentIndex = (currentIndex + 1) % products.length;
-	    const next = products[currentIndex];
-	    
-	    // 1. 새 배너를 미리 위쪽(-100%)에 생성
-	    const newBanner = $(`
-	        <div class="banner-item" style="top: -100%; background-image: url('https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/${next.posterImageName}');">
-	            <div class="banner-content">
-	                <a href="/performance/detail.do?id=${next.performanceId}"><h2>${next.title}</h2></a>
-	                <p>${next.startDate} ~ ${next.endDate}</p>
-	            </div>
-	        </div>
-	    `);
-	    
-	    $('#banner-container').append(newBanner);
-	    
-	    // 2. 아주 짧은 지연 후 애니메이션 시작
-	    setTimeout(() => {
-	        // 기존 배너를 아래로 밀어냄
-	        $('#current-banner').css('top', '100%'); 
-	        // 새 배너를 현재 위치로 가져옴
-	        newBanner.css('top', '0'); 
-	    }, 50);
-	    
-	    // 3. 1초 뒤(애니메이션 끝난 후) 기존 배너 제거
-	    setTimeout(() => {
-	        $('#current-banner').remove();
-	        newBanner.attr('id', 'current-banner');
-	    }, 1000);
-	    
-	}, 5000);
+    setInterval(() => {
+        if (products.length <= 1) return; // 제품이 하나 이하면 작동 안 함
+
+        const nextIndex = (currentIndex + 1) % products.length;
+        const next = products[nextIndex];
+        
+        // 1. 새 배너 생성 (위에서 대기 중인 상태)
+        const $newBanner = $(`
+            <div class="banner-item incoming" style="background-image: url('https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/${next.posterImageName}');">
+                <div class="banner-content">
+                    <a href="/reserve/ticket.do?id=${next.performanceId}"><h2>${next.title}</h2></a>
+                    <p>${next.startDate} ~ ${next.endDate}</p>
+                </div>
+            </div>
+        `);
+        
+        $('#banner-container').append($newBanner);
+        
+        // 2. 현재 배너와 새 배너의 클래스를 바꿔서 애니메이션 시작
+        const $currentBanner = $('.banner-item.active');
+
+        // 브라우저가 위치 변화를 인식할 아주 짧은 찰나의 시간 부여
+        setTimeout(() => {
+            $currentBanner.removeClass('active').addClass('outgoing'); // 기존꺼는 아래로
+            $newBanner.removeClass('incoming').addClass('active');    // 새꺼는 중앙으로
+        }, 50);
+
+        // 3. 애니메이션이 끝난 후(0.8초 뒤) 쓸모없는 이전 배너 삭제
+        setTimeout(() => {
+            $('.banner-item.outgoing').remove();
+        }, 800);
+        
+        currentIndex = nextIndex;
+        
+    }, 5000); // 5초마다 교체
     /*]]>*/
 </script>
 </body>

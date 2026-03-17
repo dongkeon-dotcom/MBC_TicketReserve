@@ -1,11 +1,11 @@
-/* 기본 초기화: 스크롤이 가능하도록 수정 */
+/* 기본 초기화 */
 html {
     height: 100%;
 }
 body {
     margin: 0;
     padding: 0;
-    min-height: 100%; /* 전체 높이를 보장하되 스크롤 가능하게 */
+    min-height: 100%; 
     font-family: 'Pretendard', sans-serif;
     background: #f8f9fa;
 }
@@ -13,31 +13,50 @@ body {
 /* 1. 풀스크린 배너 (첫 화면) */
 .full-banner-container {
     width: 100%;
-    height: 100vh; /* 화면 높이 100% 꽉 채움 */
+    height: 100vh;
     position: relative;
-    overflow: hidden;
+    overflow: hidden; /* 배너가 밖으로 나가는 것을 숨김 */
+    background: #000; /* 배너 교체 시 빈 공간이 검게 보이도록 함 */
 }
 
 .banner-item {
     width: 100%;
-    height: 100vh; /* 화면 전체 높이 */
+    height: 100vh;
     position: absolute;
-    top: -100%;    /* 초기에는 위쪽에 숨김 */
     left: 0;
-    transition: top 1s ease-in-out; /* 위에서 아래로 움직이는 애니메이션 */
+    top: 0; /* 기본 위치는 0으로 잡고 transform으로 움직입니다 */
     background-size: cover;
     background-position: center;
     display: flex;
     align-items: center;
     justify-content: center;
+    
+    /* 애니메이션 설정: 위아래 이동과 투명도를 동시에 조절 */
+    transition: transform 1s ease-in-out, opacity 1s ease-in-out;
+    opacity: 0;
+    z-index: 1;
 }
 
-/* 현재 화면에 있는 배너 */
-#current-banner {
-    top: 0;
+/* [상태 1] 새로 들어오는 배너: 위에서 대기 */
+.banner-item.incoming {
+    transform: translateY(-100%); 
+    opacity: 1;
+    z-index: 3; /* 가장 위에 있음 */
 }
 
-.banner-item.active { opacity: 1; }
+/* [상태 2] 현재 활성화된 배너: 화면 중앙 */
+.banner-item.active {
+    transform: translateY(0);
+    opacity: 1;
+    z-index: 2;
+}
+
+/* [상태 3] 나가는 배너: 아래로 밀려남 */
+.banner-item.outgoing {
+    transform: translateY(100%);
+    opacity: 0;
+    z-index: 1;
+}
 
 /* 배너 내부 텍스트 영역 */
 .banner-content {
@@ -50,10 +69,10 @@ body {
 .banner-content a { text-decoration: none; color: white; }
 .banner-content h2 { font-size: 3rem; margin: 0 0 10px; }
 
-/* 2. 티켓팅 공지 스타일 (스크롤해서 내려오면 보임) */
+/* 2. 티켓팅 공지 스타일 (스크롤 영역) */
 .ticket-notice-container {
     width: 800px;
-    margin: 40px auto; /* 위쪽 여백을 주어 배너와 구분 */
+    margin: 40px auto;
     background: #ffffff;
     border: 1px solid #ddd;
     border-radius: 8px;

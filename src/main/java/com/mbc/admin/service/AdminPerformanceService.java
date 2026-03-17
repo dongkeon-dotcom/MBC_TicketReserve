@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -587,6 +588,93 @@ public class AdminPerformanceService {
         orderListRepository.save(order);
         seatInventoryRepository.save(seat);
     }
+    
+    
+    /**
+     * 취소된 예매 내역 필터링 조회
+     */
+    public List<OrderList> getCancelledOrders(Long showIdx, String reserveNum,String showTitle, LocalDate startDate, LocalDate endDate) {
+        // 모든 내역을 가져온 뒤 스트림으로 필터링 (데이터가 아주 많지 않을 때 효율적)
+        // 데이터가 매우 많다면 Repository에 Querydsl이나 JPQL을 쓰는 것이 좋습니다.
+    	return orderListRepository.findAll().stream()
+                .filter(order -> "CANCELLED".equals(order.getStatus()))
+                // 1. 공연 회차 번호 검색
+                .filter(order -> showIdx == null || order.getSchedule().getScheduleId().equals(showIdx))
+                // 2. 예매 번호 검색
+                .filter(order -> reserveNum == null || reserveNum.isEmpty() || order.getReserveNum().contains(reserveNum))
+                // 3. 공연 제목(title) 검색
+                .filter(order -> {
+                    if (showTitle == null || showTitle.isEmpty()) return true;
+                    return order.getSchedule() != null && 
+                           order.getSchedule().getPerformance() != null &&
+                           order.getSchedule().getPerformance().getTitle().contains(showTitle);
+                })
+                // 4. 취소 기간 검색
+                .filter(order -> {
+                    if (startDate == null || endDate == null) return true;
+                    LocalDateTime start = startDate.atStartOfDay();
+                    LocalDateTime end = endDate.atTime(23, 59, 59);
+                    return order.getCancelDate() != null && 
+                           !order.getCancelDate().isBefore(start) && 
+                           !order.getCancelDate().isAfter(end);
+                })
+                .sorted((o1, o2) -> o2.getCancelDate().compareTo(o1.getCancelDate()))
+                .collect(Collectors.toList());
+    }
+    
+    ////// 회차당 예매율 보여주기 ''\
+    ///
+    ///
+    ///
+    private final int TOTAL_SEATS = 30; // 고정된 전체 좌석수
+    public Map<String, Object> getPerformanceStats(String title) {
+        // 1. 해당 공연명에 해당하는 모든 회차와 예매 내역 가져오기
+        List<OrderList> allOrders = orderListRepository.findAllByPerformanceTitle(title);
+        
+        if (allOrders.isEmpty()) return null;
+
+        // 공연 정보 추출 (리스트의 첫 번째 데이터에서 공연 정보를 가져옴)
+        var performance = allOrders.get(0).getSchedule().getPerformance();
+        String performanceTitle = performance.getTitle();
+        String period = performance.getStartDate() + " ~ " + performance.getEndDate();
+        
+        // 2. 회차(Schedule)별로 그룹화하여 예매율 계산
+        Map<Long, List<OrderList>> groupedBySchedule = allOrders.stream()
+                .collect(Collectors.groupingBy(order -> order.getSchedule().getScheduleId()));
+
+        List<Map<String, Object>> scheduleStats = new ArrayList<>();
+        long totalConfirmedAll = 0;
+
+        for (Long scheduleId : groupedBySchedule.keySet()) {
+            List<OrderList> orders = groupedBySchedule.get(scheduleId);
+            long confirmedCount = orders.stream()
+                    .filter(o -> "CONFIRMED".equals(o.getStatus()))
+                    .count();
+            
+            totalConfirmedAll += confirmedCount;
+            
+            Map<String, Object> stat = new HashMap<>();
+            stat.put("scheduleId", scheduleId);
+            stat.put("startTime", orders.get(0).getSchedule().getStartTime()); // 회차 시간
+            stat.put("rate", Math.round((confirmedCount / (double) TOTAL_SEATS) * 100)); // 회차별 예매율
+            scheduleStats.add(stat);
+        }
+
+        // 3. 공연 전체 평균 예매율 계산
+        double totalAvgRate = 0;
+        if (!scheduleStats.isEmpty()) {
+            int totalSchedules = scheduleStats.size();
+            totalAvgRate = Math.round((totalConfirmedAll / (double) (totalSchedules * TOTAL_SEATS)) * 100);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("performanceTitle", performanceTitle); // 실제 DB의 제목
+        result.put("period", period);                     // 공연 기간
+        result.put("totalRate", totalAvgRate);      // 공연 전체 예매율
+        result.put("scheduleStats", scheduleStats); // 달력용 회차별 데이터
+        return result;
+    }
+    
     
     
     

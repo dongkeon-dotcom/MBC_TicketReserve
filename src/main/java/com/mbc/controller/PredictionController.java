@@ -27,12 +27,13 @@ public class PredictionController {
     @GetMapping("/predict/{id}")
     public ResponseEntity<?> predict(@PathVariable Long id) {
         // 1. DB에서 해당 공연의 과거 판매 데이터 조회
-        List<Map<String, Object>> data = performanceRepository.findSalesDataById(id);
+        //List<Map<String, Object>> data = performanceRepository.findSalesDataById(id);
         
         // 2. 서비스 호출하여 FastAPI 결과 받아오기
-        List<Map<String, Object>> prediction = predictionService.getPrediction(data);
+       // List<Map<String, Object>> prediction = predictionService.getPrediction(data);
         
         // 3. React로 JSON 응답
-        return ResponseEntity.ok(prediction);
+       // return ResponseEntity.ok(prediction);
+    	return null;
     }
 }
