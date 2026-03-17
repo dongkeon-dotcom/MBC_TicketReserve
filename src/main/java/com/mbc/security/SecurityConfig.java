@@ -32,7 +32,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
             	.requestMatchers("/", "/index.do", "/user/login.do", "/user/join.do",
             					"/user/sendAuthMail.do", "/user/checkEmail.do", "/user/joinOK.do",
-            					"/user/verify.do", "/user/pwFind.do", "/user/pwFindOK.do").permitAll() // 누구나 가능
+            					"/user/verify.do", "/user/pwFind.do", "/user/pwFindOK.do", "/user/checkInfoEmail.do").permitAll() // 누구나 가능
                 .requestMatchers("/admin/**").hasRole("ADMIN") // ADMIN 권한만
                 .requestMatchers("/user/**").authenticated()
                 .anyRequest().permitAll() // 누구나 접근 가능
