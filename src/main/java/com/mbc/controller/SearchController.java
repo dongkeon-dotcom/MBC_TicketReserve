@@ -31,7 +31,7 @@ public class SearchController {
         if (keyword != null && !keyword.trim().isEmpty()) {
         	Pageable pageable = PageRequest.of(page, 10);
             // 기존 서비스의 검색 메서드 호출
-        	Page<Performance> searchPage = service.searchByTitle(keyword, pageable);
+        	Page<Performance> searchPage = service.searchByTitleForUser(keyword, pageable);
         	model.addAttribute("list", searchPage.getContent()); // 실제 데이터 리스트
             model.addAttribute("currentPage", page);
             model.addAttribute("totalPages", searchPage.getTotalPages());

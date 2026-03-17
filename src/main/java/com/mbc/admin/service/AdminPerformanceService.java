@@ -340,11 +340,10 @@ public class AdminPerformanceService {
  // AdminPerformanceService.java
 
    
-
-    public Page<Performance> searchByTitle(String keyword, Pageable pageable){
-    	return performanceRepository.findByTitleContainingIgnoreCase(keyword, pageable);
+    public Page<Performance> searchByTitle(String keyword, Pageable pageable) {
+        // 일반 사용자 검색 시: 노출(1) 상태인 것만 조회
+        return performanceRepository.findByTitleContainingIgnoreCaseAndIsVisible(keyword, 1, pageable);
     }
-    
 
     
     
@@ -679,13 +678,51 @@ public class AdminPerformanceService {
     
     
     
+    @Transactional
+    public void updateBatchStatus(List<Long> ids, String status) {
+        List<Performance> list = performanceRepository.findAllById(ids);
+        
+        for (Performance p : list) {
+            switch (status) {
+                case "VISIBLE":
+                    p.setIsVisible(1);
+                    p.setIsFeatured(0);
+                    break;
+                case "FEATURED":
+                    p.setIsVisible(1);
+                    p.setIsFeatured(1);
+                    break;
+                case "HIDDEN":
+                    p.setIsVisible(0);
+                    p.setIsFeatured(0);
+                    break;
+            }
+        }
+        // Transactional 어노테이션이 있다면 별도의 save 없이도 변경 감지로 업데이트됩니다.
+    }
+    
+    public Page<Performance> searchByTitleForUser(String keyword, Pageable pageable) {
+        // isVisible 매개변수에 1을 전달하여 노출 승인된 공연만 검색합니다.
+        return performanceRepository.findByTitleContainingIgnoreCaseAndIsVisible(keyword, 1, pageable);
+    }
+ // 관리자용: 모든 공연 검색 (숨김 포함)
+    public Page<Performance> searchByTitleForAdmin(String keyword, Pageable pageable) {
+        return performanceRepository.findByTitleContainingIgnoreCase(keyword, pageable);
+    }
     
     
-    
-    
-    
-    
-    
+ // 메인 페이지 배너용: 추천 공연(isFeatured=1)을 시작일 순으로 8개 가져오기
+    public List<Performance> findFeaturedPerformances() {
+        // Repository에 findByIsFeaturedAndIsVisibleOrderByStartDateAsc (혹은 유사한 이름)가 필요합니다.
+        // 만약 Repository 수정이 번거롭다면 아래처럼 전체를 가져와서 스트림으로 처리할 수 있습니다.
+        
+        return performanceRepository.findAll().stream()
+                .filter(p -> p.getIsFeatured() != null && p.getIsFeatured() == 1) // 추천 공연만
+                .filter(p -> p.getIsVisible() != null && p.getIsVisible() == 1)  // 노출 가능만
+                .sorted(Comparator.comparing(Performance::getStartDate))         // 날짜순 정렬
+                .limit(8)                                                       // 8개 제한
+                .collect(Collectors.toList());
+    } 
     
     
 }

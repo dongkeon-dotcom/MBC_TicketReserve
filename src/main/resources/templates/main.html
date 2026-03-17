@@ -11,15 +11,20 @@
 <div th:replace="~{include/top::top}"></div>
 
 <section class="full-banner-container" id="banner-container">
-    <a th:href="@{/reserve/ticket.do(performanceId=${randomProducts[0].performanceId})}" class="banner-wrapper">
-        <div class="banner-item active" id="current-banner" 
-             th:style="'background-image: url(https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/' + ${randomProducts[0].posterImageName} + ');'">
-            <div class="banner-content">
-                <h2 th:text="${randomProducts[0].title}">공연 제목</h2>
-                <p th:text="${randomProducts[0].startDate} + ' ~ ' + ${randomProducts[0].endDate}">날짜</p>
-            </div>
+    <div class="banner-item active" 
+         th:if="${not #lists.isEmpty(randomProducts)}"
+         th:onclick="|location.href='/reserve/ticket.do?performanceId=${randomProducts[0].performanceId}'|"
+         th:style="'background-image: url(https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/' + ${randomProducts[0].posterImageName} + '); cursor:pointer;'">
+        <div class="banner-content">
+            <h2 th:text="${randomProducts[0].title}">공연 제목</h2>
+            <p th:text="${randomProducts[0].startDate} + ' ~ ' + ${randomProducts[0].endDate}">날짜</p>
         </div>
-    </a>
+    </div>
+
+	<div class="banner-controls" th:if="${not #lists.isEmpty(randomProducts) and randomProducts.size() > 1}">
+	    <button id="prev-banner" class="control-btn" title="이전 배너">&#9652;</button>
+	    <button id="next-banner" class="control-btn" title="다음 배너">&#9662;</button>
+	</div>
 </section>
 
 <section class="content-section">
@@ -39,22 +44,35 @@
 
 <div th:replace="~{include/bottom::footer}"></div>
 
+JavaScript
 <script th:inline="javascript">
     /*<![CDATA[*/
     let currentIndex = 0;
     const products = /*[[${randomProducts}]]*/ []; 
+    let bannerInterval; // 자동 전환 타이머 변수
 
-    setInterval(() => {
-        if (products.length <= 1) return; // 제품이 하나 이하면 작동 안 함
+    // 1. 배너 전환 핵심 로직 (함수로 분리)
+    function changeBanner(direction = 'next') {
+        if (!products || products.length <= 1) return;
 
-        const nextIndex = (currentIndex + 1) % products.length;
+        // 다음 인덱스 계산
+        let nextIndex;
+        if (direction === 'next') {
+            nextIndex = (currentIndex + 1) % products.length;
+        } else {
+            nextIndex = (currentIndex - 1 + products.length) % products.length;
+        }
+
         const next = products[nextIndex];
         
-        // 1. 새 배너 생성 (위에서 대기 중인 상태)
+        // 방향에 따른 클래스 설정 (이전 버튼 클릭 시 아래에서 위로 오게 하려면 'incoming-reverse' 등 활용 가능)
+        // 여기서는 기존에 쓰시던 incoming/outgoing 로직을 유지합니다.
         const $newBanner = $(`
-            <div class="banner-item incoming" style="background-image: url('https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/${next.posterImageName}');">
+            <div class="banner-item incoming" 
+                 onclick="location.href='/reserve/ticket.do?performanceId=${next.performanceId}'"
+                 style="background-image: url('https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/${next.posterImageName}'); cursor:pointer;">
                 <div class="banner-content">
-                    <a href="/reserve/ticket.do?id=${next.performanceId}"><h2>${next.title}</h2></a>
+                    <h2>${next.title}</h2>
                     <p>${next.startDate} ~ ${next.endDate}</p>
                 </div>
             </div>
@@ -62,23 +80,52 @@
         
         $('#banner-container').append($newBanner);
         
-        // 2. 현재 배너와 새 배너의 클래스를 바꿔서 애니메이션 시작
         const $currentBanner = $('.banner-item.active');
 
-        // 브라우저가 위치 변화를 인식할 아주 짧은 찰나의 시간 부여
         setTimeout(() => {
-            $currentBanner.removeClass('active').addClass('outgoing'); // 기존꺼는 아래로
-            $newBanner.removeClass('incoming').addClass('active');    // 새꺼는 중앙으로
+            $currentBanner.removeClass('active').addClass('outgoing');
+            $newBanner.removeClass('incoming').addClass('active');
         }, 50);
 
-        // 3. 애니메이션이 끝난 후(0.8초 뒤) 쓸모없는 이전 배너 삭제
         setTimeout(() => {
             $('.banner-item.outgoing').remove();
         }, 800);
         
         currentIndex = nextIndex;
-        
-    }, 5000); // 5초마다 교체
+    }
+
+    // 2. 타이머 시작 함수
+    function startAutoSlide() {
+        if (products.length > 1) {
+            bannerInterval = setInterval(() => {
+                changeBanner('next');
+            }, 5000);
+        }
+    }
+
+    // 3. 사용자가 버튼 클릭 시 타이머 리셋
+    function resetTimer() {
+        clearInterval(bannerInterval);
+        startAutoSlide();
+    }
+
+    // 4. 초기 실행 및 이벤트 바인딩
+    $(document).ready(function() {
+        // 자동 재생 시작
+        startAutoSlide();
+
+        // 이전 버튼 클릭 이벤트
+        $(document).on('click', '#prev-banner', function() {
+            changeBanner('prev');
+            resetTimer();
+        });
+
+        // 다음 버튼 클릭 이벤트
+        $(document).on('click', '#next-banner', function() {
+            changeBanner('next');
+            resetTimer();
+        });
+    });
     /*]]>*/
 </script>
 </body>

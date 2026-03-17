@@ -37,32 +37,33 @@ public class IndexController {
     @GetMapping("main.do")
     public String main(Model model) {
         try {
-            // 1. 랜덤 공연 리스트 가져오기 (데이터가 없을 경우 빈 리스트 반환)
-            List<Performance> allList = adminService.findAllPerformances();
-            List<Performance> randomList = (allList != null) ? 
-                    allList.stream().limit(8).collect(Collectors.toList()) : Collections.emptyList();
+            // 1. 수정된 부분: 전체 리스트가 아닌 'is_featured = 1'인 공연만 가져옴
+            // (Service에 findFeaturedPerformances 메서드를 새로 만든다고 가정)
+            List<Performance> featuredList = adminService.findFeaturedPerformances();
             
-            // 2. 가장 빠른 티켓팅 회차 가져오기
+            // 8개까지만 제한 (이미 SQL에서 제한했다면 limit 생략 가능)
+            List<Performance> displayList = (featuredList != null) ? 
+                    featuredList.stream().limit(8).collect(Collectors.toList()) : Collections.emptyList();
+            
+            // 2. 가장 빠른 티켓팅 회차 가져오기 (기존 유지)
             PerformanceSchedule fastSchedule = adminService.findFastestOpeningSchedule();
             
-            // 3. 모델에 데이터 전달 (null 체크 강화)
-            model.addAttribute("randomProducts", randomList);
+            // 3. 모델에 데이터 전달
+            // HTML 변수명인 'randomProducts'를 유지해야 프론트엔드 코드가 깨지지 않습니다.
+            model.addAttribute("randomProducts", displayList);
             
             if (fastSchedule != null && fastSchedule.getPerformance() != null) {
                 model.addAttribute("fastTitle", fastSchedule.getPerformance().getTitle());
                 model.addAttribute("fastId", fastSchedule.getPerformance().getPerformanceId());
                 model.addAttribute("fastOpeningTime", fastSchedule.getOpeningTime());
             } else {
-                // 데이터가 없을 때 템플릿 에러 방지를 위해 명시적 null 처리
                 model.addAttribute("fastTitle", null);
                 model.addAttribute("fastId", null);
                 model.addAttribute("fastOpeningTime", null);
             }
             
         } catch (Exception e) {
-            // 에러 발생 시 로그 출력
             e.printStackTrace();
-            // 에러 발생 시에도 빈 리스트는 넘겨서 템플릿이 깨지지 않게 함
             model.addAttribute("randomProducts", Collections.emptyList());
             model.addAttribute("fastTitle", null);
         }
