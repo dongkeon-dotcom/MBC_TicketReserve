@@ -286,12 +286,16 @@
 								        .then(data => {
 								            if (data.reserved) {
 								                alert("이미 해당 회차에 대한 예매 내역이 존재합니다. (1인 1매 제한)");
-								                return;
+												selectedScheduleId = null; 
+												    document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected'));
+												    document.getElementById('grade-container').innerHTML = '<p class="empty-msg">이미 예매하신 회차입니다.</p>';
+												    return;
 								            }
 
-								            document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected'));
-								            clickedElement.classList.add('selected');
-								            selectedScheduleId = s.scheduleId;
+											// 예매 내역이 없을 때만 아래 로직 실행
+											document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected'));
+											clickedElement.classList.add('selected');
+											selectedScheduleId = s.scheduleId;
 
 								            const gradeContainer = document.getElementById('grade-container');
 								            gradeContainer.innerHTML = '';
@@ -324,6 +328,19 @@
 					    }
 
 					    try {
+							// [추가] 입장 전 최종적으로 한 번 더 예매 내역을 체크하면 더 확실합니다.
+							        const checkRes = await fetch(`/reserve/check-reservation.do?scheduleId=${selectedScheduleId}&t=${new Date().getTime()}`, {
+							            headers: getHeaders()
+							        });
+							        const checkData = await checkRes.json();
+							        
+							        if (checkData.reserved) {
+							            alert("이미 예매 내역이 존재하는 회차입니다. 다른 회차를 선택해주세요.");
+							            return; // 여기서 return하면 아래의 팝업(openSeatPopup) 로직이 실행되지 않습니다.
+							        }
+							
+							
+							
 					        const response = await fetch('/reserve/check-queue'							, {
 							            method: 'GET', // POST 요청인지 확인하세요
 							            headers: getHeaders() // 추가됨

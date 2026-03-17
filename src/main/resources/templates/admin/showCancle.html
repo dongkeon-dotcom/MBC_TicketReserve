@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:replace="~{include/top::top}"></div>
+<head>
+    <meta charset="UTF-8">
+    <title> 취소 확인 </title>
+    <link rel="stylesheet" th:href="@{/css/admin/showEdit.css}">
+    <style>
+        /* 목록 전용 추가 스타일 (필요시 showEdit.css에 통합하세요) */
+        .cancel-container { padding: 30px; max-width: 1200px; margin: 0 auto; }
+        .search-box { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd; }
+        .search-box table { width: 100%; }
+        .search-box td { padding: 5px 10px; }
+        .search-box input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .btn-search { background: #333; color: #fff; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; }
+        
+        .list-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .list-table th { background: #444; color: #fff; padding: 12px; }
+        .list-table td { border-bottom: 1px solid #eee; padding: 12px; text-align: center; }
+        .list-table tr:hover { background: #fdfdfd; }
+        .no-data { padding: 50px; color: #888; }
+    </style>
+</head>
+<body>
+
+    <div class="cancel-container">
+        <h2>🚫 취소 내역 관리</h2>
+        <p>취소된 예매 건만 모아보는 페이지입니다.</p>
+
+        <div class="search-box">
+            <form th:action="@{/admin/cancelled.do}" method="get">
+                <table>
+                    <tr>
+                        <td><strong>공연 번호</strong></td>
+                        <td><input type="number" name="showIdx" th:value="${showIdx}" placeholder="공연 번호 입력"></td>
+                        <td><strong>예매 번호</strong></td>
+                        <td><input type="text" name="reserveNum" th:value="${reserveNum}" placeholder="2026MMDD-순번"></td>
+                    </tr>
+                    <tr>
+                        <td><strong>취소 기간</strong></td>
+                        <td colspan="2">
+                            <input type="date" name="startDate" th:value="${startDate}"> 
+                            ~ 
+                            <input type="date" name="endDate" th:value="${endDate}">
+                        </td>
+                        <td style="text-align: right;">
+                            <button type="submit" class="btn-search">검색하기</button>
+                        </td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+
+		<table class="list-table">
+		    <thead>
+		        <tr>
+		            <th>예매번호</th>
+		            <th>공연명</th> <th>회차번호</th> <th>예매자명</th>
+		            <th>환불금액</th>
+		            <th>취소일시</th>
+		        </tr>
+		    </thead>
+		    <tbody>
+		        <tr th:each="order : ${orders}">
+		            <td th:text="${order.reserveNum}">예매번호</td>
+		            <td th:text="${order.schedule.performance.title}" style="text-align:left;">공연 제목</td>
+		            <td th:text="${order.schedule.scheduleId}">회차ID</td>
+		            <td th:text="${order.name}">이름</td>
+		            <td th:text="${#numbers.formatInteger(order.paymentAmount, 0, 'COMMA')} + '원'">금액</td>
+		            <td th:text="${#temporals.format(order.cancelDate, 'yyyy-MM-dd HH:mm')}">취소일</td>
+		        </tr>
+		    </tbody>
+		</table>
+    </div>
+
+    <div th:replace="~{include/bottom::footer}"></div>
+
+   <script>
+       // 페이지 로드 시 검색 필터 확인용 (필요시 알림 로직 등 추가)
+       window.onload = function() {
+           console.log("취소 내역 조회 페이지 로드 완료");
+       };
+   </script>
+</body>
+</html>

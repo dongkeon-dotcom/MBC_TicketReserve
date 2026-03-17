@@ -30,11 +30,10 @@ public class PredictionController {
         //List<Map<String, Object>> data = performanceRepository.findSalesDataById(id);
         
         // 2. 서비스 호출하여 FastAPI 결과 받아오기
-        //List<Map<String, Object>> prediction = predictionService.getPrediction(data);
+       // List<Map<String, Object>> prediction = predictionService.getPrediction(data);
         
         // 3. React로 JSON 응답
-        //return ResponseEntity.ok(prediction);
-        
-        return null;
+       // return ResponseEntity.ok(prediction);
+    	return null;
     }
 }

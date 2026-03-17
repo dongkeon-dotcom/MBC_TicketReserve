@@ -13,18 +13,19 @@
 
 .list-header {
     display: flex;
-    justify-content: space-between;
+justify-content: flex-start; /* 왼쪽 정렬로 변경 */
     align-items: center;
     margin-bottom: 25px;
     padding-bottom: 15px;
     border-bottom: 2px solid #E5E0D8; /* 부드러운 라인 */
 }
-
-.list-header h2 {
-    margin: 0;
-    color: #2C3E50;
-    font-size: 1.5em;
+.header-right-group {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* 검색창과 등록버튼 사이 간격 */
+    margin-left: auto; /* 핵심: 이 속성이 있으면 검색창 그룹만 오른쪽 끝으로 밀려남 */
 }
+
 
 /* --- [2] 공연 목록 테이블 스타일 --- */
 .admin-table {
@@ -85,12 +86,7 @@
     font-family: 'Consolas', monospace;
 }
 
-/* --- [5] 관리 버튼 스타일 (테마 색상 적용) --- */
-.action-group {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-}
+
 
 /* 범용 버튼 스타일 */
 .action-group a, .action-group button {
@@ -153,12 +149,7 @@
     margin: 0 5px;
 }
 
-/* 검색 폼 컨테이너 */
-.search-box {
-    display: flex;
-    gap: 5px;
-    align-items: center;
-}
+
 
 /* 검색 입력창 */
 .search-input {
@@ -188,3 +179,102 @@
 .search-btn-admin:hover {
     background-color: #E67E22; /* 마우스 올리면 포인트 오렌지로 변경 */
 }
+
+
+.action-group {
+    display: flex;          /* 가로 배열의 핵심 */
+    align-items: center;    /* 세로 중앙 정렬 */
+    gap: 10px;              /* 버튼/링크 사이의 간격 */
+    flex-wrap: wrap;        /* 공간이 부족할 경우 자연스럽게 줄바꿈 */
+}
+
+/* <a> 태그나 <button>이 블록 요소처럼 동작하지 않도록 명시 */
+.action-group a, 
+.action-group button {
+    white-space: nowrap;    /* 글씨가 길어져도 줄바꿈 방지 */
+}
+
+.performance-mini-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; /* 세로 중앙 정렬 */
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+    gap: 15px; /* 제목과 버튼 사이 간격 */
+    flex-wrap: nowrap; /* 핵심: 절대 줄바꿈 금지 */
+}
+
+.info-text {
+    flex: 1; /* 남은 공간을 모두 차지하되 */
+    min-width: 0; /* 이 속성이 있어야 텍스트가 길어져도 부모 박스를 뚫지 않음 */
+    overflow: hidden; /* 넘치는 텍스트 숨기기 */
+}
+
+.info-text h3 {
+    margin: 0 0 5px 0;
+    font-size: 18px;
+    white-space: nowrap; /* 제목 한 줄 유지 */
+    overflow: hidden;    /* 넘치면 자르기 */
+    text-overflow: ellipsis; /* ...으로 표시 */
+}
+
+.btn-change-date {
+    flex-shrink: 0; /* 버튼이 절대로 작아지거나 찌그러지지 않게 고정 */
+    white-space: nowrap; /* 버튼 글씨도 줄바꿈 금지 */
+    padding: 6px 12px;
+}
+
+/* 관리 액션 버튼 정렬 */
+.action-group {
+    display: flex;
+    flex-direction: row;        /* 가로 배열 강제 */
+    flex-wrap: nowrap;          /* 핵심: 공간이 부족해도 절대로 다음 줄로 넘기지 않음 */
+    justify-content: center;
+    align-items: center;
+    gap: 4px;                   /* 버튼 사이 간격을 조금 더 좁게 */
+    min-width: 160px;           /* 사파리에서 공간이 찌그러지는 것 방지 */
+}
+
+
+/* 공연 운영 기간 스타일 */
+.period-column {
+    white-space: nowrap;    /* 날짜가 꺾이지 않고 한 줄로 출력 */
+    font-size: 13px;
+    font-family: monospace; /* 날짜 형태를 깔끔하게 유지 */
+}
+
+
+.list-header h2 {
+    margin: 0;
+    color: #2C3E50;
+    font-size: 1.5em;
+}
+
+
+/* 검색 폼 컨테이너 */
+.search-box {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+/* --- [5] 관리 버튼 스타일 (테마 색상 적용) --- */
+.action-group {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+/* 버튼과 링크 스타일 */
+.action-group a, 
+.action-group button {
+    display: inline-block;
+    padding: 3px 6px;           /* 패딩을 조금 줄여서 좁은 공간에 최적화 */
+    font-size: 11px;            /* 글자 크기를 살짝 줄여서 한 줄 유지 */
+    white-space: nowrap;        /* 글자 줄바꿈 방지 */
+    flex-shrink: 0;             /* 버튼이 찌그러지지 않게 고정 */
+}
+
+
+
+

@@ -5,6 +5,7 @@ import com.mbc.admin.PerformanceSaveDto;
 import com.mbc.admin.entity.Performance;
 import com.mbc.admin.entity.PerformanceSchedule;
 import com.mbc.admin.service.AdminPerformanceService;
+import com.mbc.reservation.OrderList;
 import com.mbc.admin.entity.PerformanceSeatTemplate;
 
 import java.time.LocalDate;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -311,6 +313,70 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("설정 실패");
         }
     }
+  ///////캔슬 관련 컨트롤러 
+  ///
+  ///
+  ///  
+    
+    
+ // 주소를 /cancelled.do 형식으로 변경
+    @GetMapping("/cancelled.do")
+    public String viewCancelledList(
+    		@RequestParam(required = false) Long showIdx,
+            @RequestParam(required = false) String reserveNum,
+            @RequestParam(required = false) String showTitle, // 추가
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            Model model) {
+
+        List<OrderList> cancelledList = performanceService.getCancelledOrders(showIdx, reserveNum, showTitle, startDate, endDate);
+        
+        model.addAttribute("orders", cancelledList);
+        model.addAttribute("showIdx", showIdx);
+        model.addAttribute("reserveNum", reserveNum);
+        model.addAttribute("showTitle", showTitle); // 추가
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+
+        return "admin/showCancle"; 
+    }   
+    
+    ////예매율 확인용
+    ///
+    
+    @GetMapping("/stats.do")
+    public String showStats(@RequestParam(required = false) String showTitle, Model model) {
+        if (showTitle != null && !showTitle.isEmpty()) {
+            // 공연별 통계 데이터 로직 호출
+            var stats = performanceService.getPerformanceStats(showTitle);
+            model.addAttribute("stats", stats);
+            model.addAttribute("showTitle", showTitle);
+        }
+        return "statistics/statisCalendar";
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     

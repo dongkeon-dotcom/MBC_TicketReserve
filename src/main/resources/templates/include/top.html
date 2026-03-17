@@ -8,7 +8,7 @@
 	
     <!-- Header -->
     <header class="top-header">
-        <h1>티켓팅 사이트 ver 1.0</h1>
+        <h1> Uni Ticket</h1>
     </header>
 
     <!-- Navigation -->
@@ -18,8 +18,14 @@
         <!-- 관리자 영역 -->
 		<div sec:authorize="hasRole('ROLE_ADMIN')">
 			<a th:href="@{/admin/insertPage.do}">공연등록</a>			
-    	</div>
-    	<a th:href="@{/admin/listPage.do}">공연목록</a>
+    	
+			<a th:href="@{/admin/listPage.do}">공연목록</a>
+			<a th:href="@{/admin/cancelled.do}">공연 취소 </a>
+			
+			<a th:href="@{/admin/stats.do}">공연통계 </a>
+
+			
+		</div>
     	</div>
     
 		<div class="nav-right">		
