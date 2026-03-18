@@ -1,5 +1,6 @@
 package com.mbc.admin.repositiry;
 
+import com.mbc.admin.Prediction.SalesDataMapping;
 import com.mbc.admin.entity.PerformanceSchedule;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -44,10 +45,24 @@ public interface PerformanceScheduleRepository extends JpaRepository<Performance
     PerformanceSchedule findTopByOpeningTimeAfterOrderByOpeningTimeAsc(@Param("now") LocalDateTime now);
     
     
+    //시계열 예
+    @Query(value = "SELECT " +
+            "DATE_FORMAT(ps.start_time, '%m/%d %H:%i') as startTime, " +
+            "COUNT(CASE WHEN si.is_reserved = 1 THEN 1 END) as currentCount, " +
+            "ps.schedule_id as scheduleId " +
+            "FROM performance_schedule ps " +
+            "LEFT JOIN seat_inventory si ON ps.schedule_id = si.schedule_id " +
+            "WHERE ps.performance_id = :performanceId " + // 전달받은 공연 ID (예: 211)
+            "AND ps.start_time >= CURDATE() " +           // 오늘 00시부터
+            "AND ps.start_time < DATE_ADD(CURDATE(), INTERVAL 8 DAY) " + // 7일 후까지
+            "GROUP BY ps.schedule_id, ps.start_time " +
+            "ORDER BY ps.start_time ASC", nativeQuery = true)
+    List<SalesDataMapping> findUpcomingSchedules(@Param("performanceId") Long performanceId);
     
     
     
-} 
+
+}
     // (나머지 리포지토리도 동일하게 deleteByPerformanceId 추가 필요)
     
     
