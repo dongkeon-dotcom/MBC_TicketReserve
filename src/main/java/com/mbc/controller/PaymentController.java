@@ -99,7 +99,7 @@ public class PaymentController {
                                 @RequestParam("seatId") Long seatId,
                                 @RequestParam("scheduleId") Long scheduleId,
                                 @AuthenticationPrincipal SecurityUserDetails userDetails,
-                                RedirectAttributes rttr) {
+                                Model model) { // 1. RedirectAttributes 대신 Model을 사용합니다.
         
         if (userDetails == null) return "redirect:/user/login.do";
         Users user = userDetails.getUser();
@@ -124,11 +124,16 @@ public class PaymentController {
             orderListRepository.save(order);
             performanceService.reserveSeat(seatId, user.getUserIdx());
 
-            rttr.addFlashAttribute("msg", "예매가 성공적으로 완료되었습니다!");
-            return "reserve/complete";
+            // 2. HTML 팝업창에서 사용할 예매 번호와 메시지를 담습니다.
+            model.addAttribute("reserveNum", paymentId); 
+            model.addAttribute("msg", "예매가 성공적으로 완료되었습니다!");
+            
+            return "reserve/complete"; // 팝업창(HTML)을 띄웁니다.
+            
         } catch (Exception e) {
             e.printStackTrace(); 
-            rttr.addFlashAttribute("error", "예매 처리 중 오류가 발생했습니다.");
+            // 에러 시에는 메인으로 리다이렉트 하므로 이때는 RedirectAttributes가 편하지만, 
+            // 통일성을 위해 여기서도 에러 처리를 상황에 맞게 하시면 됩니다.
             return "redirect:/";
         }
     }

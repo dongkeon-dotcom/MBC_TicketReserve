@@ -94,13 +94,38 @@ body { background-color: #f8f9fa; margin: 0; font-family: 'Pretendard', sans-ser
 	    align-items: center; 
 	    padding-top: 40px;
 	    border: 1px solid #eee; /* 영역 확인용 */
+		overflow: auto;        /* ⭐ 확대 시 영역을 벗어나면 스크롤이 생기도록 함 */
+		padding: 40px 20px;    /* 사방에 여유 공간 부여 */
 	}
-.stage { width: 350px; background: #444; color: #fff; text-align: center; padding: 10px; margin-bottom: 50px; font-weight: bold; border-radius: 4px; }
-.seat-grid { display: grid; grid-template-columns: repeat(6, 35px); grid-template-rows: repeat(5, 35px); gap: 10px; justify-content: center; }
+	/* 무대 스타일 */
+	.stage { 
+		flex-shrink: 0;       /* ⭐ 확대 시 무대가 찌그러지지 않게 고정 */
+		width: 350px; 
+		background: #444; 
+		color: #fff; 
+		text-align: center; 
+		padding: 10px; 
+		margin-bottom: 50px; 
+		font-weight: bold; 
+		border-radius: 4px; 
+		margin-bottom: 50px;  /* 좌석과의 기본 간격 */
+			    z-index: 5;           /* 혹시나 겹치더라도 무대가 위에 보이게(선택사항) */
+	}
+	/* 좌석 그리드 */
+	.seat-grid { 
+	    display: grid; 
+	    grid-template-columns: repeat(6, 35px); 
+	    grid-template-rows: repeat(5, 35px); 
+	    gap: 10px; 
+	    justify-content: center; 
+	    transition: transform 0.2s ease; /* 부드러운 확대 */
+	}
 .seat { width: 35px; height: 35px; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #fff; border: 1px solid #ccc; }
-.seat.grade-1 { background-color: #FF3E3E; }
-.seat.grade-2 { background-color: #1AABFF; }
-.seat.grade-3 { background-color: #28D094; }
+.seat.grade-1 { background-color: #ff5e5e ; }
+.seat.grade-2 { background-color: #ffbd4a; }
+.seat.grade-3 { background-color: #4db8ff; }
+.seat.grade-4 { background-color: #56e396; }
+.seat.grade-5 { background-color: #b388ff; }
 .seat.is-paid {
 	background-color: #e0e0e0 !important; /* 회색 처리 */
 	    border: none !important;

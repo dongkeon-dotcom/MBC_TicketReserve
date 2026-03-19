@@ -79,7 +79,7 @@
 	            </div>
 	        
 	            <div class="sidebar-buttons">
-	                <button class="btn-prev" onclick="history.back()">이전단계</button>
+	                <button class="btn-prev" onclick="window.close()">이전단계</button>
 	                <button id="payment-btn" class="btn-next" disabled onclick="goToPayment()">다음단계</button>
 	            </div>
 	        </div> </div>
@@ -136,7 +136,7 @@
             const grid = document.getElementById('seat-grid');
             if (grid) {
                 grid.style.transform = `scale(${currentZoom})`;
-                grid.style.transformOrigin = "top left";
+                grid.style.transformOrigin = "center top";
                 grid.style.width = (100 / currentZoom) + "%";
             }
         };

@@ -1,27 +1,37 @@
 <!DOCTYPE html>
-<html>
-<body style="display: center; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif;">
+<html xmlns:th="http://www.thymeleaf.org"> <head>
+    <meta charset="UTF-8">
+    <title>결제 완료</title>
+</head>
+<body style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif; background-color: #f8f9fa; margin: 0;">
+    
     <div style="text-align: center;">
-        <h3>결제가 완료되었습니다!</h3>
+        <h3 th:text="${msg != null ? msg : '결제가 완료되었습니다!'}">결제 성공</h3>
         <p>예매 상세 내역으로 이동 중입니다...</p>
     </div>
-    <script>
-        /* 서버에서 전달받은 예매 번호가 '123'이라고 가정할 때의 예시입니다. 
-           JSP를 사용하신다면 ${reservationId} 같은 형태로 값을 넣으시면 됩니다.
+
+    <script th:inline="javascript">
+        /* Thymeleaf의 자바스크립트 인라인 기능을 사용합니다.
+           서버에서 model.addAttribute("reserveNum", paymentId)로 보낸 값을 가져옵니다.
         */
-        const reservationId = "${reservationId}"; // 서버에서 넘겨준 예약 번호 변수
-        const targetUrl = "/reservationOne.do?resId=" + reservationId;
+        const reserveNum = [[${reserveNum}]]; 
+        
+        // 1. UserController 경로 확인: /user/reservationOne.do
+        // 2. 파라미터명 확인: ?reserveNum=
+        const targetUrl = "/user/reservationOne.do?reserveNum=" + reserveNum;
 
         setTimeout(function() {
+            // 부모 창(공연 예매를 진행하던 메인 창)이 있는지 확인
             if (window.opener && !window.opener.closed) {
-                // 부모 창(메인화면 등)을 상세 페이지로 이동
+                // 부모 창을 상세 내역 페이지로 이동시킴
                 window.opener.location.href = targetUrl; 
-                window.close(); // 팝업 닫기
+                // 현재 팝업창은 닫음
+                window.close(); 
             } else {
-                // 팝업이 아니거나 부모창이 없으면 현재 창에서 이동
+                // 부모 창이 없거나 이미 닫혔다면 현재 창(팝업)에서 바로 이동
                 location.href = targetUrl;
             }
-        }, 800);
+        }, 1200); // 사용자에게 성공 메시지를 보여주기 위해 1.2초 대기
     </script>
 </body>
 </html>
