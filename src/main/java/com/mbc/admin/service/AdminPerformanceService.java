@@ -341,8 +341,8 @@ public class AdminPerformanceService {
 
    
     public Page<Performance> searchByTitle(String keyword, Pageable pageable) {
-        // 일반 사용자 검색 시: 노출(1) 상태인 것만 조회
-        return performanceRepository.findByTitleContainingIgnoreCaseAndIsVisible(keyword, 1, pageable);
+        // [수정] 노출(1) 상태이면서 + 삭제되지 않은(0) 공연만 조회
+        return performanceRepository.findByTitleContainingIgnoreCaseAndIsVisibleAndIsDeleted(keyword, 1, 0, pageable);
     }
 
     
@@ -350,27 +350,21 @@ public class AdminPerformanceService {
     /**
      * 공연 삭제 로직
      */
+    @Transactional
     public void deletePerformance(Long performanceId) {
-        // fk 안한줄알았는데 지멋대로 만들었는지 fk를 가지고있습ㄴ디다 
-        
-        // 1. 가장 하위 데이터인 '재고 좌석(Inventory)'부터 삭제 (FK 해결)
-        seatInventoryRepository.deleteByPerformanceId(performanceId);
-        
-        // 2. 공연 회차(Schedule) 삭제
-        scheduleRepository.deleteByPerformanceId(performanceId);
-        
-        // 3. 가격 설정(GradeConfig) 삭제
-        gradeConfigRepository.deleteByPerformanceId(performanceId);
-        
-        // 4. 좌석 템플릿(Template) 삭제
-        templateRepository.deleteByPerformanceId(performanceId);
-        
-        // 5. 마지막으로 공연(Performance) 삭제
-        performanceRepository.deleteById(performanceId);
-        
-        System.out.println("==> 모든 연관 데이터 삭제 완료 (ID: " + performanceId + ")");
-    }
+        Performance performance = performanceRepository.findById(performanceId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 공연이 없습니다. ID: " + performanceId));
 
+        // [수정] Soft Delete 적용
+        performance.setIsDeleted(1);    // 삭제됨 상태
+        performance.setIsVisible(0);     // 사용자 페이지 노출 안됨
+        performance.setIsFeatured(0);    // 추천 공연 해제
+        
+        // 연관된 스케줄들도 논리적으로 삭제된 효과를 주기 위해 처리 (선택사항)
+        // 만약 스케줄 테이블에도 is_deleted가 있다면 여기서 반복문으로 처리하면 더 완벽합니다.
+
+        System.out.println("==> 공연 논리 삭제 완료 (ID: " + performanceId + ")");
+    }
     
     
     
@@ -422,24 +416,30 @@ public class AdminPerformanceService {
     
  // 목록화 하고  공연 기간이지난경우 뒤로 아닌경우 앞으로 배치 되도록 함 
     public Page<Performance> findAll(Pageable pageable) {
-        // 1. 모든 공연을 가져온 뒤 자바 메모리에서 정렬 (공연 수가 수백 개 이하일 때 적합)
-        List<Performance> all = performanceRepository.findAll();
+        // 1. 모든 공연을 가져온 뒤 '삭제되지 않은 것'만 필터링
+    	List<Performance> all = performanceRepository.findAllByIsDeleted(0);
+
         LocalDate now = LocalDate.now();
 
+        // 기존 정렬 로직 유지
         all.sort((p1, p2) -> {
             boolean p1Expired = p1.getEndDate().isBefore(now);
             boolean p2Expired = p2.getEndDate().isBefore(now);
             
-            if (p1Expired && !p2Expired) return 1;  // p1이 지났으면 뒤로
-            if (!p1Expired && p2Expired) return -1; // p2가 지났으면 앞으로
-            return p2.getPerformanceId().compareTo(p1.getPerformanceId()); // 둘 다 같으면 최신순
+            if (p1Expired && !p2Expired) return 1;
+            if (!p1Expired && p2Expired) return -1;
+            return p2.getPerformanceId().compareTo(p1.getPerformanceId());
         });
 
-        // 2. 수동으로 페이징 처리하여 반환
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), all.size());
+        
+        // 만약 필터링 후 데이터가 없으면 빈 페이지 반환
+        if (start > all.size()) return new PageImpl<>(new ArrayList<>(), pageable, all.size());
+        
         return new PageImpl<>(all.subList(start, end), pageable, all.size());
     }
+    
     
     /**
      * [좌석 선점 로직]
@@ -701,13 +701,14 @@ public class AdminPerformanceService {
         // Transactional 어노테이션이 있다면 별도의 save 없이도 변경 감지로 업데이트됩니다.
     }
     
+ // 사용자용 검색 (노출중 + 삭제안됨)
     public Page<Performance> searchByTitleForUser(String keyword, Pageable pageable) {
-        // isVisible 매개변수에 1을 전달하여 노출 승인된 공연만 검색합니다.
-        return performanceRepository.findByTitleContainingIgnoreCaseAndIsVisible(keyword, 1, pageable);
+        return performanceRepository.findByTitleContainingIgnoreCaseAndIsVisibleAndIsDeleted(keyword, 1, 0, pageable);
     }
- // 관리자용: 모든 공연 검색 (숨김 포함)
+
+    // 관리자용 검색 (숨김포함 + 삭제안됨)
     public Page<Performance> searchByTitleForAdmin(String keyword, Pageable pageable) {
-        return performanceRepository.findByTitleContainingIgnoreCase(keyword, pageable);
+        return performanceRepository.findByTitleContainingIgnoreCaseAndIsDeleted(keyword, 0, pageable);
     }
     
     

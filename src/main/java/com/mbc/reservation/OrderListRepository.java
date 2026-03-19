@@ -39,5 +39,6 @@ public interface OrderListRepository  extends JpaRepository<OrderList, Long> {
            "WHERE p.title LIKE %:title% " +
            "AND o.status = 'CANCELLED'")
     List<OrderList> findCancelledByPerformanceTitle(@Param("title") String title);
+    
 }
 
