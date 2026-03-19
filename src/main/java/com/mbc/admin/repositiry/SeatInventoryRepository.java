@@ -1,5 +1,6 @@
 package com.mbc.admin.repositiry;
 
+import com.mbc.admin.Prediction.SalesDataMapping;
 import com.mbc.admin.entity.PerformanceSchedule;
 import com.mbc.admin.entity.SeatInventory;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -53,6 +54,16 @@ public interface SeatInventoryRepository extends JpaRepository<SeatInventory, Lo
     
   
     List<SeatInventory> findByReservedByAndIsReservedAndSchedule_ScheduleId(String reservedBy, Integer isReserved, Long scheduleId);
+
+
+
+
+
+
+
+
+
+
 
 }
 //실제로 판매될 개별 좌석을 저정하고 확인하기 위해 사용 

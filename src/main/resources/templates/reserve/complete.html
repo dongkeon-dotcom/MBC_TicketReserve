@@ -1,19 +1,27 @@
 <!DOCTYPE html>
 <html>
-<body style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif;">
+<body style="display: center; justify-content: center; align-items: center; height: 100vh; font-family: sans-serif;">
     <div style="text-align: center;">
         <h3>결제가 완료되었습니다!</h3>
-        <p>메인 페이지로 이동 중입니다...</p>
+        <p>예매 상세 내역으로 이동 중입니다...</p>
     </div>
     <script>
+        /* 서버에서 전달받은 예매 번호가 '123'이라고 가정할 때의 예시입니다. 
+           JSP를 사용하신다면 ${reservationId} 같은 형태로 값을 넣으시면 됩니다.
+        */
+        const reservationId = "${reservationId}"; // 서버에서 넘겨준 예약 번호 변수
+        const targetUrl = "/reservationOne.do?resId=" + reservationId;
+
         setTimeout(function() {
-            if (window.opener) {
-                window.opener.location.href = "/main.do"; // 부모 창 이동//상세 페이지로 이동할때 이쪽 바꿔주기 
+            if (window.opener && !window.opener.closed) {
+                // 부모 창(메인화면 등)을 상세 페이지로 이동
+                window.opener.location.href = targetUrl; 
                 window.close(); // 팝업 닫기
             } else {
-                location.href = "/main.do";// 상세 페이지로 이동할때 이쪽 바꿔주기 
+                // 팝업이 아니거나 부모창이 없으면 현재 창에서 이동
+                location.href = targetUrl;
             }
-        }, 500);
+        }, 800);
     </script>
 </body>
 </html>

@@ -18,9 +18,9 @@
         <!-- 관리자 영역 -->
 		<div sec:authorize="hasRole('ROLE_ADMIN')">
 			<a th:href="@{/admin/insertPage.do}">공연등록</a>			
-    	
-			<a th:href="@{/admin/listPage.do}">공연목록</a>
-			<a th:href="@{/admin/cancelled.do}">공연 취소 </a>
+    	&emsp;&emsp;
+			<a th:href="@{/admin/listPage.do}">공연목록</a>&emsp;&emsp;
+			<a th:href="@{/admin/cancelled.do}">공연 취소 </a>&emsp;&emsp;
 			
 			<a th:href="@{/admin/stats.do}">공연통계 </a>
 

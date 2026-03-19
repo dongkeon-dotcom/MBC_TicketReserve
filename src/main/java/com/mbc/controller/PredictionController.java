@@ -1,39 +1,45 @@
 package com.mbc.controller;
 
-import java.util.List;
-import java.util.Map;
-
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.mbc.admin.Prediction.PredictionService;
-import com.mbc.admin.repositiry.PerformanceRepository;
+
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/prediction")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:5173") // React(Vite) 앱 주소 허용
 public class PredictionController {
 
     private final PredictionService predictionService;
-    private final PerformanceRepository performanceRepository; // DB 조회용
 
-    public PredictionController(PredictionService ps, PerformanceRepository pr) {
-        this.predictionService = ps;
-        this.performanceRepository = pr;
-    }
+    /**
+     * 특정 공연의 향후 회차별 점유율을 예측하여 반환합니다.
+     * GET /api/prediction/forecast/211
+     */
+    @GetMapping("/forecast/{performanceId}")
+    public ResponseEntity<?> getForecast(@PathVariable Long performanceId) {
 
-    @GetMapping("/predict/{id}")
-    public ResponseEntity<?> predict(@PathVariable Long id) {
-        // 1. DB에서 해당 공연의 과거 판매 데이터 조회
-        //List<Map<String, Object>> data = performanceRepository.findSalesDataById(id);
-        
-        // 2. 서비스 호출하여 FastAPI 결과 받아오기
-       // List<Map<String, Object>> prediction = predictionService.getPrediction(data);
-        
-        // 3. React로 JSON 응답
-       // return ResponseEntity.ok(prediction);
-    	return null;
+        try {
+            // 💡 Service의 메서드명을 getForecast로 일치시켰습니다.
+            Map<String, Object> forecastResult = predictionService.getForecast(performanceId);
+            
+            // 데이터가 없는 경우 처리
+            if ("no_data".equals(forecastResult.get("status"))) {
+                return ResponseEntity.ok(Map.of(
+                    "status", "no_data",
+                    "message", "향후 일주일간 예정된 공연 회차가 없습니다."
+                ));
+            }
+
+            return ResponseEntity.ok(forecastResult);
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("message", "서ver 오류가 발생했습니다: " + e.getMessage()));
+        }
     }
 }
