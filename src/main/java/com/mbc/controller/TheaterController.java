@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -244,20 +245,35 @@ return ResponseEntity.ok("선점 취소 완료");
 //동일회차 매수재한 api 
 @GetMapping("/check-reservation.do")
 @ResponseBody
-public Map<String, Object> checkReservation(@RequestParam("scheduleId") Long scheduleId, HttpSession session) {
-    Users user = (Users) session.getAttribute("user");
+public Map<String, Object> checkReservation(
+        @RequestParam("scheduleId") Long scheduleId, 
+        @AuthenticationPrincipal SecurityUserDetails userDetails) { // 시큐리티 유저 객체 주입
+    
     Map<String, Object> response = new HashMap<>();
     
-    if (user == null) {
-        response.put("reserved", false); // 로그인이 안 되어 있으면 일단 통과
+    // 1. 로그인 여부 확인
+    if (userDetails == null) {
+        // 로그인 안 되어 있으면 중복 체크 불필요 (false 반환하여 예약 진행 허용)
+        response.put("reserved", false);
         return response;
     }
 
-    boolean isReserved = performanceService.hasAlreadyReserved(user.getUserIdx(), scheduleId);
-    response.put("reserved", isReserved);
+    try {
+        // 2. 이미 만들어두신 getUserIdx() 메서드 사용
+        Long userIdx = userDetails.getUserIdx();
+
+        // 3. 서비스 호출하여 예약 내역 존재 여부 확인
+        boolean isReserved = performanceService.hasAlreadyReserved(userIdx, scheduleId);
+        response.put("reserved", isReserved);
+        
+    } catch (Exception e) {
+        // 예외 발생 시 로그 출력 및 기본값 반환
+        System.err.println("중복 예매 확인 중 오류: " + e.getMessage());
+        response.put("reserved", false);
+    }
+    
     return response;
 }
-
 
 
 

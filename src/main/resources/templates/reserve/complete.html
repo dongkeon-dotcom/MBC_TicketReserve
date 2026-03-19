@@ -10,28 +10,27 @@
         <p>예매 상세 내역으로 이동 중입니다...</p>
     </div>
 
-    <script th:inline="javascript">
-        /* Thymeleaf의 자바스크립트 인라인 기능을 사용합니다.
-           서버에서 model.addAttribute("reserveNum", paymentId)로 보낸 값을 가져옵니다.
-        */
-        const reserveNum = [[${reserveNum}]]; 
-        
-        // 1. UserController 경로 확인: /user/reservationOne.do
-        // 2. 파라미터명 확인: ?reserveNum=
-        const targetUrl = "/user/reservationOne.do?reserveNum=" + reserveNum;
+	<script th:inline="javascript">
+	        /*<![CDATA[*/
+	        // Thymeleaf 변수를 안전하게 가져오는 방식
+	        const reserveNum = /*[[${reserveNum}]]*/ null; 
+	        
+	        if (!reserveNum) {
+	            console.error("예약 번호를 전달받지 못했습니다.");
+	        }
 
-        setTimeout(function() {
-            // 부모 창(공연 예매를 진행하던 메인 창)이 있는지 확인
-            if (window.opener && !window.opener.closed) {
-                // 부모 창을 상세 내역 페이지로 이동시킴
-                window.opener.location.href = targetUrl; 
-                // 현재 팝업창은 닫음
-                window.close(); 
-            } else {
-                // 부모 창이 없거나 이미 닫혔다면 현재 창(팝업)에서 바로 이동
-                location.href = targetUrl;
-            }
-        }, 1200); // 사용자에게 성공 메시지를 보여주기 위해 1.2초 대기
-    </script>
-</body>
-</html>
+	        const targetUrl = "/user/reservationOne.do?reserveNum=" + reserveNum;
+
+	        setTimeout(function() {
+	            if (window.opener && !window.opener.closed) {
+	                window.opener.location.href = targetUrl; 
+	                window.close(); 
+	            } else {
+	                location.href = targetUrl;
+	            }
+	        }, 1200);
+	        /*]]>*/
+	    </script>
+	</body>
+	</html>
+	이렇게 수정했는데도 브라우저 콘솔에서 re

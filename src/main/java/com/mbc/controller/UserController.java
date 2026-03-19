@@ -51,7 +51,7 @@ public class UserController {
 	            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body("잠시 후 다시 시도해주세요.");
 	        }
 			
-			service.sendAuthEmail(email);
+			service.sendAuthEmail(email,"join");
 			return ResponseEntity.ok("success");
 		} catch (MessagingException e) {
 			// TODO Auto-generated catch block
