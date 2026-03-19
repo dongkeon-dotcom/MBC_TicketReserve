@@ -124,8 +124,8 @@
 						     th:id="'img-item-' + ${img.imageId}" 
 						     style="position: relative; width: 18%; min-width: 100px;">
 						     
-						    <img th:src="@{|https://s3-202601052.s3.ap-northeast-2.amazonaws.com/${img.imageName}|}" 
-						         style="width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 8px; border: 1px solid #ddd;">
+							 <img th:src="@{|https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/DETAIL_IMAGE/${img.imageName}|}" 
+							      style="width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 8px; border: 1px solid #ddd;">
 						    
 						    <label th:onclick="|removeExistingImage('${img.imageId}')|" 
 						           style="position: absolute; top: 5px; right: 5px; background: rgba(255,0,0,0.8); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; font-size: 14px;">
