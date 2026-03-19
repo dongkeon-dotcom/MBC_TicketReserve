@@ -236,18 +236,45 @@
                 if (date > lastDate) break;
             }
         }
+		function selectModalDate(dateStr) {
+		    const container = document.getElementById('modal-time-slot-container');
+		    container.innerHTML = '';
+		    const daySchedules = window.allSchedules.filter(s => s.startTime.startsWith(dateStr));
 
-        function selectModalDate(dateStr) {
-            const container = document.getElementById('modal-time-slot-container');
-            container.innerHTML = '';
-            const daySchedules = window.allSchedules.filter(s => s.startTime.startsWith(dateStr));
-            daySchedules.forEach(s => {
-                const btn = document.createElement('button');
-                btn.innerText = s.startTime.substring(11, 16);
-                btn.onclick = () => { location.href = "/reserve/seat.do?scheduleId=" + s.scheduleId; };
-                container.appendChild(btn);
-            });
-        }
+		    daySchedules.forEach(s => {
+		        const btn = document.createElement('button');
+		        const timeStr = s.startTime.substring(11, 16);
+		        btn.innerText = timeStr;
+
+		        btn.onclick = async () => {
+		            try {
+		                // [추가] 변경하려는 회차에 이미 예매 내역이 있는지 확인
+		                const response = await fetch(`/reserve/check-reservation.do?scheduleId=${s.scheduleId}&t=${new Date().getTime()}`, {
+		                    headers: { 'Content-Type': 'application/json' } // GET 요청이므로 기본 헤더
+		                });
+		                const data = await response.json();
+
+		                if (data.reserved) {
+		                    alert(`⚠️ 해당 회차(${timeStr})는 이미 예매하신 내역이 있습니다.\n(본 공연은 1인 1매로 제한됩니다.)`);
+		                    return; // 이동하지 않고 중단
+		                }
+
+		                // 예매 내역이 없을 때만 이동
+		                if (confirm(`${timeStr} 회차로 변경하시겠습니까?\n(선택 중이던 좌석은 해제됩니다.)`)) {
+		                    // [중요] 이동 전 현재 선점 중인 좌석이 있다면 해제 요청 (선택 사항)
+		                    if (window.currentSelectedId) {
+		                        navigator.sendBeacon('/reserve/cancelSeat.do', new URLSearchParams({ 'seatId': window.currentSelectedId }));
+		                    }
+		                    location.href = "/reserve/seat.do?scheduleId=" + s.scheduleId;
+		                }
+		            } catch (error) {
+		                console.error("회차 확인 중 오류:", error);
+		                alert("정보를 확인하는 중 오류가 발생했습니다.");
+		            }
+		        };
+		        container.appendChild(btn);
+		    });
+		}
 		window.resetSelection = function() {
 		    if (window.currentSelectedId) {
 		        // 서버에 취소 요청
