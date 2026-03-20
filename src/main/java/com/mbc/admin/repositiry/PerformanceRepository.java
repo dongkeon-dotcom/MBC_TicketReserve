@@ -28,4 +28,10 @@ public interface PerformanceRepository extends JpaRepository<Performance, Long> 
 
     // [기존 메서드 유지/수정] 하위 호환성을 위해 남겨두거나 위 메서드로 대체 사용 가능합니다.
     Page<Performance> findByTitleContainingAndIsVisibleAndIsDeleted(String keyword, Integer isVisible, Integer isDeleted, Pageable pageable);
+
+
+    List<Performance> findByTitleContainingIgnoreCaseAndIsDeleted(String title, int isDeleted);
+
+
+
 }

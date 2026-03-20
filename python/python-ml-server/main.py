@@ -1,50 +1,63 @@
+import numpy as np
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
-import pandas as pd
-from datetime import datetime, timedelta
 
 app = FastAPI()
 
-# CORS 설정 (React/Spring Boot와 통신 허용)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-
-# Spring Boot에서 보낼 요청 규격
 class SalesRequest(BaseModel):
-    sales: List[int]  # 각 회차별 현재 예약된 좌석 수 (예: [5, 12, 8...])
-    days: int         # 예측할 회차 개수 (보통 sales 리스트의 길이와 같음)
+    sales: List[int]
 
 @app.post("/forecast")
 def predict(data: SalesRequest):
     total_seats = 30
-    predictions = []
+    actual_sales = data.sales
+    n = len(actual_sales)
     
-    # 데이터가 아예 없을 때만 최소 기준(5장) 적용
-    max_reserved = max(data.sales) if data.sales and max(data.sales) > 0 else 5
+    # 1. 예약이 있는 데이터의 인덱스와 값 추출
+    past_indices = [i for i, s in enumerate(actual_sales) if s > 0]
+    past_values = [s for s in actual_sales if s > 0]
 
-    for current_count in data.sales:
-        # 1. 💡 바닥값(Base) 하향 조정 (현실화)
-        # 기존 max_reserved * 0.6 -> 0.3으로 낮춤 (낙관 지수 감소)
-        # 현재 0장이면, 다른 날 잘 팔렸어도 "예측치도 낮게" 시작합니다.
-        base_line = max(current_count, max_reserved * 0.3)
-        
-        # 2. 💡 성장 가중치 축소
-        # 기존 1.4배 -> 1.15배로 축소 (폭발적 성장 대신 완만한 증가)
-        if current_count == 0:
-            # 아예 0장인 날은 더 냉정하게 계산
-            estimated_final = base_line * 1.1 
+    if not past_values:
+        # 데이터가 아예 없으면 보수적으로 10%부터 시작
+        return {"predictions": [round(3/30*100, 1)] * n}
+
+    # 2. 기울기(Slope) 계산
+    if len(past_values) > 1:
+        z = np.polyfit(past_indices, past_values, 1)
+        slope = z[0]
+        intercept = z[1]
+    else:
+        # 데이터가 하나뿐이면 아주 천천히 증가한다고 가정 (기울기 0.2)
+        slope = 0.2
+        intercept = past_values[0]
+
+    predictions = []
+
+    # 3. 💡 현실적인 시계열 예측 (가중치 대폭 하향)
+    for i in range(n):
+        if actual_sales[i] > 0:
+            # 현재 예약된 날은 "현재 값 + 남은 기간 동안의 완만한 증가"
+            # 무조건 1.2배 하는 게 아니라, 조금만 더 팔릴 것으로 예상
+            pred = actual_sales[i] + (slope * 0.5) + 1. 
         else:
-            # 조금이라도 팔린 날은 탄력을 받음
-            estimated_final = current_count * 1.25 + 1
+            # 미래 날짜 (0인 날)
+            # 추세를 따라가되, 뒤로 갈수록 증가폭을 줄임 (감쇠 효과)
+            # 30석 기준이므로 상수를 더하는 걸 조심해야 함 (+2 정도로 수정)
+            pred = (slope * i) + intercept + 2 
+            
+        # 4. 💡 30석을 초과하지 않도록 철저히 계산
+        # 예측값이 현재 최대 판매량보다 너무 높지 않게 제어 (안정성)
+        max_limit = max(past_values) * 1.5 if past_values else 30
+        final_val = min(total_seats, pred, max_limit)
+        
+        # 0보다 작아지지 않게 방어
+        final_val = max(0, final_val)
+        
+        predictions.append(round((final_val / total_seats) * 100, 1))
 
-        # 3. 최대 좌석수 제한 및 반올림
-        estimated_final = min(total_seats, estimated_final)
-        final_rate = round((estimated_final / total_seats) * 100, 1)
-        predictions.append(final_rate)
-
-    return {"status": "success", "predictions": predictions}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    return {
+        "status": "success",
+        "predictions": predictions,
+        "slope": float(slope)
+    }

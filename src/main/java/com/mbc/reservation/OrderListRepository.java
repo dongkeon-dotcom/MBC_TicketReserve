@@ -40,5 +40,9 @@ public interface OrderListRepository  extends JpaRepository<OrderList, Long> {
            "AND o.status = 'CANCELLED'")
     List<OrderList> findCancelledByPerformanceTitle(@Param("title") String title);
     
+    
+ // 특정 회차의 특정 상태 주문 개수 조회
+    long countBySchedule_ScheduleIdAndStatus(Long scheduleId, String status);
+    
 }
 

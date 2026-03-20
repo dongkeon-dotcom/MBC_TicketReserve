@@ -373,19 +373,28 @@ public class AdminController {
     ///
     
     @GetMapping("/stats.do")
-    public String showStats(@RequestParam(required = false) String showTitle, Model model) {
+    public String showStats(
+            @RequestParam(required = false) String showTitle, 
+            @RequestParam(required = false) Long performanceId, // DTO의 필드명과 맞춰줌
+            Model model) {
+
         if (showTitle != null && !showTitle.isEmpty()) {
-            // 공연별 통계 데이터 로직 호출
-            var stats = performanceService.getPerformanceStats(showTitle);
-            model.addAttribute("stats", stats);
+            // 1. 제목으로 검색된 공연들 리스트 (PerformanceListDto 리스트)
+            // 서비스에서 검색된 엔티티들을 PerformanceListDto로 변환해서 가져온다고 가정합니다.
+            List<PerformanceListDto> showList = performanceService.searchShowsByTitle(showTitle);
+            model.addAttribute("showList", showList);
             model.addAttribute("showTitle", showTitle);
+
+            // 2. 사용자가 리스트에서 특정 공연을 클릭하여 ID가 넘어온 상태라면 상세 통계 계산
+            if (performanceId != null) {
+                // ID를 기준으로 정확한 통계 데이터를 가져옴
+                var stats = performanceService.getPerformanceStatsById(performanceId);
+                model.addAttribute("stats", stats);
+            }
         }
+        
         return "statistics/statisCalendar";
     }
-    
-    
-    
-    
     
     
     

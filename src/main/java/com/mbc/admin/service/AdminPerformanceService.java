@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.mbc.admin.FileUtil;
+import com.mbc.admin.PerformanceListDto;
 import com.mbc.admin.PerformanceSaveDto;
 import com.mbc.admin.entity.Performance;
 import com.mbc.admin.entity.PerformanceDetailImage;
@@ -84,27 +85,160 @@ public class AdminPerformanceService {
      */
     @Transactional
     public void processShowInsert(PerformanceSaveDto dto) throws Exception {
-    	Performance performance = new Performance();
+        // 1. JSON 문자열(String)을 Map<Integer, Integer>로 변환
+        ObjectMapper mapper = new ObjectMapper();
+        Map<Integer, Integer> seatGradeMap = new HashMap<>();
+        if (dto.getSeatGradeMap() != null && !dto.getSeatGradeMap().isEmpty()) {
+            seatGradeMap = mapper.readValue(dto.getSeatGradeMap(), 
+                           new TypeReference<Map<Integer, Integer>>() {});
+        }
+
+        // 2. 공연 기본 정보 저장
+        Performance performance = new Performance();
         performance.setTitle(dto.getTitle());
         performance.setStartDate(LocalDate.parse(dto.getStartDate()));
         performance.setEndDate(LocalDate.parse(dto.getEndDate()));
-
-        // [수정] 1. 먼저 공연 정보를 저장해서 ID를 생성합니다.
         performanceRepository.save(performance);
 
-        // [수정] 2. 이제 ID가 생긴 performance 객체를 넘겨서 이미지를 저장합니다.
+     // [위치 변경] DB에 저장하기 전에 노출 여부를 먼저 세팅합니다.
+        if (dto.getIsVisible() != null) {
+            performance.setIsVisible(dto.getIsVisible());
+        } else {
+            performance.setIsVisible(1); // 기본값 노출(1)
+        }
+
+        // [중요] 모든 기본 정보가 채워진 후 save 호출
+        performanceRepository.save(performance);
+        
+        
+        // 3. 이미지 저장 로직 호출
         saveImages(performance, dto);
 
-        // [수정] 3. 스케줄 및 좌석 생성도 ID가 생성된 performance를 사용합니다.
+        // 4. 스케줄 및 좌석 생성 (변환된 seatGradeMap 전달)
         List<String> startDates = dto.getOpenStartDates();
         if (startDates != null) {
             for (int i = 0; i < startDates.size(); i++) {
                 LocalDate start = LocalDate.parse(startDates.get(i));
                 LocalDate end = LocalDate.parse(dto.getOpenEndDates().get(i));
-                generateSchedulesForPeriod(performance, start, end, dto, i);
+                // 메서드 호출 시 seatGradeMap 인자 추가
+                generateSchedulesForPeriod(performance, start, end, dto, i, seatGradeMap);
             }
         }
     }
+    
+    
+    /**
+     * [공통] 특정 기간 동안의 회차 및 좌석 인벤토리를 생성하는 핵심 메서드
+     */
+   
+    public void generateSchedulesForPeriod(Performance performance, LocalDate openStart, LocalDate openEnd, 
+            PerformanceSaveDto dto, int index, 
+            Map<Integer, Integer> seatGradeMap) throws Exception {
+
+        // [A] 등급 설정(GradeConfig) 생성 (공연에 등급 정보가 없을 때만 생성)
+        if (performance.getGrades().isEmpty()) {
+            for (int i = 0; i < dto.getGradeNames().size(); i++) {
+                PerformanceGradeConfig grade = new PerformanceGradeConfig();
+                grade.setGradeName(dto.getGradeNames().get(i));
+                String priceStr = dto.getGradePrices().get(i).replace(",", "");
+                grade.setGradePrice(Integer.parseInt(priceStr)); 
+                grade.setGradeOrder(i + 1); // 1부터 시작하는 등급 순서
+                performance.addGradeConfig(grade); 
+            }
+        }
+
+        // [B] JSON 파싱 - 요일별 시간 목록 (예: {"월": ["14:00", "20:00"]})
+        Map<String, List<String>> scheduleMap = objectMapper.readValue(
+                dto.getWeeklySchedule(), new TypeReference<Map<String, List<String>>>() {});
+
+        // [C] 템플릿(설계도) 저장 - UI에서 배치한 좌석 등급 정보를 DB에 기록
+        if (templateRepository.findByPerformance(performance).isEmpty()) {
+            for (Map.Entry<Integer, Integer> entry : seatGradeMap.entrySet()) {
+                PerformanceSeatTemplate template = new PerformanceSeatTemplate();
+                template.setPerformance(performance);
+                template.setSeatNumber(String.valueOf(entry.getKey()));
+                int gradeOrder = (entry.getValue() != null) ? entry.getValue() : 1;
+                template.setGradeOrder(gradeOrder);
+                templateRepository.save(template);
+            }
+        }
+
+        List<VenueSeatMaster> masters = venueMasterRepository.findAll();
+        LocalDateTime openingTime = LocalDateTime.parse(dto.getOpeningTimes().get(index));
+
+        // [D] 날짜별 순회하며 스케줄 및 좌석 인벤토리 생성
+        LocalDate current = openStart;
+        while (!current.isAfter(openEnd)) {
+            String dayOfWeek = getKoreanDayOfWeek(current);
+            List<String> times = scheduleMap.get(dayOfWeek);
+
+            if (times != null && !times.isEmpty()) {
+                for (String timeStr : times) {
+                    LocalDateTime startDateTime = current.atTime(LocalTime.parse(timeStr));
+
+                    // 중복 생성 방지 체크
+                    boolean isAlreadyExists = performance.getSchedules().stream()
+                            .anyMatch(s -> s.getStartTime().equals(startDateTime));
+                    if (isAlreadyExists) continue;
+
+                    // 1. 회차(Schedule) 생성
+                    PerformanceSchedule schedule = new PerformanceSchedule();
+                    schedule.setStartTime(startDateTime);
+                    schedule.setOpeningTime(openingTime);
+
+                    // 2. 각 회차별 좌석(Inventory) 생성 루프
+                    for (VenueSeatMaster master : masters) {
+                        String seatNo = master.getSeatNumber(); 
+
+                        // UI 배치도 데이터(seatGradeMap)에서 해당 좌석의 등급 번호를 가져옴
+                        Integer gradeNum = seatGradeMap.get(Integer.parseInt(seatNo));
+                        if (gradeNum == null) gradeNum = 1; // 기본값 1등급
+
+                        // 해당 등급의 실제 Config 정보 매칭
+                        if (gradeNum > performance.getGrades().size()) gradeNum = 1;
+                        PerformanceGradeConfig matchedGrade = performance.getGrades().get(gradeNum - 1);
+
+                        // --- [제작사 보유석 상태 3 적용 핵심 로직] ---
+                        int isReservedStatus = 0; // 기본은 판매 가능(0)
+                        String reservedBy = null;
+
+                        // 관리자가 체크한 보유석 등급 리스트(isSecret)에 현재 좌석의 등급(gradeNum)이 포함되어 있는지 확인
+                        if (dto.getIsSecret() != null && dto.getIsSecret().contains(String.valueOf(gradeNum))) {
+                            isReservedStatus = 3;           // 제작사 보유석 상태값 설정
+                            reservedBy = "SYSTEM_HOLD";     // 예약자명에 시스템 홀딩 기록
+                        }
+                        // ------------------------------------------
+
+                        // 좌석 인벤토리 객체 생성
+                        SeatInventory seat = SeatInventory.createSeat(
+                            schedule, 
+                            seatNo, 
+                            matchedGrade.getGradeOrder(), 
+                            matchedGrade.getGradePrice(),
+                            false 
+                        );
+
+                        // 상태값 최종 주입 (보유석이면 3, 아니면 0)
+                        seat.setIsReserved(isReservedStatus);
+                        seat.setReservedBy(reservedBy);
+
+                        schedule.addSeat(seat);
+                    }
+                    performance.addSchedule(schedule);
+                }
+            }
+            current = current.plusDays(1);
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
     /**
      * [2] 공연 수정 처리 (Update)
      * 기존 데이터를 삭제 후 재등록하여 정합성을 유지합니다.
@@ -115,27 +249,33 @@ public class AdminPerformanceService {
         Performance performance = performanceRepository.findById(dto.getPerformanceId())
                 .orElseThrow(() -> new IllegalArgumentException("해당 공연이 존재하지 않습니다. ID: " + dto.getPerformanceId()));
 
-        // 2. 기본 정보 업데이트 (제목, 날짜 등)
+        // [추가] 1.5. JSON 문자열(String)을 Map<Integer, Integer>로 변환 (에러 해결 핵심)
+        ObjectMapper mapper = new ObjectMapper();
+        Map<Integer, Integer> seatGradeMap = new HashMap<>();
+        if (dto.getSeatGradeMap() != null && !dto.getSeatGradeMap().isEmpty()) {
+            seatGradeMap = mapper.readValue(dto.getSeatGradeMap(), 
+                           new TypeReference<Map<Integer, Integer>>() {});
+        }
+
+        // 2. 기본 정보 업데이트
         updatePerformanceBasicInfo(performance, dto);
 
-        // 3. 이미지 업데이트 (포스터 + 상세이미지)
-        saveImages(performance, dto); // 아래 정의한 saveImages 메서드 호출
+        // 3. 이미지 업데이트
+        saveImages(performance, dto);
 
-        // 5. 기존 연관 데이터 초기화 (회차/등급/좌석 재설정 시)
-        // 주의: 실제 예매된 좌석이 있을 경우 예외 처리가 필요합니다.
+        // 5. 기존 연관 데이터 초기화
         performance.getGrades().clear();
         performance.getSchedules().clear();
         
-        List<PerformanceSeatTemplate> oldTemplates = templateRepository.findByPerformance(performance);
-        //templateRepository.deleteAll(oldTemplates);
-
         // 6. 수정된 설정으로 등급 및 회차/좌석 재생성
         List<String> startDates = dto.getOpenStartDates();
         if (startDates != null) {
             for (int i = 0; i < startDates.size(); i++) {
                 LocalDate start = LocalDate.parse(startDates.get(i));
                 LocalDate end = LocalDate.parse(dto.getOpenEndDates().get(i));
-                generateSchedulesForPeriod(performance, start, end, dto, i);
+                
+                // [수정] 마지막 인자에 seatGradeMap을 추가해서 호출!
+                generateSchedulesForPeriod(performance, start, end, dto, i, seatGradeMap);
             }
         }
 
@@ -182,115 +322,7 @@ public class AdminPerformanceService {
             }
         }
     }
-    /**
-     * [공통] 특정 기간 동안의 회차 및 좌석 인벤토리를 생성하는 핵심 메서드
-     */
    
-    public void generateSchedulesForPeriod(Performance performance, LocalDate openStart, LocalDate openEnd, PerformanceSaveDto dto, int index) throws Exception {
-        
-        // [A] 등급 설정(GradeConfig) 생성 (최초 1회만 실행됨)
-        if (performance.getGrades().isEmpty()) {
-            for (int i = 0; i < dto.getGradeNames().size(); i++) {
-                PerformanceGradeConfig grade = new PerformanceGradeConfig();
-                grade.setGradeName(dto.getGradeNames().get(i));
-                String priceStr = dto.getGradePrices().get(i).replace(",", "");
-                grade.setGradePrice(Integer.parseInt(priceStr)); 
-                grade.setGradeOrder(i + 1);
-                performance.addGradeConfig(grade); 
-            }
-        }
-
-        // [B] JSON 파싱 - 요일별 시간 목록
-        Map<String, List<String>> scheduleMap = objectMapper.readValue(
-            dto.getWeeklySchedule(), new TypeReference<Map<String, List<String>>>() {});
-        
-        // [중요] seatGradeMap 파싱 로직 강화 (복합 객체 대응)
-        Map<String, Object> rawSeatMap = objectMapper.readValue(
-            dto.getSeatGradeMap(), new TypeReference<Map<String, Object>>() {});
-        
-        Map<String, Integer> seatGradeMap = new HashMap<>();
-        for (Map.Entry<String, Object> entry : rawSeatMap.entrySet()) {
-            Object val = entry.getValue();
-            
-            // 1. 이미 숫자라면 그대로 사용
-            if (val instanceof Integer) {
-                seatGradeMap.put(entry.getKey(), (Integer) val);
-            } 
-            // 2. {grade: 1, ...} 형태의 객체라면 'grade' 키 추출
-            else if (val instanceof Map) {
-                Map<String, Object> mapVal = (Map<String, Object>) val;
-                Object gradeVal = mapVal.get("grade");
-                seatGradeMap.put(entry.getKey(), Integer.parseInt(gradeVal.toString()));
-            } 
-            // 3. 기타(문자열 등)라면 강제 파싱
-            else {
-                seatGradeMap.put(entry.getKey(), Integer.parseInt(val.toString()));
-            }
-        }
-        
-        // [C] 템플릿(설계도) 저장 (최초 1회만 실행됨)
-        if (templateRepository.findByPerformance(performance).isEmpty()) {
-            for (Map.Entry<String, Integer> entry : seatGradeMap.entrySet()) {
-                PerformanceSeatTemplate template = new PerformanceSeatTemplate();
-                template.setPerformance(performance);
-                template.setSeatNumber(entry.getKey());
-                int gradeOrder = (entry.getValue() != null) ? entry.getValue() : 1;
-                template.setGradeOrder(gradeOrder);
-                templateRepository.save(template);
-            }
-        }
-
-        List<VenueSeatMaster> masters = venueMasterRepository.findAll();
-
-        // [D] 예매 오픈 시간 파싱
-        LocalDateTime openingTime = LocalDateTime.parse(dto.getOpeningTimes().get(index));
-
-        // [E] 날짜별 순회하며 스케줄 생성
-        LocalDate current = openStart;
-        while (!current.isAfter(openEnd)) {
-            String dayOfWeek = getKoreanDayOfWeek(current);
-            List<String> times = scheduleMap.get(dayOfWeek);
-
-            if (times != null && !times.isEmpty()) {
-                for (String timeStr : times) {
-                    LocalDateTime startDateTime = current.atTime(LocalTime.parse(timeStr));
-
-                    boolean isAlreadyExists = performance.getSchedules().stream()
-                            .anyMatch(s -> s.getStartTime().equals(startDateTime));
-                    if (isAlreadyExists) continue;
-
-                    PerformanceSchedule schedule = new PerformanceSchedule();
-                    schedule.setStartTime(startDateTime);
-                    schedule.setOpeningTime(openingTime);
-
-                    for (VenueSeatMaster master : masters) {
-                        String seatNo = master.getSeatNumber(); 
-                        
-                        Integer gradeNum = seatGradeMap.get(seatNo);
-                        if (gradeNum == null) gradeNum = 1;
-                        
-                        boolean isSecret = false; 
-
-                        if (gradeNum > performance.getGrades().size()) gradeNum = 1;
-                        PerformanceGradeConfig matchedGrade = performance.getGrades().get(gradeNum - 1);
-                        
-                        SeatInventory seat = SeatInventory.createSeat(
-                            schedule, 
-                            seatNo, 
-                            matchedGrade.getGradeOrder(), 
-                            matchedGrade.getGradePrice(),
-                            isSecret
-                        );
-                        
-                        schedule.addSeat(seat);
-                    }
-                    performance.addSchedule(schedule);
-                }
-            }
-            current = current.plusDays(1);
-        }
-    }
-
     private String getKoreanDayOfWeek(LocalDate date) {
         return switch (date.getDayOfWeek()) {
             case MONDAY -> "월";
@@ -724,6 +756,82 @@ public class AdminPerformanceService {
                 .limit(8)                                                       // 8개 제한
                 .collect(Collectors.toList());
     } 
+    
+    
+    
+    /**
+     * [추가] 1. 제목으로 공연 목록 검색 (중복/유사 이름 선택용)
+     * 검색된 엔티티들을 PerformanceListDto로 변환하여 반환합니다.
+     */
+    public List<PerformanceListDto> searchShowsByTitle(String title) {
+        // 삭제되지 않은 공연 중에서 제목이 포함된 것들을 조회
+        List<Performance> performances = performanceRepository.findByTitleContainingIgnoreCaseAndIsDeleted(title, 0);
+        
+        // 엔티티 리스트를 DTO 리스트로 변환 (생성자 이용)
+        return performances.stream()
+                .map(PerformanceListDto::new)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * [추가/수정] 2. 특정 공연 ID 기반 상세 통계 조회
+     * 기존의 getPerformanceStats(String title) 로직을 ID 기반으로 변경한 버전입니다.
+     */
+    public Map<String, Object> getPerformanceStatsById(Long performanceId) {
+        // 1. ID로 공연 정보 먼저 조회
+        Performance performance = performanceRepository.findById(performanceId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 공연이 없습니다. ID: " + performanceId));
+
+        // 2. 해당 공연에 속한 모든 회차(Schedule) 가져오기
+        List<PerformanceSchedule> schedules = scheduleRepository.findByPerformanceId(performanceId);
+        
+        if (schedules.isEmpty()) return null;
+
+        String performanceTitle = performance.getTitle();
+        String period = performance.getStartDate() + " ~ " + performance.getEndDate();
+        
+        List<Map<String, Object>> scheduleStats = new ArrayList<>();
+        long totalConfirmedAll = 0;
+        int totalSchedules = schedules.size();
+
+        // 3. 각 회차별로 예매된 좌석 수 계산 (OrderList 기준)
+        for (PerformanceSchedule schedule : schedules) {
+            // 해당 회차의 'CONFIRMED' 상태인 주문 개수 카운트
+            long confirmedCount = orderListRepository.countBySchedule_ScheduleIdAndStatus(schedule.getScheduleId(), "CONFIRMED");
+            
+            totalConfirmedAll += confirmedCount;
+            
+            Map<String, Object> stat = new HashMap<>();
+            stat.put("scheduleId", schedule.getScheduleId());
+            stat.put("startTime", schedule.getStartTime()); 
+            // 전체 좌석수(TOTAL_SEATS = 30) 대비 예매율 계산
+            stat.put("rate", Math.round((confirmedCount / (double) TOTAL_SEATS) * 100));
+            scheduleStats.add(stat);
+        }
+
+        // 4. 전체 평균 예매율 계산
+        double totalAvgRate = 0;
+        if (totalSchedules > 0) {
+            totalAvgRate = Math.round((totalConfirmedAll / (double) (totalSchedules * TOTAL_SEATS)) * 100);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("performanceTitle", performanceTitle);
+        result.put("period", period);
+        result.put("totalRate", totalAvgRate);
+        result.put("scheduleStats", scheduleStats);
+        
+        return result;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
 }

@@ -17,6 +17,8 @@ public class PerformanceGradeConfig {
     private Integer gradeOrder;   // 1, 2, 3...
     private String gradeName;     // VIP, R석 등
     private Integer gradePrice;
+    
+    
 
     public void setPerformance(Performance performance) {
         this.performance = performance;

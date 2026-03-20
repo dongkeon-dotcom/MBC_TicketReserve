@@ -44,16 +44,16 @@
 	                <div class="stage">STAGE</div>
 	                
 	                <div class="seat-grid" id="seat-grid">
-	                    <div th:each="seat : ${seats}" 
-	                         class="seat"
-	                         th:classappend="|grade-${seat.seatType} 
-	                                         ${(seat.isReserved == 1 or seat.isReserved == 3) ? 'is-paid' : 'available'}|"
-	                         th:data-id="${seat.seatId}"
-	                         th:data-status="${seat.isReserved}" 
-	                         onclick="handleSeatClick(this)">
-	                         
-	                         <span  th:text="${seat.seatNumber}"></span>
-	                    </div>
+						<div th:each="seat : ${seats}" 
+						     class="seat"
+						     th:classappend="|grade-${seat.seatType} 
+						                     ${(seat.isReserved == 1 or seat.isReserved == 3) ? 'is-paid' : 'available'}|"
+						     th:data-id="${seat.seatId}"
+						     th:data-status="${seat.isReserved}" 
+						     onclick="handleSeatClick(this)">
+						     
+						     <span th:text="${seat.seatNumber}"></span>
+						</div>
 	                </div>
 	            </div>
 	        </div> <div class="info-sidebar">
@@ -69,13 +69,14 @@
 	                 <!--   <button class="btn-refresh" onclick="location.reload()">새로고침</button>-->
 	                </div>
 	                
-	                <div class="grade-list">
-	                    <div th:each="grade : ${grades}" class="grade-item">
-	                        <span class="grade-name" th:text="${grade.gradeName}">등급</span>
-	                        <span class="grade-price" th:text="${#numbers.formatInteger(grade.price, 3, 'COMMA') + '원'}">0원</span>
-	                        <span class="remain-count"><b th:text="${grade.remainCount}">0</b>석</span>
-	                    </div>
-	                </div>
+					<div class="grade-list">
+					    <div th:each="grade : ${grades}" 
+					         th:if="${grade.remainCount > 0}" 
+					         class="grade-item">
+					        <span class="grade-name" th:text="${grade.gradeName}">등급</span>
+					        <span class="grade-price" th:text="${#numbers.formatInteger(grade.price, 3, 'COMMA') + '원'}">0원</span>
+					        <span class="remain-count"><b th:text="${grade.remainCount}">0</b>석</span>
+					    </div>
 	            </div>
 	        
 	            <div class="sidebar-buttons">

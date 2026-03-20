@@ -31,36 +31,68 @@
 </head>
 <body>
 
-    <div class="stats-container">
-        <h2>📊 공연별 예매율 통계</h2>
+	<div class="stats-container">
+	    <h2>📊 공연별 예매율 통계</h2>
 
-        <div class="search-box">
-            <form th:action="@{/admin/stats.do}" method="get">
-                <table style="width: 100%;">
-                    <tr>
-                        <td style="width: 80px;"><strong>공연 이름</strong></td>
-                        <td>
-                            <input type="text" name="showTitle" th:value="${showTitle}" 
-                                   placeholder="공연 제목을 입력하세요 (예: B 공연)" style="width: 100%; max-width: 400px;">
-                        </td>
-                        <td style="text-align: right;">
-                            <button type="submit" class="btn-search">통계 조회하기</button>
-                        </td>
-                    </tr>
-                </table>
-            </form>
-        </div>
+	    <div class="search-box">
+	        <form th:action="@{/admin/stats.do}" method="get">
+	            <table style="width: 100%;">
+	                <tr>
+	                    <td style="width: 80px;"><strong>공연 이름</strong></td>
+	                    <td>
+	                        <input type="text" name="showTitle" th:value="${showTitle}" 
+	                               placeholder="공연 제목을 입력하세요 (예: B 공연)" style="width: 100%; max-width: 400px;">
+	                    </td>
+	                    <td style="text-align: right;">
+	                        <button type="submit" class="btn-search">검색</button>
+	                    </td>
+	                </tr>
+	            </table>
+	        </form>
+	    </div>
 
-        <div th:if="${stats != null}" class="performance-info-card">
-            <div class="info-content">
-                <h3 th:text="${stats.performanceTitle}">공연 제목</h3>
-                <p>📅 <strong>공연 운영 기간:</strong> <span th:text="${stats.period}">2026-03-01 ~ 2026-04-02</span></p>
-                <p>📈 <strong>전체 평균 예매율:</strong> <span class="rate-text" th:text="|${stats.totalRate}%|">0%</span> (전체 회차 대비)</p>
-            </div>
-        </div>
+	    <div th:if="${showList != null and #lists.size(showList) > 0}" class="search-results" style="margin-bottom: 30px;">
+	        <h3>검색된 공연 목록 <small style="font-size: 0.8rem; color: #666;">(원하는 공연의 '통계보기'를 클릭하세요)</small></h3>
+	        <table class="list-table" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+	            <thead style="background: #eee;">
+					<tr>
+					            <th style="padding: 10px; border: 1px solid #ddd;">공연명</th>
+					            <th style="padding: 10px; border: 1px solid #ddd;">공연 기간</th>
+					            <th style="padding: 10px; border: 1px solid #ddd;">선택</th>
+					        </tr>
+					    </thead>
+					    <tbody>
+					        <tr th:each="show : ${showList}" style="text-align: center;">
+					            <td th:text="${show.title}" style="padding: 10px; border: 1px solid #ddd;">공연명</td>
+					            <td style="padding: 10px; border: 1px solid #ddd;">
+					                <span th:text="${show.startDate}"></span> ~ <span th:text="${show.endDate}"></span>
+					            </td>
+					            <td style="padding: 10px; border: 1px solid #ddd;">
+					                <a th:href="@{/admin/stats.do(performanceId=${show.performanceId}, showTitle=${showTitle})}" 
+					                   style="padding: 5px 10px; background: #3498db; color: white; text-decoration: none; border-radius: 3px;">
+					                   통계보기
+					                </a>
+					            </td>
+					        </tr>
+					    </tbody>
+					</table>
+					    </div>
 
-        <div id="calendar"></div>
-    </div>
+	    <div th:if="${stats != null}">
+	        <div class="performance-info-card">
+	            <div class="info-content">
+	                <h3 th:text="${stats.performanceTitle}">공연 제목</h3>
+	                <p>📅 <strong>공연 운영 기간:</strong> <span th:text="${stats.period}">기간</span></p>
+	                <p>📈 <strong>전체 평균 예매율:</strong> <span class="rate-text" th:text="|${stats.totalRate}%|">0%</span></p>
+	            </div>
+	        </div>
+	        <div id="calendar"></div>
+	    </div>
+	    
+	    <div th:if="${showList != null and #lists.isEmpty(showList)}" style="text-align: center; padding: 50px;">
+	        <p>검색된 공연이 없습니다. 공연명을 다시 확인해주세요.</p>
+	    </div>
+	</div>
 
     <div th:replace="~{include/bottom::footer}"></div>
 

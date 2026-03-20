@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <title>관리자 - 공연 등록</title>
     <link rel="stylesheet" th:href="@{/css/admin/showInsert.css}">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
     <div th:replace="include/top::top"></div>
 </head>
 <body>
@@ -13,52 +16,86 @@
 
         <form th:action="@{/admin/showsave.do}" method="post" enctype="multipart/form-data" onsubmit="return validateAndSubmit()">
             
-            <div class="section">
-                <h2>1. 공연 기본 정보</h2>
-                <div class="form-group">
-                    <label>공연 제목</label>
-                    <input type="text" name="title" placeholder="예: B 공연 (2026)" required>
-                </div>
-                <div class="date-row">
-                    <div class="date-item"><label>전체 시작일</label><input type="date" name="startDate" id="startDate" required></div>
-                    <div class="date-item"><label>전체 종료일</label><input type="date" name="endDate" id="endDate" required></div>
-                </div>
-            </div>
+			
+			<div class="section">
+			    <h2>1. 공연 기본 정보</h2>
+			    
+			    <div class="info-row">
+			        <div class="title-visibility-group">
+			            <div class="form-group">
+			                <div class="label-with-inline">
+			                    <label>공연 제목</label>
+			                    <div class="visibility-small-inline">
+			                        <label><input type="radio" name="isVisible" value="1" checked> 노출</label>
+			                        <label><input type="radio" name="isVisible" value="0"> 숨김</label>
+			                    </div>
+			                </div>
+			                <input type="text" name="title" placeholder="예: B 공연 (2026)" class="short-input" required>
+			            </div>
+			            <p class="help-text" style="font-size: 0.85em; color: #666; margin-top: 10px;">
+			                * 오른쪽 달력에서 시작일과 종료일을 각각 선택하세요.
+			            </p>
+						<div class="help-text">
+									        <small>* '숨김' 처리 시 사용자 앱/웹 목록에 나타나지 않습니다.</small>
+									    </div>
+			        </div>
 
-            <div class="section">
-                <h2>2. 요일별 회차 및 생성 범위 설정</h2>
-                <div class="day-schedule-container">
-                    <div th:each="day : ${#strings.arraySplit('월,화,수,목,금,토,일', ',')}" class="day-schedule-item">
-                        <div class="day-header">
-                            <span class="day-name">[[${day}]]</span>
-                            <div class="radio-group">
-                                <label><input type="radio" th:name="'is' + ${day} + 'Show'" value="Y" th:data-day="${day}" onclick="handleRadioClick(this, true)"> 있음</label>
-                                <label><input type="radio" th:name="'is' + ${day} + 'Show'" value="N" checked th:data-day="${day}" onclick="handleRadioClick(this, false)"> 없음</label>
-                            </div>
-                        </div>
-                        <div th:id="'time-area-' + ${day}" class="time-input-area" style="display:none;">
-                            <div th:id="'time-list-' + ${day}" class="time-list"></div>
-                            <button type="button" class="btn-add-time" th:data-day="${day}" onclick="addTimeInputByData(this)">+ 시간 추가</button>
-                        </div>
-                    </div>
-                </div>
-                <input type="hidden" name="weeklySchedule" id="weeklyScheduleInput">
+			        <div class="dual-calendar-container">
+			            <div class="calendar-item">
+			                <span class="card-label">📅 공연 시작일</span>
+			                <div id="start-calendar-inline"></div> <input type="hidden" name="startDate" id="startDate" required>
+			            </div>
+			            
+			            <div class="calendar-item">
+			                <span class="card-label">🏁 공연 종료일</span>
+			                <div id="end-calendar-inline"></div> <input type="hidden" name="endDate" id="endDate" required>
+			            </div>
+			        </div>
+			    </div>
+			</div>
+				
+			</div>
 
-                <div id="open-period-container">
-                    <div class="open-period-box" id="open-box-1">
-                        <div class="period-title"><strong>🎟️ 생성할 회차 범위 (세트 1)</strong></div>
-                        <div class="date-row">
-                            <div class="date-item"><label>오픈 시작일</label><input type="date" name="openStartDates" class="openStart" required></div>
-                            <div class="date-item"><label>오픈 종료일</label><input type="date" name="openEndDates" class="openEnd" required></div>
-                        </div>
-                        <div class="form-group">
-                            <label>🔔 티켓 예매 시작 일시</label>
-                            <input type="datetime-local" name="openingTimes" required>
-                        </div>
-                    </div>
-                </div>
-                <button type="button" class="btn-add" onclick="addOpenPeriod()" style="width:100%; margin-top:15px;">+ 티켓 오픈 범위 추가</button>
-            </div>
+			<div class="section">
+			    <h2>2. 요일별 회차 및 생성 범위 설정</h2>
+			    
+			    <div class="day-schedule-container">
+			        <div th:each="day : ${#strings.arraySplit('월,화,수,목,금,토,일', ',')}" class="day-schedule-item">
+			            <div class="day-header">
+			                <span class="day-name">[[${day}]]</span>
+			                <div class="radio-group">
+			                    <label><input type="radio" th:name="'is' + ${day} + 'Show'" value="Y" th:data-day="${day}" onclick="handleRadioClick(this, true)"> 있음</label> 
+			                    <label><input type="radio" th:name="'is' + ${day} + 'Show'" value="N" checked th:data-day="${day}" onclick="handleRadioClick(this, false)"> 없음</label>
+			                </div>
+			            </div>
+			            <div th:id="'time-area-' + ${day}" class="time-input-area" style="display:none;">
+			                <div th:id="'time-list-' + ${day}" class="time-list"></div>
+			                <button type="button" class="btn-add-time" th:data-day="${day}" onclick="addTimeInputByData(this)">+ 시간 추가</button>
+			            </div>
+			        </div>
+			    </div>
+			    <input type="hidden" name="weeklySchedule" id="weeklyScheduleInput">
+
+				<div id="open-period-container">
+				    <div class="open-period-box" id="open-box-1">
+				        <div class="period-title"><strong>🎟️ 생성할 회차 범위 (세트 1)</strong></div>
+				        <div class="date-row"> <div class="date-item">
+				                <label>오픈 시작일</label>
+				                <input type="date" name="openStartDates" class="openStart" required>
+				            </div>
+				            <div class="date-item">
+				                <label>오픈 종료일</label>
+				                <input type="date" name="openEndDates" class="openEnd" required>
+				            </div>
+				            <div class="date-item flex-grow-2">
+				                <label>🔔 티켓 예매 시작 일시</label>
+				                <input type="datetime-local" name="openingTimes" required>
+				            </div>
+				        </div>
+				    </div>
+				</div>
+			    <button type="button" class="btn-add" onclick="addOpenPeriod()" style="width:100%; margin-top:15px;">+ 티켓 오픈 범위 추가</button>
+			</div>
 
             <div class="section">
                 <h2>3. 이미지 정보</h2>
@@ -77,14 +114,18 @@
             <div class="section">
                 <h2>4. 좌석 등급 설정 및 배치도 선택</h2>
                 <button type="button" class="btn-add" onclick="addGradeRow()">+ 등급 추가</button>
-                <div id="grade-container">
-                    <div class="grade-item" id="grade-row-1">
-                        <span class="grade-label">1번 등급:</span>
-                        <input type="text" name="gradeNames" placeholder="등급명" required oninput="updateSelectors()">
-                        <input type="text" name="gradePrices" placeholder="가격(원)" required oninput="handlePriceInput(this)">
-                        <label><input type="checkbox" name="isSecret" onchange="togglePrice(this); updateSelectors();"> 제작사 보유석</label>
-                    </div>
-                </div>
+				<div id="grade-container">
+				    <div class="grade-item" id="grade-row-1">
+				        <span class="grade-label">1번 등급:</span>
+				        <input type="text" name="gradeNames" placeholder="등급명" required oninput="updateSelectors()">
+				        <input type="text" name="gradePrices" placeholder="가격(원)" required oninput="handlePriceInput(this)">
+				        
+				        <label>
+				            <input type="checkbox" name="isSecret" value="1" onchange="togglePrice(this); updateSelectors();"> 
+				            제작사 보유석
+				        </label>
+				    </div>
+				</div>
                 <div class="seat-work-area">
                     <p>💡 <b>등급 선택 후 좌석을 클릭하세요.</b></p>
                     <div id="grade-selectors" class="selector-row"></div>
@@ -200,14 +241,14 @@
 	    }
 
 	    // 유틸리티 로직들 (생략 없음)
-	    window.syncOpenDateLimits = function() {
-	        const minDate = document.getElementById('startDate').value;
-	        const maxDate = document.getElementById('endDate').value;
-	        document.querySelectorAll('input[name="openStartDates"], input[name="openEndDates"]').forEach(input => {
-	            if(minDate) input.setAttribute('min', minDate);
-	            if(maxDate) input.setAttribute('max', maxDate);
-	        });
-	    };
+		window.syncOpenDateLimits = function() {
+		    const minDate = document.getElementById('startDate').value;
+		    const maxDate = document.getElementById('endDate').value;
+		    document.querySelectorAll('.openStart, .openEnd').forEach(input => {
+		        if(minDate) input.setAttribute('min', minDate);
+		        if(maxDate) input.setAttribute('max', maxDate);
+		    });
+		};
 
 	    window.handleInputTime = function(el) {
 	        let val = el.value.replace(/\D/g, ''); 
@@ -243,19 +284,45 @@
 	        document.getElementById('weeklyScheduleInput').value = JSON.stringify(schedule);
 	    };
 	    
-	    window.addOpenPeriod = function() {
-	        const minDate = document.getElementById('startDate').value;
-	        const maxDate = document.getElementById('endDate').value;
-	        if(!minDate || !maxDate) { alert("전체 공연 기간을 먼저 입력하세요."); return; }
-	        const count = document.querySelectorAll('.open-period-box').length + 1;
-	        const div = document.createElement('div');
-	        div.className = 'open-period-box';
-	        div.innerHTML = `<div class="period-title"><strong>🎟️ 생성할 회차 범위 (세트 ${count})</strong> <button type="button" onclick="this.closest('.open-period-box').remove()">삭제</button></div>
-	            <div class="date-row"><div class="date-item"><label>시작일</label><input type="date" name="openStartDates" required min="${minDate}" max="${maxDate}"></div>
-	            <div class="date-item"><label>종료일</label><input type="date" name="openEndDates" required min="${minDate}" max="${maxDate}"></div></div>
-	            <div class="form-group"><label>🔔 티켓 예매 시작 일시</label><input type="datetime-local" name="openingTimes" required></div>`;
-	        document.getElementById('open-period-container').appendChild(div);
-	    };
+		window.addOpenPeriod = function() {
+		    const minDate = document.getElementById('startDate').value;
+		    const maxDate = document.getElementById('endDate').value;
+		    
+		    if(!minDate || !maxDate) { 
+		        alert("전체 공연 기간을 먼저 입력하세요."); 
+		        return; 
+		    }
+		    
+		    const count = document.querySelectorAll('.open-period-box').length + 1;
+		    const div = document.createElement('div');
+		    div.className = 'open-period-box';
+		    
+		    // CSS 가로 한 줄 배치를 위해 date-row 안에 모든 요소를 넣음
+		    div.innerHTML = `
+		        <div class="period-title">
+		            <strong>🎟️ 생성할 회차 범위 (세트 ${count})</strong> 
+		            <button type="button" onclick="this.closest('.open-period-box').remove()" 
+		                style="color:#dc3545; border:none; background:none; cursor:pointer; font-weight:bold;">삭제</button>
+		        </div>
+		        <div class="date-row">
+		            <div class="date-item">
+		                <label>시작일</label>
+		                <input type="date" name="openStartDates" class="openStart" required min="${minDate}" max="${maxDate}">
+		            </div>
+		            <div class="date-item">
+		                <label>종료일</label>
+		                <input type="date" name="openEndDates" class="openEnd" required min="${minDate}" max="${maxDate}">
+		            </div>
+		            <div class="date-item flex-grow-2">
+		                <label>🔔 티켓 예매 시작 일시</label>
+		                <input type="datetime-local" name="openingTimes" required>
+		            </div>
+		        </div>`;
+		        
+		    document.getElementById('open-period-container').appendChild(div);
+		};
+		
+		
 
 	    window.togglePrice = function(checkbox) {
 	        const parent = checkbox.closest('.grade-item');
@@ -270,11 +337,18 @@
 	        if (nextNum > 5) { alert("최대 5개까지 가능합니다."); return; }
 	        const div = document.createElement('div');
 	        div.className = 'grade-item';
-	        div.innerHTML = `<span class="grade-label">${nextNum}번 등급:</span>
-	            <input type="text" name="gradeNames" required oninput="updateSelectors()">
-	            <input type="text" name="gradePrices" required oninput="handlePriceInput(this)">
-	            <label><input type="checkbox" name="isSecret" onchange="togglePrice(this); updateSelectors();"> 제작사 보유석</label>
-	            <button type="button" onclick="this.parentElement.remove(); updateSelectors();">×</button>`;
+			div.innerHTML = `
+			        <span class="grade-label">${nextNum}번 등급:</span>
+			        <input type="text" name="gradeNames" required oninput="updateSelectors()" placeholder="등급명">
+			        <input type="text" name="gradePrices" required oninput="handlePriceInput(this)" placeholder="가격">
+			        
+			        <label>
+			            <input type="checkbox" name="isSecret" value="${nextNum}" onchange="togglePrice(this); updateSelectors();"> 
+			            제작사 보유석
+			        </label>
+			        
+			        <button type="button" onclick="this.parentElement.remove(); updateSelectors();">×</button>
+			    `;
 	        container.appendChild(div);
 	        updateSelectors();
 	    };
@@ -296,6 +370,106 @@
 
 	    window.handlePriceInput = function(el) { el.value = el.value.replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ","); };
 	    window.validateAndSubmit = function() { collectSchedule(); return true; };
+		
+		document.addEventListener("DOMContentLoaded", function() {
+		    // 1. 시작일 달력
+		    flatpickr("#start-calendar-inline", {
+		        inline: true,
+		        locale: "ko",
+		        dateFormat: "Y-m-d",
+		        onChange: function(selectedDates, dateStr) {
+		            document.getElementById('startDate').value = dateStr;
+		            // 종료일 달력의 최소 날짜를 시작일로 제한 (논리적 오류 방지)
+		            endPicker.set("minDate", dateStr);
+		            if(typeof syncOpenDateLimits === 'function') syncOpenDateLimits();
+		        }
+		    });
+
+		    // 2. 종료일 달력
+		    const endPicker = flatpickr("#end-calendar-inline", {
+		        inline: true,
+		        locale: "ko",
+		        dateFormat: "Y-m-d",
+		        onChange: function(selectedDates, dateStr) {
+		            document.getElementById('endDate').value = dateStr;
+		            if(typeof syncOpenDateLimits === 'function') syncOpenDateLimits();
+		        }
+		    });
+		});
+		
+		
+		document.addEventListener("DOMContentLoaded", function() {
+		    // 1. 페이지 로드시 첫 번째 세트 달력 그리기
+		    const firstBox = document.querySelector("#open-box-1");
+		    if(firstBox) initInlineCalendar(firstBox);
+		});
+
+		// [중요] 세트별 달력 초기화 함수 (신규/기존 공통)
+		function initInlineCalendar(container) {
+		    const startDiv = container.querySelector(".open-start-calendar");
+		    const endDiv = container.querySelector(".open-end-calendar");
+		    const startInput = container.querySelector(".openStart");
+		    const endInput = container.querySelector(".openEnd");
+
+		    // 시작일 달력
+		    const startPicker = flatpickr(startDiv, {
+		        inline: true,
+		        locale: "ko",
+		        dateFormat: "Y-m-d",
+		        onChange: function(selectedDates, dateStr) {
+		            startInput.value = dateStr;
+		            endPicker.set("minDate", dateStr); // 종료일이 시작일보다 빠를 수 없게 제한
+		        }
+		    });
+
+		    // 종료일 달력
+		    const endPicker = flatpickr(endDiv, {
+		        inline: true,
+		        locale: "ko",
+		        dateFormat: "Y-m-d",
+		        onChange: function(selectedDates, dateStr) {
+		            endInput.value = dateStr;
+		        }
+		    });
+		}
+
+		/* --- 이미지 미리보기 로직 --- */
+
+		// 메인 포스터용 (단일)
+		function previewSingle(input, targetId) {
+		    const previewBox = document.getElementById(targetId);
+		    previewBox.innerHTML = ""; // 기존 미리보기 삭제
+
+		    if (input.files && input.files[0]) {
+		        const reader = new FileReader();
+		        reader.onload = function(e) {
+		            const img = document.createElement("img");
+		            img.src = e.target.result;
+		            img.className = "preview-img"; // CSS에서 크기 조절 예정
+		            previewBox.appendChild(img);
+		        };
+		        reader.readAsDataURL(input.files[0]);
+		    }
+		}
+
+		// 상세 이미지용 (다중)
+		function previewMultiple(input, targetId) {
+		    const previewBox = document.getElementById(targetId);
+		    previewBox.innerHTML = ""; // 기존 미리보기 삭제
+
+		    if (input.files) {
+		        Array.from(input.files).forEach(file => {
+		            const reader = new FileReader();
+		            reader.onload = function(e) {
+		                const img = document.createElement("img");
+		                img.src = e.target.result;
+		                img.className = "preview-img-multiple"; // CSS에서 크기 조절 예정
+		                previewBox.appendChild(img);
+		            };
+		            reader.readAsDataURL(file);
+		        });
+		    }
+		}
 	</script>
 </body>
 </html>

@@ -1,20 +1,52 @@
 /* --- [1] 기본 레이아웃 및 공통 스타일 --- */
 .admin-container { max-width: 1200px; margin: 40px auto; padding: 0 20px; color: #333; }
 .page-title { text-align: center; font-size: 2.2em; font-weight: 700; margin-bottom: 40px; color: #222; }
+
+/* 섹션 테두리 양식 유지 */
 .section { background: #fff; border-radius: 12px; padding: 30px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border: 1px solid #eee; }
 .section h2 { font-size: 1.4em; margin-bottom: 20px; color: #007bff; font-weight: 600; border-left: 5px solid #007bff; padding-left: 15px; }
-.form-group { margin-bottom: 20px; }
-.form-group label { display: block; font-weight: 600; margin-bottom: 8px; }
-.form-group input[type="text"], .form-group input[type="datetime-local"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; }
 
-/* --- [2] 날짜 및 운영 기간 설정 --- */
-.date-row { display: flex; gap: 20px; flex-wrap: wrap; }
-.date-item { flex: 1; min-width: 200px; }
-.date-item label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 0.9em; }
-.date-item input[type="date"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
-.open-period-box { background: #e7f3ff; padding: 25px; border-radius: 12px; border: 1px solid #b8daff; margin-top: 30px; }
+/* 공연 기본 정보 가로 배치 */
+.info-row { display: flex; gap: 40px; align-items: flex-start; margin-bottom: 10px; }
 
-/* --- [3] 요일별 회차 설정 --- */
+/* 제목 영역: 너비 고정 및 입력칸 짧게 */
+.title-visibility-group { flex: 0 0 380px !important; }
+.short-input { width: 100%; max-width: 380px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; }
+
+/* 노출 여부 라벨 인라인 배치 */
+.label-with-inline { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.visibility-small-inline { 
+    display: flex; gap: 8px; font-size: 0.8em; background: #f1f3f5; 
+    padding: 2px 10px; border-radius: 20px; border: 1px solid #dee2e6;
+}
+.visibility-small-inline label { margin-bottom: 0 !important; cursor: pointer; display: flex; align-items: center; gap: 3px; font-weight: 500; }
+.visibility-small-inline input[type="radio"] { width: 13px; height: 13px; margin: 0; cursor: pointer; }
+
+/* --- [섹션 1 전용] 인라인 달력 스타일 (유지) --- */
+.dual-calendar-container { flex: 1; display: flex; gap: 20px; justify-content: flex-start; }
+.calendar-item { flex: 0 0 300px; } 
+.card-label { display: block; margin-bottom: 10px; color: #007bff; font-weight: bold; font-size: 0.9em; }
+.flatpickr-calendar.inline { border: 1px solid #eee !important; box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important; width: 100% !important; }
+
+/* --- [섹션 2 전용] 오픈 범위 설정 (가로 한 줄 핵심 스타일) --- */
+.open-period-box { background: #e7f3ff; padding: 25px; border-radius: 12px; border: 1px solid #b8daff; margin-top: 20px; }
+.period-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+
+/* ★ 티켓 예매 시간을 포함하여 모두 한 줄로 배치 */
+.date-row { 
+    display: flex; 
+    gap: 15px; 
+    flex-wrap: nowrap !important; /* 절대 줄바꿈 방지 */
+    align-items: flex-end; 
+}
+
+.date-item { flex: 1; min-width: 0; }
+.flex-grow-2 { flex: 1.5; min-width: 0; } /* 예매 시간 칸을 조금 더 넓게 */
+
+.date-item label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 0.9em; white-space: nowrap; }
+.date-item input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em; }
+
+/* --- [3] 요일별 회차 설정 (기존 유지) --- */
 .day-schedule-container { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 10px; overflow-x: auto; }
 .day-schedule-item { flex: 1; min-width: 100px; border: 1px solid #e0e0e0; border-radius: 10px; padding: 15px; background: #fff; }
 .day-header { text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
@@ -23,37 +55,12 @@
 .btn-remove-time { flex: 0 0 30px; background: #dc3545; color: white; border: none; padding: 8px 0; border-radius: 4px; cursor: pointer; }
 .btn-add-time { width: 100%; padding: 7px; background: #6c757d; color: white; border: none; border-radius: 4px; font-size: 0.8em; cursor: pointer; }
 
-/* --- [4] 좌석 설정 및 그리드 (클릭 모드) --- */
-.grade-item { display: flex; gap: 10px; margin-bottom: 12px; align-items: center; }
-.seat-work-area {
-	 margin-top: 30px; text-align: center; background: #f9f9f9; padding: 30px; border-radius: 15px; }
-.seat-grid { 
-    display: grid; 
-    grid-template-columns: repeat(6, 50px); 
-    grid-template-rows: repeat(5, 50px); 
-    gap: 12px; 
-    justify-content: center; 
-    margin: 20px auto; 
-    width: fit-content; 
-    pointer-events: auto !important; /* 클릭 가능하도록 강제 */
-}
-.seat { 
-    width: 50px; 
-    height: 50px; 
-    background: #eee; 
-    border: 1px solid #ccc; 
-    border-radius: 8px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    font-size: 14px; 
-    font-weight: bold; 
-    cursor: pointer !important; 
-    pointer-events: auto !important; /* 클릭 가능하도록 강제 */
-    user-select: none;
-}
+/* --- [4] 좌석 설정 및 그리드 (기존 유지) --- */
+.seat-work-area { margin-top: 30px; text-align: center; background: #f9f9f9; padding: 30px; border-radius: 15px; }
+.seat-grid { display: grid; grid-template-columns: repeat(6, 50px); grid-template-rows: repeat(5, 50px); gap: 12px; justify-content: center; margin: 20px auto; width: fit-content; }
+.seat { width: 50px; height: 50px; background: #eee; border: 1px solid #ccc; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; cursor: pointer; }
 
-/* 등급 색상 (우선순위 높임) */
+/* 등급 색상 및 버튼 */
 .grade-color-1 { background-color: #ff5e5e !important; color: white !important; }
 .grade-color-2 { background-color: #ffbd4a !important; color: white !important; }
 .grade-color-3 { background-color: #4db8ff !important; color: white !important; }
@@ -61,10 +68,48 @@
 .grade-color-5 { background-color: #b388ff !important; color: white !important; }
 .seat.secret-seat { background-color: #333 !important; color: #fff !important; border: 2px solid #d9534f !important; }
 
-/* 버튼 및 기타 */
 .btn-submit { width: 100%; padding: 20px; font-size: 1.3em; background: #28a745; color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; margin-top: 20px; margin-bottom: 60px; }
 .selector-btn { padding: 10px 20px; border: 1px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; font-weight: 600; }
 .selector-btn.active { background: #007bff; color: #fff; border-color: #007bff; }
 
-/* 드래그 영역은 이제 사용하지 않으므로 완전히 숨김 */
-#drag-selection-rect { display: none !important; }
+
+/* --- [5] 이미지 미리보기 스타일 --- */
+.preview-box {
+    margin-top: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* 메인 포스터 미리보기 (크게) */
+.preview-img {
+    width: 200px;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* 상세 이미지 미리보기 (여러 장이므로 작게) */
+.preview-img-multiple {
+    width: 120px;
+    height: 120px;
+    object-fit: cover; /* 이미지가 찌그러지지 않게 꽉 채움 */
+    border-radius: 6px;
+    border: 1px solid #eee;
+}
+
+/* 파일 입력창 스타일 살짝 다듬기 */
+input[type="file"] {
+    display: block;
+    width: 100%;
+    padding: 8px;
+    background: #f9f9f9;
+    border: 1px dashed #ccc;
+    border-radius: 6px;
+    cursor: pointer;
+}
+input[type="file"]:hover {
+    background: #f1f3f5;
+    border-color: #007bff;
+}

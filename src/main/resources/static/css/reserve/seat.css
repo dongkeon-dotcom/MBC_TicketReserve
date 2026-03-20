@@ -131,8 +131,13 @@ body { background-color: #f8f9fa; margin: 0; font-family: 'Pretendard', sans-ser
 	    border: none !important;
 	    cursor: default !important; /* 포인터 커서 제거 */
 	    pointer-events: none; /* 마우스 클릭/호버 이벤트 완전 차단 */
+		opacity: 0.7;
  
- }
+ }	
+ /* 선택 가능한 좌석 스타일 (기존 유지) */
+	.seat.available {
+	    cursor: pointer;
+	}
 .seat.is-secret { background-color: #333; cursor: not-allowed; }
 .seat.selected { background-color: #fff; border: 3px solid #ff5a00; color: #000; font-weight: bold; }
 .grade-status-area { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 20px; }

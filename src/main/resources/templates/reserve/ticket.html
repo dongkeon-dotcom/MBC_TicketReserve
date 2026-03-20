@@ -300,17 +300,33 @@
 								            const gradeContainer = document.getElementById('grade-container');
 								            gradeContainer.innerHTML = '';
 								            
-								            if (s.seatStatus && s.seatStatus.length > 0) {
-								                s.seatStatus.forEach(status => {
-								                    const infoDiv = document.createElement('div');
-								                    infoDiv.className = 'grade-info';
-								                    infoDiv.innerHTML = `
-								                        <span class="grade-name">${status.gradeName}</span>
-								                        <span class="grade-price"><b style="color: #ff5a00;">${status.remainCount}</b>석</span>
-								                    `;
-								                    gradeContainer.appendChild(infoDiv);
-								                });
-								            }
+											if (s.seatStatus && s.seatStatus.length > 0) {
+											    s.seatStatus.forEach(status => {
+											        
+											        // [핵심] 잔여석(remainCount)이 0석인 경우, 
+											        // 이것이 '매진'인 건지 '아예 판매하지 않는 보유석(상태 3)'인 건지 판단해야 합니다.
+											        // 만약 백엔드에서 상태 0만 카운트해서 보낸다면, 0석인 것은 아예 안 그리도록 설정:
+											        
+											        if (status.remainCount <= 0) {
+											            // 이 등급은 판매 가능한 좌석이 1개도 없으므로(보유석이거나 진짜 매진)
+											            // 리스트에 추가하지 않고 그냥 넘어갑니다(skip).
+											            return; 
+											        }
+
+											        const infoDiv = document.createElement('div');
+											        infoDiv.className = 'grade-info';
+											        infoDiv.innerHTML = `
+											            <span class="grade-name">${status.gradeName}</span>
+											            <span class="grade-price"><b style="color: #ff5a00;">${status.remainCount}</b>석</span>
+											        `;
+											        gradeContainer.appendChild(infoDiv);
+											    });
+											    
+											    // 만약 모든 등급이 보유석이라서 아무것도 추가되지 않았다면 안내 문구 출력
+											    if (gradeContainer.innerHTML === '') {
+											        gradeContainer.innerHTML = '<p class="empty-msg">선택 가능한 좌석이 없습니다.</p>';
+											    }
+											}
 								        })
 								        .catch(error => {
 								            console.error("예매 여부 확인 중 오류:", error);

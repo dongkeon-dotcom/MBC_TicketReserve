@@ -24,10 +24,16 @@ public class PerformanceSaveDto {
     private MultipartFile posterFile; 
     private List<MultipartFile> detailFiles;
     private List<Long> deleteImageIds;          // 삭제할 이미지 ID들
-    
+    private List<String> isSecret; // [추가] 체크된 등급 번호들이 넘어옵니다 (예: ["1", "3"])
     private List<String> gradeNames;
     private List<String> gradePrices;
     
     private String weeklySchedule;
     private String seatGradeMap;
+ // [추가] 노출 여부 필드 (HTML의 name="isVisible"과 매핑)
+    // DB 타입이 tinyint이므로 Integer 또는 boolean으로 받으면 됩니다.
+    private Integer isVisible; 
+    
+    // [선택 사항 추가] 추천 공연 여부 필드
+    private Integer isFeatured;
 }
