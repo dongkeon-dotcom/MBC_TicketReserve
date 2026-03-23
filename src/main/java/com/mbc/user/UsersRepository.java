@@ -18,6 +18,6 @@ public interface UsersRepository extends JpaRepository<Users,Long> {
 	// 탈퇴하지 않은(isDeleted = false) 유저 중 아이디로 찾기
     Optional<Users> findByUserIdAndDelYnFalse(String userId);
     
-    @Query("SELECT loginType FROM Users WHERE userId = :userId AND name = :name")
+    @Query("SELECT loginType, delYn FROM Users WHERE userId = :userId AND name = :name")
     Optional<String> findLoginTypeByUserIdAndName(String userId, String name);
 }
