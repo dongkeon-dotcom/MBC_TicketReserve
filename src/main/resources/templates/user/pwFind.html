@@ -74,6 +74,7 @@ if (message) {
     function validateInfo(){
     	const userId = document.getElementById('userId').value;
     	const name = document.getElementById('name').value;
+    	let userType = ""; 
     	
     	if(!userId || !name){
     		alert("아이디(이메일), 이름을 입력해주세요.");
@@ -96,7 +97,14 @@ if (message) {
     			alert("해당 계정은 탈퇴 처리된 아이디(이메일)입니다.\n"+
     					"고객센터에 문의해 주세요.")
     		} else if(result !== "LOCAL,false" && result !== "" && result !== "null"){
-    			alert("해당 계정은 " + result + "(으)로 가입된 계정입니다.\n"+
+    			if(result.includes("GOOGLE")){
+    				userType = "구글";
+    			} else if(result.includes("NAVER")){
+    				userType = "네이버";
+    			} else{
+    				userType = "카카오";
+    			}
+    			alert("해당 계정은 " + userType + " 간편 로그인으로 가입된 계정입니다.\n"+
     					"해당 간편로그인을 이용해 주세요.");
     		} else{
     			if(confirm("확인되었습니다. 인증 메일을 발송할까요?")){
