@@ -834,15 +834,6 @@ public class AdminPerformanceService {
     
     
     
-    /**
-     * 티켓 오픈 예정인 '공연 회차' 목록 조회
-     * (Performance + PerformanceSchedule 조인)
-     */
-    public List<PerformanceSchedule> getUpcomingTicketingSchedules() {
-        // 현재 시간 기준으로 티켓 오픈이 아직 안 됐거나, 최근에 오픈된 회차 조회
-        // 리포지토리 메서드는 아래 2번에서 정의합니다.
-        return scheduleRepository.findByOpeningTimeAfterOrderByOpeningTimeAsc(LocalDateTime.now());
-    }
     
     
     /**
@@ -868,5 +859,22 @@ public class AdminPerformanceService {
         return summary;
     }
     
+
+    /**
+     * 티켓 오픈 예정인 '공연 회차' 목록 조회
+     * (Performance + PerformanceSchedule 조인)
+     */
+    public List<PerformanceSchedule> getUpcomingTicketingSchedules() {
+        // 현재 시간으로부터 12시간 전에 오픈한 공연부터 ~ 앞으로 오픈할 모든 공연 조회
+        // 이렇게 하면 오픈 후 12시간 동안은 목록에 계속 남아있습니다.
+        LocalDateTime threshold = LocalDateTime.now().minusHours(12); 
+        
+        return scheduleRepository.findControlTargetSchedules(threshold);
+    }
     
+    
+    
+    
+    
+
 }

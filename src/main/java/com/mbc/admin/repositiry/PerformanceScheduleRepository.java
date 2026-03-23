@@ -59,11 +59,11 @@ public interface PerformanceScheduleRepository extends JpaRepository<Performance
             "ORDER BY ps.start_time ASC", nativeQuery = true)
     List<SalesDataMapping> findUpcomingSchedules(@Param("performanceId") Long performanceId);
     
- // PerformanceScheduleRepository.java 에서 사용 권장
-    @Query("SELECT s FROM PerformanceSchedule s JOIN FETCH s.performance p " +
-           "WHERE s.openingTime >= :threshold " +
-           "ORDER BY s.openingTime ASC")
-    List<PerformanceSchedule> findUpcomingTicketingSchedules(@Param("threshold") LocalDateTime threshold);
+    /**
+     * [수정] 관제 센터 전용: 티켓 오픈 전후 데이터를 모두 조회
+     * threshold : 기준 시간 (보통 현재 시간에서 몇 시간 전으로 설정)
+     */
+   
  // 1. 관제용: 지금 이후로 티켓 오픈이 예정된 회차들만 오픈 시간순으로 보기
     // (대기열을 미리 준비해야 하는 '예정된' 것들만 추출)
     List<PerformanceSchedule> findByOpeningTimeAfterOrderByOpeningTimeAsc(LocalDateTime now);
@@ -72,8 +72,20 @@ public interface PerformanceScheduleRepository extends JpaRepository<Performance
     List<PerformanceSchedule> findByOpeningTimeBeforeOrderByOpeningTimeDesc(LocalDateTime now);
     
     
-
-       
+    /**
+     * [수정] 관제 센터 전용: 티켓 오픈 전후 데이터를 모두 조회
+     * threshold : 기준 시간 (보통 현재 시간에서 몇 시간 전으로 설정)
+     */
+    @Query("SELECT s FROM PerformanceSchedule s " +
+    	       "JOIN FETCH s.performance p " +
+    	       "WHERE s.scheduleId IN (" +
+    	       "    SELECT MIN(s2.scheduleId) " +
+    	       "    FROM PerformanceSchedule s2 " +
+    	       "    WHERE s2.openingTime >= :threshold " +
+    	       "    GROUP BY s2.performance.performanceId" +
+    	       ") " +
+    	       "ORDER BY s.openingTime ASC")
+    	List<PerformanceSchedule> findControlTargetSchedules(@Param("threshold") LocalDateTime threshold);
     
     
     
