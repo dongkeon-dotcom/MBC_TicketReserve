@@ -57,7 +57,9 @@ public class AdminQueueController {
     @GetMapping("/{showId}/is-enabled")
     @ResponseBody
     public ResponseEntity<Boolean> isEnabled(@PathVariable String showId) {
+        // 여기서 waitingQueueService.isQueueEnabled(showId)를 호출해야 합니다.
         boolean enabled = waitingQueueService.isQueueEnabled(showId);
+        System.out.println("공연 ID " + showId + "의 가동 상태: " + enabled); // 서버 로그로 확인!
         return ResponseEntity.ok(enabled);
     }
 

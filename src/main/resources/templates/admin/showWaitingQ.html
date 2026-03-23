@@ -100,50 +100,54 @@
     <div th:replace="~{include/bottom::footer}"></div>
 
     <script th:inline="javascript">
-        $(document).ready(function() {
-            // 초기 로드 시 상태 확인
-            refreshDashboard();
-            // 5초 간격 모니터링
-            setInterval(refreshDashboard, 5000);
-        });
+		document.addEventListener('DOMContentLoaded', function() {
+		    // 초기 로드 시 상태 확인
+		    refreshDashboard();
+		    // 5초 간격 모니터링
+		    setInterval(refreshDashboard, 5000);
+		});
 
-        async function refreshDashboard() {
-            const cards = document.querySelectorAll('.q-card');
-            
-            for (let card of cards) {
-                const showId = card.id.replace('card-', '');
-                
-                try {
-                    // 1. 인원수 조회
-                    const countRes = await fetch(`/admin/queue/${showId}/size`);
-                    const count = await countRes.json();
-                    document.getElementById(`cnt-${showId}`).innerText = count.toLocaleString();
+		async function refreshDashboard() {
+		    const cards = document.querySelectorAll('.q-card');
+		    
+		    for (let card of cards) {
+		        const showId = card.id.replace('card-', '');
+		        
+		        try {
+		            // 가동 상태 조회
+		            const statusRes = await fetch(`/admin/queue/${showId}/is-enabled`);
+		            const isEnabled = await statusRes.json();
+		            
+		            console.log(`[확인] 공연 ${showId} 상태:`, isEnabled); // 👈 로그 추가
+		            
+		            // UI 업데이트 함수 호출
+		            updateUI(showId, isEnabled);
+		        } catch (e) {
+		            console.error("데이터 갱신 실패:", showId, e);
+		        }
+		    }
+		}
 
-                    // 2. 가동 상태 조회
-                    const statusRes = await fetch(`/admin/queue/${showId}/is-enabled`);
-                    const isEnabled = await statusRes.json();
-                    
-                    updateUI(showId, isEnabled);
-                } catch (e) {
-                    console.error("데이터 갱신 실패:", showId);
-                }
-            }
-        }
-
-        function updateUI(showId, isEnabled) {
-            const card = document.getElementById(`card-${showId}`);
-            const statusText = document.getElementById(`status-text-${showId}`);
-            
-            if (isEnabled) {
-                card.classList.add('active');
-                statusText.innerText = "🟢 가동 중";
-                statusText.style.color = "#27ae60";
-            } else {
-                card.classList.remove('active');
-                statusText.innerText = "🔴 중지됨";
-                statusText.style.color = "#e74c3c";
-            }
-        }
+		function updateUI(showId, isEnabled) {
+		    const card = document.getElementById(`card-${showId}`);
+		    const statusText = document.getElementById(`status-text-${showId}`);
+		    
+		    if (card && statusText) {
+		        if (isEnabled === true || isEnabled === "true") { // 문자열 "true"인 경우도 대비
+		            card.style.borderTopColor = "#27ae60"; // 🟢 가동 시 초록색 강제 적용
+		            card.classList.add('active'); // CSS 클래스 추가
+		            statusText.innerText = "🟢 가동 중";
+		            statusText.style.color = "#27ae60";
+		        } else {
+		            card.style.borderTopColor = "#ccc"; // ⚪ 중지 시 회색 강제 적용
+		            card.classList.remove('active');
+		            statusText.innerText = "🔴 중지됨";
+		            statusText.style.color = "#e74c3c";
+		        }
+		    } else {
+		        console.error(`ID가 card-${showId}인 요소를 찾을 수 없습니다.`);
+		    }
+		}
 
         async function toggleQueue(showId, action) {
             if (!confirm(`대기열 기능을 ${action === 'enable' ? '가동' : '중지'}하시겠습니까?`)) return;
