@@ -98,24 +98,37 @@ footer {
     z-index: 9999;
     transition: right 0.4s ease-in-out;
     box-shadow: -5px 0 15px rgba(0,0,0,0.1);
-    display: flex;
-    flex-direction: column;
-    padding: 20px 30px;
+    padding: 40px 30px;
 }
 
 .search-overlay.active {
     right: 0;
 }
 
+.search-inner {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
 .search-close-btn {
-    position: absolute;
-    top: 30px;
-    right: 30px;
-    font-size: 35px;
+    margin-left: auto;  
+    
+    /* 기존 스타일 유지 */
+    font-size: 40px;
     background: none;
     border: none;
     cursor: pointer;
     color: #2C3E50;
+    line-height: 1;
+    
+    margin-bottom: 60px;
+}
+
+/* 검색 입력창 컨테이너 (가로 너비에 맞게 조정) */
+.search-form-container {
+    width: 100%; /* 부모(33%) 안에서 꽉 차게 */
 }
 
 .search-input-wrapper {
