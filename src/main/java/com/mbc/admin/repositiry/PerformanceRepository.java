@@ -32,6 +32,5 @@ public interface PerformanceRepository extends JpaRepository<Performance, Long> 
 
     List<Performance> findByTitleContainingIgnoreCaseAndIsDeleted(String title, int isDeleted);
 
-
-
+   
 }

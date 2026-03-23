@@ -23,6 +23,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.mbc.admin.FileUtil;
 import com.mbc.admin.PerformanceListDto;
 import com.mbc.admin.PerformanceSaveDto;
+import com.mbc.admin.WaitingQueueService;
 import com.mbc.admin.entity.Performance;
 import com.mbc.admin.entity.PerformanceDetailImage;
 import com.mbc.admin.entity.PerformanceGradeConfig;
@@ -55,6 +56,11 @@ public class AdminPerformanceService {
     private final S3UploaderService s3UploaderService;
     private final PerformenceDetailImageRepository  detailImageRepository ;
     private final  OrderListRepository orderListRepository;
+    private final WaitingQueueService waitingQueueService; // 여기에 선언되어 있어야 함!
+    
+    
+    
+    
     // 생성자 주입 (모든 리포지토리를 포함하도록 업데이트)
     public AdminPerformanceService(
             PerformanceRepository performanceRepository, 
@@ -65,7 +71,8 @@ public class AdminPerformanceService {
             SeatInventoryRepository seatInventoryRepository, // 추가
             S3UploaderService s3UploaderService	,					// AWS S3 Upload용
             PerformenceDetailImageRepository  detailImageRepository,
-            OrderListRepository orderListRepository
+            OrderListRepository orderListRepository,
+            WaitingQueueService waitingQueueService
     ) {
         this.performanceRepository = performanceRepository;
         this.venueMasterRepository = venueMasterRepository;
@@ -78,6 +85,7 @@ public class AdminPerformanceService {
         this.objectMapper.registerModule(new JavaTimeModule()); 
         this.detailImageRepository  = detailImageRepository;
         this.orderListRepository =orderListRepository;
+        this.waitingQueueService = waitingQueueService;
     }
 
     /**
@@ -826,12 +834,39 @@ public class AdminPerformanceService {
     
     
     
+    /**
+     * 티켓 오픈 예정인 '공연 회차' 목록 조회
+     * (Performance + PerformanceSchedule 조인)
+     */
+    public List<PerformanceSchedule> getUpcomingTicketingSchedules() {
+        // 현재 시간 기준으로 티켓 오픈이 아직 안 됐거나, 최근에 오픈된 회차 조회
+        // 리포지토리 메서드는 아래 2번에서 정의합니다.
+        return scheduleRepository.findByOpeningTimeAfterOrderByOpeningTimeAsc(LocalDateTime.now());
+    }
     
     
-    
-    
-    
-    
+    /**
+     * 특정 공연의 실시간 대기열 요약 정보 (선택 사항)
+     */
+    public Map<String, Object> getQueueSummary(String showId) { // 여기서 showId는 String
+        Map<String, Object> summary = new HashMap<>();
+        
+        // 1. DB 조회를 위해 String -> Long 변환
+        Long id = Long.parseLong(showId); 
+        Performance p = performanceRepository.findById(id).orElse(null);
+        
+        if (p != null) {
+            // 2. Redis 조회를 위해 원래의 String showId 사용
+            // 만약 에러가 'Long'을 넣어야 한다고 나온다면 String.valueOf(showId) 대신 그냥 id를 넣으세요.
+            Long currentWaitingCount = waitingQueueService.getQueueSize(showId); 
+            boolean isEnabled = waitingQueueService.isQueueEnabled(showId);
+            
+            summary.put("title", p.getTitle());
+            summary.put("count", currentWaitingCount);
+            summary.put("isEnabled", isEnabled);
+        }
+        return summary;
+    }
     
     
 }

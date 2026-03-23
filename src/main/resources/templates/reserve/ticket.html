@@ -106,7 +106,7 @@
 		const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
 		const csrfHeader = document.querySelector('meta[name="_csrf_header"]') ? 
 		                   document.querySelector('meta[name="_csrf_header"]').getAttribute('content') : '';
-		
+	     const showId = /*[[${performance.performanceId}]]*/ 'default'; // 서버에서 전달하는 공연 고유 ID
 		
 	    const allSchedules = /*[[${schedules}]]*/ [];    
 	    let selectedScheduleId = null;
@@ -344,31 +344,31 @@
 					    }
 
 					    try {
-							// [추가] 입장 전 최종적으로 한 번 더 예매 내역을 체크하면 더 확실합니다.
-							        const checkRes = await fetch(`/reserve/check-reservation.do?scheduleId=${selectedScheduleId}&t=${new Date().getTime()}`, {
-							            headers: getHeaders()
-							        });
-							        const checkData = await checkRes.json();
-							        
-							        if (checkData.reserved) {
-							            alert("이미 예매 내역이 존재하는 회차입니다. 다른 회차를 선택해주세요.");
-							            return; // 여기서 return하면 아래의 팝업(openSeatPopup) 로직이 실행되지 않습니다.
-							        }
-							
-							
-							
-					        const response = await fetch('/reserve/check-queue'							, {
-							            method: 'GET', // POST 요청인지 확인하세요
-							            headers: getHeaders() // 추가됨
-							        });
+					        // [기존] 입장 전 최종적으로 한 번 더 예매 내역을 체크 (회차 기준)
+					        const checkRes = await fetch(`/reserve/check-reservation.do?scheduleId=${selectedScheduleId}&t=${new Date().getTime()}`, {
+					            headers: getHeaders()
+					        });
+					        const checkData = await checkRes.json();
+					        
+					        if (checkData.reserved) {
+					            alert("이미 예매 내역이 존재하는 회차입니다. 다른 회차를 선택해주세요.");
+					            return; 
+					        }
+
+					        // [수정] 대기열 체크 시 showId를 쿼리 스트링으로 전달
+					        // 서버의 WaitingQueueController.checkQueue(@RequestParam String showId, ...)와 연결됩니다.
+					        const response = await fetch(`/reserve/check-queue?showId=${showId}`, {
+					            method: 'GET',
+					            headers: getHeaders()
+					        });
 					        const data = await response.json();
 					        
-					        console.log("서버 응답:", data);
+					        console.log("대기열 서버 응답:", data);
 
 					        // 1. 로그인 필요 상황 처리
 					        if (data.status === "REDIRECT_LOGIN") {
 					            if (confirm("로그인이 필요한 서비스입니다. 로그인 페이지로 이동하시겠습니까?")) {
-									window.location.href = /*[[@{/user/login.do}]]*/ '/user/login.do';
+					                window.location.href = /*[[@{/user/login.do}]]*/ '/user/login.do';
 					            }
 					            return;
 					        }
@@ -378,10 +378,10 @@
 					            console.log("대기열 없음: 바로 입장");
 					            openSeatPopup();
 					        } 
-					        // 3. 대기열 발생
+					        // 3. 대기열 발생 (모달 오픈 및 순번 폴링 시작)
 					        else {
 					            console.log("대기열 발생: 모달 오픈, 내 순번:", data.rank);
-					            startWaiting(data.rank);
+					            startWaiting(data.rank); // 이 함수 내부에서도 showId를 써야 하므로 아래 수정 확인!
 					        }
 					    } catch (e) {
 					        console.error("대기열 확인 실패:", e);
@@ -399,36 +399,33 @@
 					}
 
 					function startWaiting(initialRank) {
-					    const modal = document.getElementById("waitingModal");
-					    const rankDisplay = document.getElementById("rankDisplay");
-					    modal.style.display = "block";
-					    
-					    // 상태 표시
-					    rankDisplay.innerText = initialRank === 0 ? "입장 준비 중..." : `내 순번: ${initialRank}번째`;
+						const modal = document.getElementById("waitingModal");
+						    const rankDisplay = document.getElementById("rankDisplay");
+						    modal.style.display = "block";
+						    
+						    rankDisplay.innerText = initialRank <= 0 ? "입장 준비 중..." : `내 순번: ${initialRank}번째`;
 
-					    // 3초마다 순번 체크
-					    const interval = setInterval(async () => {
-					        try {
-					            const res = await fetch('/reserve/check-rank', {
-					                method: 'GET',
-					                headers: getHeaders()
-					            });
-					            const d = await res.json();
-					            
-					            // 서버에서 d.rank가 0이면 입장이 가능하다는 신호라고 가정합니다.
-					            // 만약 서버 로직상 다른 신호를 보낸다면 그에 맞게 수정하세요.
-					            if (d.rank <= 0) { 
-					                clearInterval(interval); // 폴링 중단
-					                modal.style.display = "none";
-					                openSeatPopup(); // <--- 여기서 자동으로 좌석 선택창을 엽니다.
-					            } else {
-					                rankDisplay.innerText = `내 순번: ${d.rank}번째`;
-					            }
-					        } catch (error) {
-					            console.error("순번 확인 중 에러:", error);
-					        }
-					    }, 3000);
-					}
+						    const interval = setInterval(async () => {
+						        try {
+						            // [수정] URL에 showId 파라미터 추가
+						            const res = await fetch(`/reserve/check-rank?showId=${showId}`, {
+						                method: 'GET',
+						                headers: getHeaders()
+						            });
+						            const d = await res.json();
+						            
+						            if (d.rank <= 0) { 
+						                clearInterval(interval);
+						                modal.style.display = "none";
+						                openSeatPopup(); 
+						            } else {
+						                rankDisplay.innerText = `내 순번: ${d.rank}번째`;
+						            }
+						        } catch (error) {
+						            console.error("순번 확인 중 에러:", error);
+						        }
+						    }, 3000);
+						}
 					
 					function closeModalAndOpen() {
 					        document.getElementById("waitingModal").style.display = "none";

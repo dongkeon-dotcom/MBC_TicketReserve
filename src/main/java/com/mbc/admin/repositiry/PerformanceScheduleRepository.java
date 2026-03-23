@@ -59,9 +59,25 @@ public interface PerformanceScheduleRepository extends JpaRepository<Performance
             "ORDER BY ps.start_time ASC", nativeQuery = true)
     List<SalesDataMapping> findUpcomingSchedules(@Param("performanceId") Long performanceId);
     
+ // PerformanceScheduleRepository.java 에서 사용 권장
+    @Query("SELECT s FROM PerformanceSchedule s JOIN FETCH s.performance p " +
+           "WHERE s.openingTime >= :threshold " +
+           "ORDER BY s.openingTime ASC")
+    List<PerformanceSchedule> findUpcomingTicketingSchedules(@Param("threshold") LocalDateTime threshold);
+ // 1. 관제용: 지금 이후로 티켓 오픈이 예정된 회차들만 오픈 시간순으로 보기
+    // (대기열을 미리 준비해야 하는 '예정된' 것들만 추출)
+    List<PerformanceSchedule> findByOpeningTimeAfterOrderByOpeningTimeAsc(LocalDateTime now);
+
+    // 2. 관리용: 이미 오픈된 것들 중 최근 것 보기 (이미 대기열이 돌고 있는 것 확인용)
+    List<PerformanceSchedule> findByOpeningTimeBeforeOrderByOpeningTimeDesc(LocalDateTime now);
     
     
 
+       
+    
+    
+    
+    
 }
     // (나머지 리포지토리도 동일하게 deleteByPerformanceId 추가 필요)
     

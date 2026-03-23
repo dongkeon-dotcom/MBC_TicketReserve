@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>실시간 대기열 관제 - 관리자</title>
+    <link rel="stylesheet" th:href="@{/css/admin/showList.css}"> 
+    <style>
+        .dashboard-container { padding: 20px; background: #f4f6f9; min-height: 100vh; }
+        .dashboard-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+            gap: 20px; 
+            margin-top: 20px; 
+        }
+        .q-card { 
+            background: white; 
+            border-radius: 12px; 
+            padding: 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+            border-top: 5px solid #ccc; /* 기본 상태 */
+        }
+        .q-card.active { border-top-color: #ff5a00; } /* 대기열 가동 중일 때 */
+        
+        .q-header { display: flex; gap: 15px; margin-bottom: 15px; }
+        .q-poster { width: 60px; height: 80px; object-fit: cover; border-radius: 4px; }
+        .q-title { font-size: 1.1rem; font-weight: bold; margin: 0; color: #333; }
+        .q-open-date { font-size: 0.85rem; color: #e74c3c; margin-top: 5px; }
+
+        .q-body { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 8px; 
+            text-align: center;
+        }
+        .q-count-val { font-size: 1.8rem; font-weight: 800; color: #ff5a00; display: block; }
+        .q-count-label { font-size: 0.75rem; color: #666; }
+
+        .q-footer { margin-top: 15px; display: flex; gap: 10px; }
+        .btn-q { 
+            flex: 1; padding: 10px; border: none; border-radius: 6px; 
+            font-weight: bold; cursor: pointer; transition: 0.2s;
+        }
+        .btn-q-on { background: #27ae60; color: white; }
+        .btn-q-off { background: #e74c3c; color: white; }
+        .btn-q-reset { background: #f39c12; color: white; }
+        .btn-q:hover { opacity: 0.8; }
+        
+        /* 대기열 꺼짐 상태일 때 버튼 스타일 조정 */
+        .is-disabled { background: #ddd !important; color: #999 !important; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div th:replace="~{include/top::top}"></div>
+
+    <div class="dashboard-container">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1 class="page-title">🚀 실시간 대기열 관제소</h1>
+            <div class="refresh-indicator" style="font-size: 0.9rem; color: #666;">
+                🔄 5초마다 자동 갱신 중...
+            </div>
+        </div>
+
+		<div class="dashboard-grid">
+		    <div th:each="s : ${activeSchedules}" th:id="|card-${s.performance.performanceId}|" class="q-card">
+		        
+		        <div class="q-header">
+		            <img th:src="@{|https://s3-202601052.s3.ap-northeast-2.amazonaws.com/TICKET/MAIN_POSTER/${s.performance.posterImageName}|}" class="q-poster">
+		            <div>
+		                <p class="q-title" th:text="${s.performance.title}">공연 제목</p>
+		                <p class="q-open-date" th:text="|티켓오픈: ${#temporals.format(s.openingTime, 'yyyy-MM-dd HH:mm')}|">
+		                    티켓오픈: 2026-03-23 14:00
+		                </p>
+		            </div>
+		        </div>
+
+		        <div class="q-body">
+		            <div>
+		                <span class="q-count-label">현재 대기자</span>
+		                <span th:id="|cnt-${s.performance.performanceId}|" class="q-count-val">0</span>
+		            </div>
+		            <div style="border-left: 1px solid #ddd; padding-left: 20px;">
+		                <span class="q-count-label">가동 상태</span>
+		                <span th:id="|status-text-${s.performance.performanceId}|" style="display:block; font-weight:bold; margin-top:5px;">확인 중</span>
+		            </div>
+		        </div>
+
+		        <div class="q-footer">
+		            <button type="button" class="btn-q btn-q-on" 
+		                    th:onclick="|toggleQueue('${s.performance.performanceId}', 'enable')|">가동(ON)</button>
+		            <button type="button" class="btn-q btn-q-off" 
+		                    th:onclick="|toggleQueue('${s.performance.performanceId}', 'disable')|">중지(OFF)</button>
+		        </div>
+		    </div>
+		</div>
+
+    <div th:replace="~{include/bottom::footer}"></div>
+
+    <script th:inline="javascript">
+        $(document).ready(function() {
+            // 초기 로드 시 상태 확인
+            refreshDashboard();
+            // 5초 간격 모니터링
+            setInterval(refreshDashboard, 5000);
+        });
+
+        async function refreshDashboard() {
+            const cards = document.querySelectorAll('.q-card');
+            
+            for (let card of cards) {
+                const showId = card.id.replace('card-', '');
+                
+                try {
+                    // 1. 인원수 조회
+                    const countRes = await fetch(`/admin/queue/${showId}/size`);
+                    const count = await countRes.json();
+                    document.getElementById(`cnt-${showId}`).innerText = count.toLocaleString();
+
+                    // 2. 가동 상태 조회
+                    const statusRes = await fetch(`/admin/queue/${showId}/is-enabled`);
+                    const isEnabled = await statusRes.json();
+                    
+                    updateUI(showId, isEnabled);
+                } catch (e) {
+                    console.error("데이터 갱신 실패:", showId);
+                }
+            }
+        }
+
+        function updateUI(showId, isEnabled) {
+            const card = document.getElementById(`card-${showId}`);
+            const statusText = document.getElementById(`status-text-${showId}`);
+            
+            if (isEnabled) {
+                card.classList.add('active');
+                statusText.innerText = "🟢 가동 중";
+                statusText.style.color = "#27ae60";
+            } else {
+                card.classList.remove('active');
+                statusText.innerText = "🔴 중지됨";
+                statusText.style.color = "#e74c3c";
+            }
+        }
+
+        async function toggleQueue(showId, action) {
+            if (!confirm(`대기열 기능을 ${action === 'enable' ? '가동' : '중지'}하시겠습니까?`)) return;
+
+            try {
+                const res = await fetch(`/admin/queue/${showId}/${action}`, { method: 'POST' });
+                if (res.ok) {
+                    refreshDashboard(); // 즉시 갱신
+                }
+            } catch (e) {
+                alert("처리 중 오류가 발생했습니다.");
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,79 +1,81 @@
 package com.mbc.admin;
 
-import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 
+
 @Service
 public class WaitingQueueService {
-	private final StringRedisTemplate redisTemplate;
-    private static final String QUEUE_KEY = "waiting_queue";
-    private static final String QUEUE_STATUS_KEY = "queue_on"; // 대기열 가동 상태 키
+    private final StringRedisTemplate redisTemplate;
+    
+    // 키를 관리하기 쉽게 접두사로 변경합니다.
+    private static final String QUEUE_KEY_PREFIX = "waiting_queue:";
+    private static final String STATUS_KEY_PREFIX = "queue_status:";
 
     public WaitingQueueService(StringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
-    // --- [추가] 대기열 활성화/비활성화 로직 ---
-
-    // 대기열이 켜져 있는지 확인
-    public boolean isQueueEnabled() {
-        return Boolean.TRUE.equals(redisTemplate.hasKey(QUEUE_STATUS_KEY));
+    // --- [내부 로직] 공연별 Redis 키 생성 ---
+    private String getQueueKey(String showId) {
+        return QUEUE_KEY_PREFIX + showId;
     }
 
-    // 관리자가 대기열 가동 (Redis에 키 생성)
-    public void enableQueue() {
-        redisTemplate.opsForValue().set(QUEUE_STATUS_KEY, "true");
+    private String getStatusKey(String showId) {
+        return STATUS_KEY_PREFIX + showId;
     }
 
-    // 관리자가 대기열 종료 (Redis에서 키 삭제)
-    public void disableQueue() {
-        redisTemplate.delete(QUEUE_STATUS_KEY);
+    // --- [추가] 대기열 활성화/비활성화 로직 (공연별) ---
+
+    // 특정 공연의 대기열이 켜져 있는지 확인
+    public boolean isQueueEnabled(String showId) {
+        return Boolean.TRUE.equals(redisTemplate.hasKey(getStatusKey(showId)));
     }
 
-    // --- [기존] 대기열 로직 ---
-
-    // 대기열에 추가 (사용자 ID와 시간)
-    public void enterQueue(String userId) {
-        // ZSet: score는 시간(currentTimeMillis)으로 사용
-        redisTemplate.opsForZSet().add(QUEUE_KEY, userId, System.currentTimeMillis());
+    // 특정 공연의 대기열 가동 (관리자용)
+    public void enableQueue(String showId) {
+        redisTemplate.opsForValue().set(getStatusKey(showId), "true");
     }
 
-    // 내 순번 확인 (0부터 시작하므로 +1)
-    public Long getRank(String userId) {
-        Long rank = redisTemplate.opsForZSet().rank(QUEUE_KEY, userId);
-        return (rank != null) ? rank + 1 : null; // 1등부터 시작
+    // 특정 공연의 대기열 종료 (관리자용)
+    public void disableQueue(String showId) {
+        redisTemplate.delete(getStatusKey(showId));
+    }
+
+    // --- [기존] 대기열 로직 (공연별 분리) ---
+
+    // 특정 공연 대기열에 추가
+    public void enterQueue(String showId, String userId) {
+        redisTemplate.opsForZSet().add(getQueueKey(showId), userId, System.currentTimeMillis());
+    }
+
+    // 특정 공연에서의 내 순번 확인
+    public Long getRank(String showId, String userId) {
+        Long rank = redisTemplate.opsForZSet().rank(getQueueKey(showId), userId);
+        return (rank != null) ? rank + 1 : null;
     }
     
-    // 대기열에서 나가기 (결제 완료 혹은 취소 시)
-    public void leaveQueue(String userId) {
-        redisTemplate.opsForZSet().remove(QUEUE_KEY, userId);
+    // 특정 공연 대기열에서 나가기
+    public void leaveQueue(String showId, String userId) {
+        redisTemplate.opsForZSet().remove(getQueueKey(showId), userId);
     }
     
- // WaitingQueueService.java에 추가
-    public Long getQueueSize() {
-        return redisTemplate.opsForZSet().zCard(QUEUE_KEY);
+    // 특정 공연의 전체 대기열 크기 확인
+    public Long getQueueSize(String showId) {
+        return redisTemplate.opsForZSet().zCard(getQueueKey(showId));
     }
     
-    public boolean isInQueue(String userId) {
-        return redisTemplate.opsForZSet().score(QUEUE_KEY, userId) != null;
+    // 특정 사용자가 해당 공연 대기열에 있는지 확인
+    public boolean isInQueue(String showId, String userId) {
+        return redisTemplate.opsForZSet().score(getQueueKey(showId), userId) != null;
     }
     
-    
-    
-    
- // WaitingQueueService.java에 추가
-    public void popFirstFromQueue() {
-        // 0번(가장 오래된 사람)을 제거
-        redisTemplate.opsForZSet().removeRange(QUEUE_KEY, 0, 0);
+    // 특정 공연 대기열의 1번(가장 오래된 사람) 제거
+    public void popFirstFromQueue(String showId) {
+        redisTemplate.opsForZSet().removeRange(getQueueKey(showId), 0, 0);
     }
-    
-    
-    
-    
     
     
     
