@@ -95,7 +95,8 @@
 					        
 					        <td>
 					            <div class="action-group">
-									<a th:href="@{'http://localhost:5173?id=' + ${p.performanceId}}" 
+									<!--도커에 올리시 하단의 아이피 변경 필요 -->
+									<a th:href="@{'http://15.165.52.105?id=' + ${p.performanceId}}" 
 									           class="btn-predict" style="background-color: #6c5ce7; color: white;">예상 확인</a>
 					                <a th:href="@{/admin/editPage.do(id=${p.performanceId})}" class="btn-edit">정보수정</a>
 									<a th:href="@{/reserve/ticket.do(performanceId=${p.performanceId})}" class="btn-view" >예매페이지</a>

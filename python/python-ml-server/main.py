@@ -39,7 +39,7 @@ def predict(data: SalesRequest):
         if actual_sales[i] > 0:
             # 현재 예약된 날은 "현재 값 + 남은 기간 동안의 완만한 증가"
             # 무조건 1.2배 하는 게 아니라, 조금만 더 팔릴 것으로 예상
-            pred = actual_sales[i] + (slope * 0.5) + 1. 
+            pred = actual_sales[i] + (slope * 0.5) + 1 
         else:
             # 미래 날짜 (0인 날)
             # 추세를 따라가되, 뒤로 갈수록 증가폭을 줄임 (감쇠 효과)

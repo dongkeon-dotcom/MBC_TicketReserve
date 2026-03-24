@@ -11,7 +11,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/prediction")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173") // React(Vite) 앱 주소 허용
+@CrossOrigin(origins = "http://15.165.52.105") // React(Vite) 앱 주소 허용
 public class PredictionController {
 
     private final PredictionService predictionService;
