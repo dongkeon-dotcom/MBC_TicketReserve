@@ -17,7 +17,7 @@ public class PredictionService {
     private final PerformanceScheduleRepository performanceScheduleRepository;
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private final String PYTHON_SERVER_URL = "http://localhost:8000/forecast";
+    private final String PYTHON_SERVER_URL = "http://15.165.52.105:8000/forecast";
 
     public Map<String, Object> getForecast(Long performanceId) {
         // 1. DB에서 향후 7일간의 회차별 예약 현황 조회
