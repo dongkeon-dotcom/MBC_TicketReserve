@@ -146,7 +146,7 @@
 				        const performanceId = this.getAttribute('data-id');
 				        // 현재 브라우저의 호스트명(localhost 또는 서버IP)을 가져옵니다.
 				        const host = window.location.hostname; 
-				        const targetUrl = `http://${host}:5173?id=${performanceId}`;
+				        const targetUrl = `http://${host}/api2/?id=${performanceId}`;
 				        
 				        window.location.href = targetUrl;
 				    });
