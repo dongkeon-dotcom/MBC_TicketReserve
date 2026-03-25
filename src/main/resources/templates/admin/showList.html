@@ -96,8 +96,11 @@
 					        <td>
 					            <div class="action-group">
 									<!--도커에 올리시 하단의 아이피 변경 필요 -->
-									<a th:href="@{'http://15.165.52.105?id=' + ${p.performanceId}}" 
-									           class="btn-predict" style="background-color: #6c5ce7; color: white;">예상 확인</a>
+									<a href="#"
+										th:data-id="${p.performanceId}"
+										class="btn-predict btn-dynamic-link"
+										style="background-color: #6c5ce7; color: white;">예상 확인</a>
+									           
 					                <a th:href="@{/admin/editPage.do(id=${p.performanceId})}" class="btn-edit">정보수정</a>
 									<a th:href="@{/reserve/ticket.do(performanceId=${p.performanceId})}" class="btn-view" >예매페이지</a>
 					                <button type="button" class="btn-delete" th:onclick="|deleteConfirm(${p.performanceId})|">삭제</button>
@@ -137,6 +140,17 @@
 		
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 		<script>
+				document.querySelectorAll('.btn-dynamic-link').forEach(link => {
+				    link.addEventListener('click', function(e) {
+				        e.preventDefault();
+				        const performanceId = this.getAttribute('data-id');
+				        // 현재 브라우저의 호스트명(localhost 또는 서버IP)을 가져옵니다.
+				        const host = window.location.hostname; 
+				        const targetUrl = `http://${host}:5173?id=${performanceId}`;
+				        
+				        window.location.href = targetUrl;
+				    });
+				});
 		        /**
 		         * 공연 삭제 확인 컨펌 창
 		         */

@@ -27,19 +27,20 @@ ChartJS.register(
 );
 
 const PredictionChart = () => {
+	const params = new URLSearchParams(window.location.search);
+	const performanceId = params.get('id');
+	
     const [chartData, setChartData] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!!performanceId);
 
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const performanceId = params.get('id');
+
 
         if (!performanceId) {
-            setLoading(false);
             return;
         }
 
-        fetch(`http://localhost:8080/api/prediction/forecast/${performanceId}`)
+        fetch(`http://3.35.119.123:8080/api/prediction/forecast/${performanceId}`)
             .then(res => res.json())
             .then(data => {
                 // 백엔드(Spring)에서 labels와 current_counts, predictions를 모두 주는지 확인
@@ -76,7 +77,7 @@ const PredictionChart = () => {
                 console.error("데이터 로드 실패:", err);
                 setLoading(false);
             });
-    }, []);
+    }, [performanceId]);
 
     // 2. 스타일 정의
     const containerStyle = {
@@ -128,7 +129,9 @@ const PredictionChart = () => {
                 </div>
 
                 <button 
-                    onClick={() => window.location.href = "http://localhost:8080/admin/listPage.do"}
+					//강사님꺼는 docker에서 nginx에서 80 -> 8080 으로 해놨기 때문에 해당내용으로 작업
+                    onClick={() => window.location.href = "http://3.35.119.123/admin/listPage.do"}
+					//onClick={() => window.location.href = "http://localhost:8080/admin/listPage.do"}
                     style={{ 
                         textDecoration: 'none', color: '#6c5ce7', fontWeight: 'bold', cursor: 'pointer',
                         border: '2px solid #6c5ce7', padding: '10px 20px', borderRadius: '10px', backgroundColor: '#fff'
