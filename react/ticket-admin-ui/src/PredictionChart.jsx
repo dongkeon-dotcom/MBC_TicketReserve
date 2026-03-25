@@ -6,11 +6,12 @@ import {
     PointElement,
     LineElement,
     BarElement,
+    BarController, // 1. 여기에 추가
     Title,
     Tooltip,
     Legend,
     Filler
-} from 'chart.js';
+} from 'chart.js/auto';
 import { Chart } from 'react-chartjs-2';
 
 // ChartJS 설정 등록
@@ -20,6 +21,7 @@ ChartJS.register(
     PointElement,
     LineElement,
     BarElement,
+    BarController, // 2. 여기에 추가
     Title,
     Tooltip,
     Legend,
@@ -40,7 +42,7 @@ const PredictionChart = () => {
             return;
         }
 
-        fetch(`http://3.35.119.123:8080/api/prediction/forecast/${performanceId}`)
+        fetch(`/api/prediction/forecast/${performanceId}`)
             .then(res => res.json())
             .then(data => {
                 // 백엔드(Spring)에서 labels와 current_counts, predictions를 모두 주는지 확인
@@ -130,7 +132,7 @@ const PredictionChart = () => {
 
                 <button 
 					//강사님꺼는 docker에서 nginx에서 80 -> 8080 으로 해놨기 때문에 해당내용으로 작업
-                    onClick={() => window.location.href = "http://3.35.119.123/admin/listPage.do"}
+                    onClick={() => window.location.href = "/admin/listPage.do"}
 					//onClick={() => window.location.href = "http://localhost:8080/admin/listPage.do"}
                     style={{ 
                         textDecoration: 'none', color: '#6c5ce7', fontWeight: 'bold', cursor: 'pointer',
