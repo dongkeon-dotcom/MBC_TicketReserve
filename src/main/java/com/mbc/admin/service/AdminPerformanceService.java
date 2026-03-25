@@ -49,14 +49,14 @@ public class AdminPerformanceService {
 	private final PerformanceRepository performanceRepository;
     private final VenueSeatMasterRepository venueMasterRepository;
     private final PerformanceSeatTemplateRepository templateRepository;
-    private final PerformanceScheduleRepository scheduleRepository;     // [추가] 회차 삭제용
-    private final PerformanceGradeConfigRepository gradeConfigRepository; // [추가] 가격 설정 삭제용
+    private final PerformanceScheduleRepository scheduleRepository;    
+    private final PerformanceGradeConfigRepository gradeConfigRepository; 
     private final ObjectMapper objectMapper;
-    private final SeatInventoryRepository seatInventoryRepository; // 추가
+    private final SeatInventoryRepository seatInventoryRepository;
     private final S3UploaderService s3UploaderService;
     private final PerformenceDetailImageRepository  detailImageRepository ;
     private final  OrderListRepository orderListRepository;
-    private final WaitingQueueService waitingQueueService; // 여기에 선언되어 있어야 함!
+    private final WaitingQueueService waitingQueueService; 
     
     
     
@@ -66,10 +66,10 @@ public class AdminPerformanceService {
             PerformanceRepository performanceRepository, 
             VenueSeatMasterRepository venueMasterRepository,
             PerformanceSeatTemplateRepository templateRepository,
-            PerformanceScheduleRepository scheduleRepository,      // [추가]
-            PerformanceGradeConfigRepository gradeConfigRepository,  // [추가]
-            SeatInventoryRepository seatInventoryRepository, // 추가
-            S3UploaderService s3UploaderService	,					// AWS S3 Upload용
+            PerformanceScheduleRepository scheduleRepository,     
+            PerformanceGradeConfigRepository gradeConfigRepository,  
+            SeatInventoryRepository seatInventoryRepository,
+            S3UploaderService s3UploaderService	,					
             PerformenceDetailImageRepository  detailImageRepository,
             OrderListRepository orderListRepository,
             WaitingQueueService waitingQueueService
@@ -77,8 +77,8 @@ public class AdminPerformanceService {
         this.performanceRepository = performanceRepository;
         this.venueMasterRepository = venueMasterRepository;
         this.templateRepository = templateRepository;
-        this.scheduleRepository = scheduleRepository;              // [주입]
-        this.gradeConfigRepository = gradeConfigRepository;        // [주입]
+        this.scheduleRepository = scheduleRepository;              
+        this.gradeConfigRepository = gradeConfigRepository;        
         this.seatInventoryRepository = seatInventoryRepository;
         this.s3UploaderService = s3UploaderService;					
         this.objectMapper = new ObjectMapper();
@@ -181,12 +181,16 @@ public class AdminPerformanceService {
             List<String> times = scheduleMap.get(dayOfWeek);
 
             if (times != null && !times.isEmpty()) {
-                for (String timeStr : times) {
+                // [수정 포인트] 중복된 시간 입력 방지 (예: "20:00"이 두 번 들어있어도 한 번만 실행)
+                List<String> distinctTimes = times.stream().distinct().collect(Collectors.toList());
+
+                for (String timeStr : distinctTimes) {
                     LocalDateTime startDateTime = current.atTime(LocalTime.parse(timeStr));
 
-                    // 중복 생성 방지 체크
+                    // [중복 생성 방지] 이미 DB(리스트)에 해당 날짜/시간이 있는지 확인
                     boolean isAlreadyExists = performance.getSchedules().stream()
                             .anyMatch(s -> s.getStartTime().equals(startDateTime));
+                    
                     if (isAlreadyExists) continue;
 
                     // 1. 회차(Schedule) 생성
@@ -246,10 +250,10 @@ public class AdminPerformanceService {
     
     
     
-    
+
     /**
      * [2] 공연 수정 처리 (Update)
-     * 기존 데이터를 삭제 후 재등록하여 정합성을 유지합니다.
+     * 기존 예약이 있는 일정은 유지하고, 새로운 회차만 추가하거나 기본 정보를 업데이트합니다.
      */
     @Transactional
     public void processShowUpdate(PerformanceSaveDto dto) throws Exception {
@@ -257,7 +261,7 @@ public class AdminPerformanceService {
         Performance performance = performanceRepository.findById(dto.getPerformanceId())
                 .orElseThrow(() -> new IllegalArgumentException("해당 공연이 존재하지 않습니다. ID: " + dto.getPerformanceId()));
 
-        // [추가] 1.5. JSON 문자열(String)을 Map<Integer, Integer>로 변환 (에러 해결 핵심)
+        // 1.5. JSON 문자열(String)을 Map<Integer, Integer>로 변환
         ObjectMapper mapper = new ObjectMapper();
         Map<Integer, Integer> seatGradeMap = new HashMap<>();
         if (dto.getSeatGradeMap() != null && !dto.getSeatGradeMap().isEmpty()) {
@@ -265,31 +269,36 @@ public class AdminPerformanceService {
                            new TypeReference<Map<Integer, Integer>>() {});
         }
 
-        // 2. 기본 정보 업데이트
+        // 2. 기본 정보 업데이트 (제목, 시작일, 종료일 등)
         updatePerformanceBasicInfo(performance, dto);
 
         // 3. 이미지 업데이트
         saveImages(performance, dto);
 
-        // 5. 기존 연관 데이터 초기화
-        performance.getGrades().clear();
-        performance.getSchedules().clear();
+        // [중요 수정] 5. 기존 연관 데이터 초기화(clear)를 하지 않습니다.
+        // 예약 데이터가 있는 상태에서 clear()를 하면 외래키 제약 조건 에러가 발생합니다.
+        // performance.getGrades().clear();   <-- 삭제 (기존 등급 유지)
+        // performance.getSchedules().clear(); <-- 삭제 (기존 일정 유지)
         
-        // 6. 수정된 설정으로 등급 및 회차/좌석 재생성
+        // 6. 수정된 설정으로 신규 회차/좌석 추가 생성
         List<String> startDates = dto.getOpenStartDates();
         if (startDates != null) {
             for (int i = 0; i < startDates.size(); i++) {
                 LocalDate start = LocalDate.parse(startDates.get(i));
                 LocalDate end = LocalDate.parse(dto.getOpenEndDates().get(i));
                 
-                // [수정] 마지막 인자에 seatGradeMap을 추가해서 호출!
+                // 이 메서드 내부의 'isAlreadyExists' 로직이 1차 티켓팅 날짜는 건너뛰고,
+                // 2차 티켓팅(새로운 날짜)만 찾아내어 안전하게 INSERT 해줍니다.
                 generateSchedulesForPeriod(performance, start, end, dto, i, seatGradeMap);
             }
         }
 
+        // JPA 더티 체킹에 의해 변경사항이 반영되지만, 명시적으로 호출 유지
         performanceRepository.save(performance);
     }
 
+    
+    
     /**
      * [공통] 공연 기본 정보 업데이트 로직
      */
@@ -361,7 +370,6 @@ public class AdminPerformanceService {
 
     /**
      * [추가] 수정 페이지용 좌석 배치도(템플릿) 데이터 조회
-     * 질문자님의 구조에서는 첫 번째 회차의 좌석 배치를 가져오거나, 
      * 별도의 Template 테이블이 없다면 VenueSeatMaster를 활용할 수 있습니다.
      */
     public List<PerformanceSeatTemplate> getTemplates(Long performanceId) {
@@ -594,7 +602,7 @@ public class AdminPerformanceService {
     
     
     
-    // 티켓취소시 다시 좌석 풀리게 하기 위한 매서드 내일의 내가 쓰겟지...
+    // 티켓취소시 다시 좌석 풀리게 하기 위한 매서드 
     
     @Transactional
     public void cancelReservation(Long orderIdx) {
@@ -661,7 +669,7 @@ public class AdminPerformanceService {
                 .collect(Collectors.toList());
     }
     
-    ////// 회차당 예매율 보여주기 ''\
+    ////// 회차당 예매율 보여주기 
     ///
     ///
     ///
