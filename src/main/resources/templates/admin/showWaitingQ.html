@@ -114,38 +114,43 @@
 		        const showId = card.id.replace('card-', '');
 		        
 		        try {
-		            // 가동 상태 조회
-		            const statusRes = await fetch(`/admin/queue/${showId}/is-enabled`);
-		            const isEnabled = await statusRes.json();
+		            // [권장] 가동 상태와 인원수를 한 번에 주는 API가 있다면 베스트!
+		            const res = await fetch(`/admin/api/queue/${showId}/status`); 
+		            const data = await res.json();
 		            
-		            console.log(`[확인] 공연 ${showId} 상태:`, isEnabled); // 👈 로그 추가
+		            // 기존 updateUI 함수 호출 (인원수까지 포함해서!)
+		            updateUI(showId, data.isEnabled, data.queueSize);
 		            
-		            // UI 업데이트 함수 호출
-		            updateUI(showId, isEnabled);
 		        } catch (e) {
 		            console.error("데이터 갱신 실패:", showId, e);
 		        }
 		    }
 		}
 
-		function updateUI(showId, isEnabled) {
+		JavaScript
+		function updateUI(showId, isEnabled, queueSize = 0) { // 👈 파라미터에 queueSize 추가
 		    const card = document.getElementById(`card-${showId}`);
 		    const statusText = document.getElementById(`status-text-${showId}`);
+		    const countElem = document.getElementById(`cnt-${showId}`); // 👈 인원수 표시 요소 찾기
 		    
 		    if (card && statusText) {
-		        if (isEnabled === true || isEnabled === "true") { // 문자열 "true"인 경우도 대비
-		            card.style.borderTopColor = "#27ae60"; // 🟢 가동 시 초록색 강제 적용
-		            card.classList.add('active'); // CSS 클래스 추가
+		        // 1. 가동 상태 업데이트 (기존 로직)
+		        if (isEnabled === true || isEnabled === "true") {
+		            card.style.borderTopColor = "#27ae60"; 
+		            card.classList.add('active');
 		            statusText.innerText = "🟢 가동 중";
 		            statusText.style.color = "#27ae60";
 		        } else {
-		            card.style.borderTopColor = "#ccc"; // ⚪ 중지 시 회색 강제 적용
+		            card.style.borderTopColor = "#ccc"; 
 		            card.classList.remove('active');
 		            statusText.innerText = "🔴 중지됨";
 		            statusText.style.color = "#e74c3c";
 		        }
-		    } else {
-		        console.error(`ID가 card-${showId}인 요소를 찾을 수 없습니다.`);
+
+		        // 2. 인원수 업데이트 (새로 추가할 한 줄)
+		        if (countElem) {
+		            countElem.innerText = queueSize.toLocaleString(); // 숫자를 1,000 단위 콤마 찍어서 표시
+		        }
 		    }
 		}
 

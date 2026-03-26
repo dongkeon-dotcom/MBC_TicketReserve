@@ -1,6 +1,8 @@
 package com.mbc.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -81,5 +83,16 @@ public class AdminQueueController {
     public ResponseEntity<String> disableQueue(@PathVariable String showId) {
         waitingQueueService.disableQueue(showId);
         return ResponseEntity.ok("대기열이 비활성화되었습니다.");
+    }
+    /**
+     * [AJAX] 특정 공연의 통합 상태(가동여부 + 인원수) 조회
+     */
+    @GetMapping("/{showId}/status")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getQueueStatus(@PathVariable String showId) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("isEnabled", waitingQueueService.isQueueEnabled(showId));
+        result.put("queueSize", waitingQueueService.getQueueSize(showId));
+        return ResponseEntity.ok(result);
     }
 }
